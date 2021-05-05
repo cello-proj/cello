@@ -1,0 +1,12 @@
+---
+version: "0.0.1"
+commands:
+  cdk:
+    diff: "{{.EnvironmentVariables}} cdk diff {{.ExecuteArguments}}"
+    sync: "{{.EnvironmentVariables}} cdk deploy {{.ExecuteArguments}}"
+  terraform:
+    diff: "{{.EnvironmentVariables}} terraform init {{.InitArguments}} && {{.EnvironmentVariables}} terraform plan {{.ExecuteArguments}}"
+    sync: "{{.EnvironmentVariables}} terraform init {{.InitArguments}} && {{.EnvironmentVariables}} terraform apply {{.ExecuteArguments}}"
+  cool-new-framework:
+    diff: "{{.EnvironmentVariables}} get-ready {{.InitArguments}} && {{.EnvironmentVariables}} diffit {{.ExecuteArguments}}"
+    sync: "{{.EnvironmentVariables}} fire {{.InitArguments}} && {{.EnvironmentVariables}} ready-aim {{.ExecuteArguments}}"

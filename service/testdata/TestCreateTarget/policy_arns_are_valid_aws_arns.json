@@ -1,0 +1,11 @@
+{
+  "name": "TARGET",
+  "type": "aws_account",
+  "properties": {
+    "credential_type": "vault",
+    "policy_arns": [
+      "FOOBAR"
+    ],
+    "role_arn": "arn:aws:iam::012345678901:role/test-role"
+  }
+}

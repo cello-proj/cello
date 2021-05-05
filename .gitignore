@@ -1,0 +1,25 @@
+# Intellij
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Mac
+.DS_Store
+
+# ms vscode
+.vscode/
+
+# Coverage directory
+coverage/
+coverage.out
+
+# Terraform
+examples/app-terraform/.terraform*
+examples/app-terraform/.terraform.tfstate*
+examples/app-terraform/.terraform.lock.hcl
+
+# Misc
+ssl
+build
+vendor

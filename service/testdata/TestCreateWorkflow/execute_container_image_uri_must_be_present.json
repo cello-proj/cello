@@ -1,0 +1,16 @@
+{
+  "arguments": {
+    "execute": ["foobar"]
+  },
+  "environment_variables": {
+    "foobar": "barfoo"
+  },
+  "framework": "cdk",
+  "parameters" : {
+  },
+  "project_name": "PROJECT",
+  "target_name": "TARGET",
+  "type": "sync",
+  "workflow_template_name": "argo-cloudops-single-step-vault-aws"
+}
+

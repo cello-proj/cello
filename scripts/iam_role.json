@@ -1,0 +1,61 @@
+{
+  "Description": "Sample IAM role for Argo CloudOps",
+  "Parameters": {
+    "RoleName": {
+      "Type": "String",
+      "Description": "Name of role."
+    }
+  },
+  "Resources": {
+    "IAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Path": "/",
+        "MaxSessionDuration": 43200,
+        "RoleName": {
+          "Ref": "RoleName"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Ref": "AWS::AccountId"
+                }
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "admin",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "*"
+                  ],
+                  "Resource": [
+                    "*"
+                  ],
+                  "Condition": {
+                    "Bool": {
+                      "aws:SecureTransport": "true"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

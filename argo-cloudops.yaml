@@ -1,0 +1,12 @@
+# Default Argo CloudOps Config
+# This will work with included examples
+
+---
+version: "0.0.1"
+commands:
+  cdk:
+    diff: "{{.EnvironmentVariables}} cdk bootstrap && {{.EnvironmentVariables}} cdk diff {{.ExecuteArguments}}"
+    sync: "{{.EnvironmentVariables}} cdk bootstrap && {{.EnvironmentVariables}} cdk deploy {{.ExecuteArguments}}"
+  terraform:
+    diff: "{{.EnvironmentVariables}} terraform init {{.InitArguments}} && {{.EnvironmentVariables}} terraform plan {{.ExecuteArguments}}"
+    sync: "{{.EnvironmentVariables}} terraform init {{.InitArguments}} && {{.EnvironmentVariables}} terraform apply {{.ExecuteArguments}}"
