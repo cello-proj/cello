@@ -20,7 +20,7 @@ fi
 
 if [ -z $ARGO_CLOUDOPS_SERVICE_ADDR ]; then
     # if not set assume local development
-    export ARGO_CLOUDOPS_SERVICE_ADDR=https://localhost:8080
+    export ARGO_CLOUDOPS_SERVICE_ADDR=https://localhost:8443
 fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"

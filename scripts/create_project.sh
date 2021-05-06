@@ -13,7 +13,7 @@ if [ -z $ARGO_CLOUDOPS_TARGET_NAME ]; then
 fi
 
 if [ -z $ARGO_CLOUDOPS_SERVICE_ADDR ]; then
-    export ARGO_CLOUDOPS_SERVICE_ADDR=https://localhost:8080
+    export ARGO_CLOUDOPS_SERVICE_ADDR=https://localhost:8443
 fi
 
 if [ -z $ACCOUNT_ID ]; then
