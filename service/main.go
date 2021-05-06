@@ -18,6 +18,7 @@ func main() {
 		vaultAddr   = os.Getenv("VAULT_ADDR")
 		argoAddr    = os.Getenv("ARGO_ADDR")
 		logLevel    = os.Getenv("ARGO_CLOUD_OPS_LOG_LEVEL")
+		port        = os.Getenv("ARGO_CLOUD_OPS_PORT")
 	)
 
 	setLogLevel(&logger, logLevel)
@@ -40,6 +41,10 @@ func main() {
 
 	if argoAddr == "" {
 		panic("ARGO_ADDR is undefined")
+	}
+
+	if port == "" {
+		port = "8443"
 	}
 
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", configFilePath()))
@@ -65,7 +70,7 @@ func main() {
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)
 
 	r := setupRouter(h)
-	err = http.ListenAndServeTLS(":8080", "ssl/certificate.crt", "ssl/certificate.key", r)
+	err = http.ListenAndServeTLS(fmt.Sprintf(":%s", port), "ssl/certificate.crt", "ssl/certificate.key", r)
 	if err != nil {
 		level.Error(logger).Log("message", "error starting service", "error", err)
 		panic("error starting service")
