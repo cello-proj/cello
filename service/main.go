@@ -18,7 +18,7 @@ func main() {
 		vaultAddr   = os.Getenv("VAULT_ADDR")
 		argoAddr    = os.Getenv("ARGO_ADDR")
 		logLevel    = os.Getenv("ARGO_CLOUD_OPS_LOG_LEVEL")
-		port        = os.Getenv("ARGO_CLOUD_OPS_PORT", "8443")
+		port        = getenv("ARGO_CLOUD_OPS_PORT", "8443")
 	)
 
 	setLogLevel(&logger, logLevel)
@@ -42,7 +42,7 @@ func main() {
 	if argoAddr == "" {
 		panic("ARGO_ADDR is undefined")
 	}
-	
+
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", configFilePath()))
 	config, err := loadConfig()
 	if err != nil {
