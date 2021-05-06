@@ -334,13 +334,6 @@ func TestDeleteTarget(t *testing.T) {
 }
 
 func TestCreateWorkflow(t *testing.T) {
-	c := createWorkflowRequest{}
-	c.Arguments = make(map[string][]string)
-	c.EnvironmentVariables = make(map[string]string)
-	c.Arguments["execute"] = []string{"blah"}
-	c.EnvironmentVariables["foobar"] = "barfoo"
-	jsonStr, _ := json.Marshal(c)
-	fmt.Println(string(jsonStr))
 	tests := []test{
 		{
 			name:    "can create workflows",
