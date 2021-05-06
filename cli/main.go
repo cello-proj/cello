@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
+	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
-	"errors"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	"github.com/spf13/cobra"
 )
 
 // TODO set this and align it to service version
@@ -30,7 +30,7 @@ func getenv(key, fallback string) string {
 }
 
 func argoCloudOpsServiceAddr() string {
-	return getenv("ARGO_CLOUDOPS_SERVICE_ADDR", "https://localhost:8080")
+	return getenv("ARGO_CLOUDOPS_SERVICE_ADDR", "https://localhost:8443")
 }
 
 func argoCloudOpsUserToken() (string, error) {
@@ -184,7 +184,7 @@ func printLogStreamOutput(body io.ReadCloser) {
 func main() {
 	logger := log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
 
-	if argoCloudOpsServiceAddr() == "https://localhost:8080" {
+	if argoCloudOpsServiceAddr() == "https://localhost:8443" {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
