@@ -334,12 +334,12 @@ func main() {
 			fmt.Print(result)
 		},
 	}
-	gitSyncCmd.Flags().StringVarP(&gitRepo, "gitRepo", "r", "", "Git repository ssh url (e.x. git@github.com:myorg/myrepo.git)")
-	gitSyncCmd.Flags().StringVarP(&gitPath, "gitPath", "p", "", "Path to manifest within git repository")
-	gitSyncCmd.Flags().StringVarP(&gitSha, "gitSha", "s", "", "Commit sha to use when creating workflow through git")
-	gitSyncCmd.MarkFlagRequired("gitRepo")
-	gitSyncCmd.MarkFlagRequired("gitPath")
-	gitSyncCmd.MarkFlagRequired("gitSha")
+	gitSyncCmd.Flags().StringVarP(&gitRepo, "repository", "r", "", "Git repository ssh url (e.x. git@github.com:myorg/myrepo.git)")
+	gitSyncCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
+	gitSyncCmd.Flags().StringVarP(&gitSha, "sha", "s", "", "Commit sha to use when creating workflow through git")
+	gitSyncCmd.MarkFlagRequired("repository")
+	gitSyncCmd.MarkFlagRequired("path")
+	gitSyncCmd.MarkFlagRequired("sha")
 
 	var diffCmd = &cobra.Command{
 		Use:   "diff",

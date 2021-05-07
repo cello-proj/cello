@@ -264,13 +264,13 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	var cgwr createGitWorkflowRequest
 	err = json.Unmarshal(reqBody, &cgwr)
 	if err != nil {
-		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest, err)
+		h.errorResponse(w, "error deserializing request body", http.StatusBadRequest, err)
 		return
 	}
 
 	cwr, err := h.loadCreateWorkflowRequestFromGit(cgwr.Repository, cgwr.CommitHash, cgwr.Path)
 	if err != nil {
-		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest, err)
+		h.errorResponse(w, "error loading workflow data from git", http.StatusBadRequest, err)
 		return
 	}
 
