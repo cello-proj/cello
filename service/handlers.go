@@ -429,7 +429,8 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
-	level.Debug(acolog.WithCtx(r.Context())).Log("MESSAGE", "TESTING")
+	ctx := r.Context()
+	level.Debug(acolog.WithCtx(ctx)).Log("MESSAGE", "TESTING")
 
 	ah := r.Header.Get("Authorization")
 	level.Debug(h.logger).Log("message", "authorizing project creation")

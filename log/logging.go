@@ -24,7 +24,7 @@ func SetLevel(logger *log.Logger, lvl string) {
 	}
 }
 
-// WithCtx is a convenience method for logging with contexts.
+// WithCtx is a convenience method for logging using logger in context.
 func WithCtx(ctx context.Context) log.Logger {
 	return FromContext(ctx)
 }
