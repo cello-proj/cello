@@ -255,7 +255,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
 		return
 	}
-	level.Debug(h.logger).Log("message", "reading response body")
+	level.Debug(h.logger).Log("message", "reading request body")
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError, err)
@@ -286,7 +286,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
 		return
 	}
-	level.Debug(h.logger).Log("message", "reading response body")
+	level.Debug(h.logger).Log("message", "reading request body")
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError, err)
