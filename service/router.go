@@ -4,14 +4,17 @@ import (
 	"context"
 	"net/http"
 
+	acolog "github.com/argoproj-labs/argo-cloudops/log"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
-func setupRouter(h handler) *mux.Router {
+func setupRouter(h handler, logLevel string) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
 	r.Use(contextMiddleware)
+	r.Use(loggingMiddleware(logLevel))
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
 	r.HandleFunc("/workflows/{workflowName}", h.getWorkflow).Methods(http.MethodGet)
@@ -38,7 +41,22 @@ func commonMiddleware(next http.Handler) http.Handler {
 
 func contextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c := context.WithValue(r.Context(), "txn_id", uuid.NewString())
-		next.ServeHTTP(w, r.WithContext(c))
+		txnID := uuid.NewString()
+		ctx := context.WithValue(r.Context(), "txn_id", txnID)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func loggingMiddleware(lvl string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			acolog.SetLevel(lvl)
+			ctx = acolog.AddFields(ctx, zap.String("txn_id", ctx.Value("txn_id").(string)))
+			defer acolog.Sync(ctx)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+		return http.HandlerFunc(fn)
+	}
 }

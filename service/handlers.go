@@ -428,7 +428,7 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
-	acolog.WithCtx(r.Context()).Info("USING ACOLOG")
+	acolog.WithCtx(r.Context()).Debug("USING ACOLOG")
 	ah := r.Header.Get("Authorization")
 	level.Debug(h.logger).Log("message", "authorizing project creation")
 	a, err := newAuthorization(ah) // todo add validation
