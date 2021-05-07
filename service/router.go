@@ -11,6 +11,7 @@ func setupRouter(h handler) *mux.Router {
 	r.Use(commonMiddleware)
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
+	r.HandleFunc("/workflows/git", h.createWorkflowFromGit).Methods(http.MethodPost)
 	r.HandleFunc("/workflows/{workflowName}", h.getWorkflow).Methods(http.MethodGet)
 	r.HandleFunc("/workflows/{workflowName}/logs", h.getWorkflowLogs).Methods(http.MethodGet)
 	r.HandleFunc("/workflows/{workflowName}/logstream", h.getWorkflowLogStream).Methods(http.MethodGet)

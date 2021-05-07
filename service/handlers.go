@@ -25,7 +25,7 @@ import (
 
 // Create workflow request
 type createWorkflowRequest struct {
-	Arguments            map[string][]string `yaml:"arguments" "json:arguments"`
+	Arguments            map[string][]string `yaml:"arguments" json:"arguments"`
 	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
 	Framework            string              `yaml:"framework" json:"framework"`
 	Parameters           map[string]string   `yaml:"parameters" json:"parameters"`
@@ -33,6 +33,13 @@ type createWorkflowRequest struct {
 	TargetName           string              `yaml:"target_name" json:"target_name"`
 	Type                 string              `yaml:"type" json:"type"`
 	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
+}
+
+// Create workflow from git manifest request
+type createGitWorkflowRequest struct {
+	Repository string `json:"repository"`
+	CommitHash string `json:"sha"`
+	Path       string `json:"path"`
 }
 
 // Represents a JWT token
@@ -240,6 +247,37 @@ func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path s
 }
 
 // Creates a workflow
+func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
+	level.Debug(h.logger).Log("message", "creating workflow")
+	ah := r.Header.Get("Authorization")
+	a, err := newAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
+		return
+	}
+	level.Debug(h.logger).Log("message", "reading response body")
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError, err)
+		return
+	}
+	var cgwr createGitWorkflowRequest
+	err = json.Unmarshal(reqBody, &cgwr)
+	if err != nil {
+		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest, err)
+		return
+	}
+
+	cwr, err := h.loadCreateWorkflowRequestFromGit(cgwr.Repository, cgwr.CommitHash, cgwr.Path)
+	if err != nil {
+		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest, err)
+		return
+	}
+
+	h.createWorkflowFromRequest(w, a, cwr)
+}
+
+// Creates a workflow
 func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	level.Debug(h.logger).Log("message", "creating workflow")
 	ah := r.Header.Get("Authorization")
@@ -261,6 +299,11 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.createWorkflowFromRequest(w, a, cwr)
+}
+
+// Creates a workflow
+func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest) {
 	level.Debug(h.logger).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		h.errorResponse(w, "error in parameters", http.StatusInternalServerError, err)
