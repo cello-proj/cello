@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
+	"github.com/spf13/cobra"
 )
 
 // TODO set this and align it to service version
@@ -246,10 +247,10 @@ func main() {
 			fmt.Printf(result)
 		},
 	}
-	syncCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-e Arg1=ValueA,Arg2=ValueB).")
+	syncCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-a Arg1=ValueA,Arg2=ValueB).")
 	syncCmd.Flags().StringVarP(&environmentVariablesCSV, "environment_variables", "e", "", "CSV string of equals separated environment variable key value pairs (-e Key1=ValueA,Key2=ValueB)")
 	syncCmd.Flags().StringVarP(&framework, "framework", "f", "", "Framework to execute")
-	syncCmd.Flags().StringVarP(&parametersCSV, "parameters", "p", "", "CSV string of equals separated parameters name and value (-o Param1=ValueA,Param2=ValueB).")
+	syncCmd.Flags().StringVarP(&parametersCSV, "parameters", "p", "", "CSV string of equals separated parameters name and value (-p Param1=ValueA,Param2=ValueB).")
 	syncCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
 	syncCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
 	syncCmd.Flags().StringVarP(&workflowTemplateName, "workflow_template_name", "w", "", "Name of the workflow template")
@@ -287,10 +288,10 @@ func main() {
 			fmt.Println(result)
 		},
 	}
-	diffCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-e Arg1=ValueA,Arg2=ValueB)")
+	diffCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-a Arg1=ValueA,Arg2=ValueB)")
 	diffCmd.Flags().StringVarP(&environmentVariablesCSV, "environment_variables", "e", "", "CSV string of equals separated environment variable key value pairs (-e Key1=ValueA,Key2=ValueB)")
 	diffCmd.Flags().StringVarP(&framework, "framework", "f", "", "Framework to execute")
-	diffCmd.Flags().StringVarP(&parametersCSV, "parameters", "p", "", "CSV string of equals separated parameters name and value (-o Param1=ValueA,Param2=ValueB).")
+	diffCmd.Flags().StringVarP(&parametersCSV, "parameters", "p", "", "CSV string of equals separated parameters name and value (-p Param1=ValueA,Param2=ValueB).")
 	diffCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
 	diffCmd.Flags().StringVarP(&targetName, "target", "t", "", "Target to apply changes against")
 	diffCmd.Flags().StringVarP(&workflowTemplateName, "workflow_template_name", "w", "", "Name of the workflow template")
