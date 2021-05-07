@@ -35,7 +35,7 @@ func init() {
 	logger = l.Named("logger")
 }
 
-// Log
+// Log writes log to output.
 func Log() *zap.SugaredLogger {
 	return logger.Sugar()
 }
@@ -54,7 +54,7 @@ func Sync(ctx context.Context) {
 	return
 }
 
-// WithCtx is a convenience method for logging with a SugaredLogger
+// WithCtx is a convenience method for logging with contexts using a SugaredLogger
 func WithCtx(ctx context.Context) *zap.SugaredLogger {
 	return FromContext(ctx).Sugar()
 }
