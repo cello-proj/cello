@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	acolog "github.com/argoproj-labs/argo-cloudops/log"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
 	"github.com/go-kit/kit/log"
@@ -427,6 +428,7 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
+	acolog.WithCtx(r.Context()).Info("USING ACOLOG")
 	ah := r.Header.Get("Authorization")
 	level.Debug(h.logger).Log("message", "authorizing project creation")
 	a, err := newAuthorization(ah) // todo add validation

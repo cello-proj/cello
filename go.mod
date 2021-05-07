@@ -9,6 +9,7 @@ require (
 	github.com/go-kit/kit v0.10.0
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/google/go-cmp v0.5.2
+	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault // indirect
@@ -17,6 +18,7 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/spf13/cobra v1.1.3
+	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.33.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.6
