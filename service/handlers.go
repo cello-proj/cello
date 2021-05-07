@@ -95,6 +95,7 @@ func (a Authorization) authorizedAdmin() bool {
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
+	logLevel               string
 	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
 	argo                   Workflow
 	config                 *Config
@@ -428,7 +429,8 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
-	acolog.WithCtx(r.Context()).Debug("USING ACOLOG")
+	level.Debug(acolog.WithCtx(r.Context())).Log("MESSAGE", "TESTING")
+
 	ah := r.Header.Get("Authorization")
 	level.Debug(h.logger).Log("message", "authorizing project creation")
 	a, err := newAuthorization(ah) // todo add validation

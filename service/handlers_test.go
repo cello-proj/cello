@@ -552,7 +552,8 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 	}
-	var router = setupRouter(h, "debug")
+
+	var router = setupRouter(h)
 	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
 	req, _ := http.NewRequest(method, url, body)
 	authorizationHeader := "vault:user:DEADBEEF"

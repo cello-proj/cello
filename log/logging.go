@@ -5,89 +5,67 @@ package log
 
 import (
 	"context"
+	"os"
 	"strings"
 
-	// Using zap instead of go-kit/log because go-kit/log/level requires a go-kit/log logger,
-	// and thought a logger struct was overkill because I didn't not want to recreate the zap methods
-	// (zap provides no interfaces).
-	"go.uber.org/zap"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 )
 
 type ctxLogKey struct{}
 
-var logger *zap.Logger
-var cfg zap.Config
-
-func init() {
-	cfg = zap.NewProductionConfig()
-	l, err := cfg.Build(zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
-
-	if err != nil {
-		panic(err.Error())
-	}
-
-	var fields []zap.Field
-
-	if len(fields) > 0 {
-		l = l.With(fields...)
-	}
-
-	logger = l.Named("logger")
-}
-
-// Log writes log to output.
-func Log() *zap.SugaredLogger {
-	return logger.Sugar()
-}
-
 // SetLevel sets the level of the logger.
-func SetLevel(lvl string) {
+func SetLevel(logger *log.Logger, lvl string) {
 	switch strings.ToUpper(lvl) {
 	case "DEBUG":
-		cfg.Level.SetLevel(zap.DebugLevel)
+		*logger = level.NewFilter(*logger, level.AllowDebug())
+	default:
+		*logger = level.NewFilter(*logger, level.AllowInfo())
 	}
 }
 
-// Sync triggers a sync of the underlying zap Logger.
-func Sync(ctx context.Context) {
-	FromContext(ctx).Sync()
-	return
+// WithCtx is a convenience method for logging with contexts.
+func WithCtx(ctx context.Context) log.Logger {
+	return FromContext(ctx)
 }
 
-// WithCtx is a convenience method for logging with contexts using a SugaredLogger
-func WithCtx(ctx context.Context) *zap.SugaredLogger {
-	return FromContext(ctx).Sugar()
-}
-
-// FromContext returns a zap.Logger with additional optional fields.
-func FromContext(ctx context.Context, fields ...zap.Field) *zap.Logger {
+// FromContext returns a log.Logger with additional optional fields.
+func FromContext(ctx context.Context, fields ...interface{}) log.Logger {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
-	l, ok := ctx.Value(ctxLogKey{}).(*zap.Logger)
+	l, ok := ctx.Value(ctxLogKey{}).(log.Logger)
 	if !ok || l == nil {
-		l = logger
+		l = GetLogger(ctx)
 	}
 
 	if len(fields) > 0 {
-		return l.With(fields...)
+		l = log.With(l, fields...)
+		return l
 	}
-
 	return l
 }
 
 // ToContext pushes a new logger, with additional optional fields, into the context.
-func ToContext(ctx context.Context, base *zap.Logger) context.Context {
+func ToContext(ctx context.Context, base log.Logger) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-
 	return context.WithValue(ctx, ctxLogKey{}, base)
 }
 
-// AddFields is sugar for updating the in-context logger with additional fields.
-func AddFields(ctx context.Context, fields ...zap.Field) context.Context {
+// AddFields updates the in-context logger with additional fields.
+func AddFields(ctx context.Context, fields ...interface{}) context.Context {
 	l := FromContext(ctx, fields...)
 	return ToContext(ctx, l)
+}
+
+// GetLogger returns the logger from context or creates a new logger if not set in context.
+func GetLogger(ctx context.Context) log.Logger {
+	logger, ok := ctx.Value(ctxLogKey{}).(log.Logger)
+	if !ok || logger == nil {
+		logger = log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
+	}
+	return logger
 }

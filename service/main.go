@@ -58,6 +58,7 @@ func main() {
 
 	h := handler{
 		logger:                 logger,
+		logLevel:               logLevel,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
 		argo:                   newArgoWorkflow(),
 		config:                 config,
@@ -65,7 +66,8 @@ func main() {
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)
 
-	r := setupRouter(h, logLevel)
+	// TODO: set logger in context and pass to setupRouter?
+	r := setupRouter(h)
 	err = http.ListenAndServeTLS(fmt.Sprintf(":%s", port), "ssl/certificate.crt", "ssl/certificate.key", r)
 	if err != nil {
 		level.Error(logger).Log("message", "error starting service", "error", err)

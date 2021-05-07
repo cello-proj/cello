@@ -18,7 +18,6 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/spf13/cobra v1.1.3
-	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.33.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.6
