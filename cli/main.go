@@ -74,6 +74,20 @@ func newCreateWorkflowRequest(arguments map[string][]string, parameters map[stri
 	return cr, nil
 }
 
+type createGitWorkflowRequest struct {
+	Repository string `json:"repository"`
+	CommitHash string `json:"sha"`
+	Path       string `json:"path"`
+}
+
+func newCreateGitWorkflowRequest(repository, path, sha string) *createGitWorkflowRequest {
+	return &createGitWorkflowRequest{
+		Repository: repository,
+		CommitHash: sha,
+		Path:       path,
+	}
+}
+
 type workflowResponse struct {
 	WorkflowName string `json:"workflow_name"`
 }
@@ -171,6 +185,49 @@ func generateParameters(parametersCSV string) (map[string]string, error) {
 	return make(map[string]string), nil
 }
 
+func executeGitWorkflow(cgwr *createGitWorkflowRequest) (string, error) {
+	client := &http.Client{}
+
+	requestJSON, err := json.Marshal(cgwr)
+	if err != nil {
+		return "", err
+	}
+
+	endpoint := fmt.Sprintf("%s/workflows/git", argoCloudOpsServiceAddr())
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(requestJSON))
+	if err != nil {
+		return "", err
+	}
+
+	argoCloudOpsUserTkn, err := argoCloudOpsUserToken()
+	if err != nil {
+		return "", err
+	}
+	req.Header.Add("Authorization", argoCloudOpsUserTkn)
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("execute workflow request failed with status code %d, message %s", resp.StatusCode, resp.Status)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var wr workflowResponse
+
+	err = json.Unmarshal(body, &wr)
+	if err != nil {
+		return "", err
+	}
+
+	return wr.WorkflowName, nil
+}
+
 func printLogStreamOutput(body io.ReadCloser) {
 	p := make([]byte, 256)
 	for {
@@ -196,6 +253,9 @@ func main() {
 	var projectName string
 	var targetName string
 	var workflowTemplateName string
+	var gitRepo string
+	var gitPath string
+	var gitSha string
 
 	var rootCmd = &cobra.Command{
 		Use:   "argo-cloudops",
@@ -258,6 +318,28 @@ func main() {
 	syncCmd.MarkFlagRequired("project_name")
 	syncCmd.MarkFlagRequired("target_name")
 	syncCmd.MarkFlagRequired("workflow_template_name")
+
+	var gitSyncCmd = &cobra.Command{
+		Use:   "gitsync",
+		Short: "Syncs target using a manifest in git",
+		Long:  "Syncs target using a manifest in git",
+		Run: func(cmd *cobra.Command, args []string) {
+			cgwr := newCreateGitWorkflowRequest(gitRepo, gitPath, gitSha)
+			result, err := executeGitWorkflow(cgwr)
+			if err != nil {
+				level.Error(logger).Log("message", "error executing workflow", "error", err)
+				os.Exit(1)
+			}
+
+			fmt.Print(result)
+		},
+	}
+	gitSyncCmd.Flags().StringVarP(&gitRepo, "gitRepo", "r", "", "Git repository ssh url (e.x. git@github.com:myorg/myrepo.git)")
+	gitSyncCmd.Flags().StringVarP(&gitPath, "gitPath", "p", "", "Path to manifest within git repository")
+	gitSyncCmd.Flags().StringVarP(&gitSha, "gitSha", "s", "", "Commit sha to use when creating workflow through git")
+	gitSyncCmd.MarkFlagRequired("gitRepo")
+	gitSyncCmd.MarkFlagRequired("gitPath")
+	gitSyncCmd.MarkFlagRequired("gitSha")
 
 	var diffCmd = &cobra.Command{
 		Use:   "diff",
@@ -436,6 +518,7 @@ func main() {
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(gitSyncCmd)
 	rootCmd.AddCommand(diffCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(logsCmd)

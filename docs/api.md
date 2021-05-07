@@ -154,6 +154,29 @@ Response Body
 }
 ```
 
+
+## Create Workflow From Git Manifest
+
+POST /workflows/git
+
+Request Body
+
+```json
+{
+	"repository": "git@github.com:myorg/myrepo.git",
+	"sha": "1234abdc5678efgh9012ijkl3456mnop7890qrst",
+	"path": "path/to/manifest.yaml"
+}
+```
+
+Response Body
+
+```json
+{
+  "workflow_name": "abcd"
+}
+```
+
 ## Get Workflow
 
 GET /workflows/<workflow_name>
