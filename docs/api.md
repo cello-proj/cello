@@ -154,10 +154,9 @@ Response Body
 }
 ```
 
+## Perform Target Operations From Git Manifest
 
-## Create Workflow From Git Manifest
-
-POST /workflows/git
+POST /projects/<project_name>/targets/<target_name>/operations
 
 Request Body
 
@@ -165,7 +164,8 @@ Request Body
 {
 	"repository": "git@github.com:myorg/myrepo.git",
 	"sha": "1234abdc5678efgh9012ijkl3456mnop7890qrst",
-	"path": "path/to/manifest.yaml"
+	"path": "path/to/manifest.yaml",
+  "type": "sync"
 }
 ```
 

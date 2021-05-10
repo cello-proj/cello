@@ -11,7 +11,6 @@ func setupRouter(h handler) *mux.Router {
 	r.Use(commonMiddleware)
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
-	r.HandleFunc("/workflows/git", h.createWorkflowFromGit).Methods(http.MethodPost)
 	r.HandleFunc("/workflows/{workflowName}", h.getWorkflow).Methods(http.MethodGet)
 	r.HandleFunc("/workflows/{workflowName}/logs", h.getWorkflowLogs).Methods(http.MethodGet)
 	r.HandleFunc("/workflows/{workflowName}/logstream", h.getWorkflowLogStream).Methods(http.MethodGet)
@@ -22,6 +21,7 @@ func setupRouter(h handler) *mux.Router {
 	r.HandleFunc("/projects/{projectName}/targets", h.createTarget).Methods(http.MethodPost)
 	r.HandleFunc("/projects/{projectName}/targets/{targetName}", h.getTarget).Methods(http.MethodGet)
 	r.HandleFunc("/projects/{projectName}/targets/{targetName}", h.deleteTarget).Methods(http.MethodDelete)
+	r.HandleFunc("/projects/{projectName}/targets/{targetName}/operations", h.createWorkflowFromGit).Methods(http.MethodPost)
 	r.HandleFunc("/projects/{projectName}/targets/{targetName}/workflows", h.listWorkflows).Methods(http.MethodGet)
 	r.HandleFunc("/health/full", h.healthCheck).Methods(http.MethodGet)
 	return r

@@ -40,6 +40,7 @@ type createGitWorkflowRequest struct {
 	Repository string `json:"repository"`
 	CommitHash string `json:"sha"`
 	Path       string `json:"path"`
+	Type       string `json:"type"`
 }
 
 // Represents a JWT token
@@ -246,7 +247,6 @@ func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path s
 	return cwr, err
 }
 
-// Creates a workflow
 func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	level.Debug(h.logger).Log("message", "creating workflow")
 	ah := r.Header.Get("Authorization")
@@ -274,6 +274,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cwr.Type = cgwr.Type
 	h.createWorkflowFromRequest(w, a, cwr)
 }
 

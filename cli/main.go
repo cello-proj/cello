@@ -78,6 +78,7 @@ type createGitWorkflowRequest struct {
 	Repository string `json:"repository"`
 	CommitHash string `json:"sha"`
 	Path       string `json:"path"`
+	Type       string `json:"type"`
 }
 
 func newCreateGitWorkflowRequest(repository, path, sha string) *createGitWorkflowRequest {
@@ -185,7 +186,7 @@ func generateParameters(parametersCSV string) (map[string]string, error) {
 	return make(map[string]string), nil
 }
 
-func executeGitWorkflow(cgwr *createGitWorkflowRequest) (string, error) {
+func executeGitWorkflow(cgwr *createGitWorkflowRequest, project, target string) (string, error) {
 	client := &http.Client{}
 
 	requestJSON, err := json.Marshal(cgwr)
@@ -193,7 +194,7 @@ func executeGitWorkflow(cgwr *createGitWorkflowRequest) (string, error) {
 		return "", err
 	}
 
-	endpoint := fmt.Sprintf("%s/workflows/git", argoCloudOpsServiceAddr())
+	endpoint := fmt.Sprintf("%s/projects/%s/targets/%s/operations", argoCloudOpsServiceAddr(), project, target)
 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(requestJSON))
 	if err != nil {
 		return "", err
@@ -253,6 +254,7 @@ func main() {
 	var projectName string
 	var targetName string
 	var workflowTemplateName string
+	var workflowType string
 	var gitRepo string
 	var gitPath string
 	var gitSha string
@@ -275,10 +277,10 @@ func main() {
 		},
 	}
 
-	var syncCmd = &cobra.Command{
-		Use:   "sync",
-		Short: "Syncs target with provided arguments",
-		Long:  "Syncs target with provided arguments",
+	var workflowCmd = &cobra.Command{
+		Use:   "workflow",
+		Short: "Creates a workflow with provided arguments",
+		Long:  "Creates a workflow with provided arguments",
 		Run: func(cmd *cobra.Command, args []string) {
 			arguments, err := generateArguments(argumentsCSV)
 			if err != nil {
@@ -292,7 +294,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			cwr, err := newCreateWorkflowRequest(arguments, parameters, framework, "sync", environmentVariablesCSV, projectName, targetName, workflowTemplateName)
+			cwr, err := newCreateWorkflowRequest(arguments, parameters, framework, workflowType, environmentVariablesCSV, projectName, targetName, workflowTemplateName)
 			if err != nil {
 				level.Error(logger).Log("message", "error creating workflow request", "error", err)
 				os.Exit(1)
@@ -307,25 +309,28 @@ func main() {
 			fmt.Printf(result)
 		},
 	}
-	syncCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-a Arg1=ValueA,Arg2=ValueB).")
-	syncCmd.Flags().StringVarP(&environmentVariablesCSV, "environment_variables", "e", "", "CSV string of equals separated environment variable key value pairs (-e Key1=ValueA,Key2=ValueB)")
-	syncCmd.Flags().StringVarP(&framework, "framework", "f", "", "Framework to execute")
-	syncCmd.Flags().StringVarP(&parametersCSV, "parameters", "p", "", "CSV string of equals separated parameters name and value (-p Param1=ValueA,Param2=ValueB).")
-	syncCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
-	syncCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
-	syncCmd.Flags().StringVarP(&workflowTemplateName, "workflow_template_name", "w", "", "Name of the workflow template")
-	syncCmd.MarkFlagRequired("framework")
-	syncCmd.MarkFlagRequired("project_name")
-	syncCmd.MarkFlagRequired("target_name")
-	syncCmd.MarkFlagRequired("workflow_template_name")
+	workflowCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-a Arg1=ValueA,Arg2=ValueB).")
+	workflowCmd.Flags().StringVarP(&environmentVariablesCSV, "environment_variables", "e", "", "CSV string of equals separated environment variable key value pairs (-e Key1=ValueA,Key2=ValueB)")
+	workflowCmd.Flags().StringVarP(&framework, "framework", "f", "", "Framework to execute")
+	workflowCmd.Flags().StringVarP(&parametersCSV, "parameters", "p", "", "CSV string of equals separated parameters name and value (-p Param1=ValueA,Param2=ValueB).")
+	workflowCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
+	workflowCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
+	workflowCmd.Flags().StringVarP(&workflowTemplateName, "workflow_template_name", "w", "", "Name of the workflow template")
+	workflowCmd.Flags().StringVar(&workflowType, "type", "", "Workflow type to execute")
+	workflowCmd.MarkFlagRequired("framework")
+	workflowCmd.MarkFlagRequired("project_name")
+	workflowCmd.MarkFlagRequired("target_name")
+	workflowCmd.MarkFlagRequired("workflow_template_name")
+	workflowCmd.MarkFlagRequired("type")
 
-	var gitSyncCmd = &cobra.Command{
-		Use:   "gitsync",
+	var syncCmd = &cobra.Command{
+		Use:   "sync",
 		Short: "Syncs target using a manifest in git",
 		Long:  "Syncs target using a manifest in git",
 		Run: func(cmd *cobra.Command, args []string) {
 			cgwr := newCreateGitWorkflowRequest(gitRepo, gitPath, gitSha)
-			result, err := executeGitWorkflow(cgwr)
+			cgwr.Type = "sync"
+			result, err := executeGitWorkflow(cgwr, projectName, targetName)
 			if err != nil {
 				level.Error(logger).Log("message", "error executing workflow", "error", err)
 				os.Exit(1)
@@ -334,53 +339,43 @@ func main() {
 			fmt.Print(result)
 		},
 	}
-	gitSyncCmd.Flags().StringVarP(&gitRepo, "repository", "r", "", "Git repository ssh url (e.x. git@github.com:myorg/myrepo.git)")
-	gitSyncCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
-	gitSyncCmd.Flags().StringVarP(&gitSha, "sha", "s", "", "Commit sha to use when creating workflow through git")
-	gitSyncCmd.MarkFlagRequired("repository")
-	gitSyncCmd.MarkFlagRequired("path")
-	gitSyncCmd.MarkFlagRequired("sha")
+	syncCmd.Flags().StringVarP(&gitRepo, "repository", "r", "", "Git repository ssh url (e.x. git@github.com:myorg/myrepo.git)")
+	syncCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
+	syncCmd.Flags().StringVarP(&gitSha, "sha", "s", "", "Commit sha to use when creating workflow through git")
+	syncCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
+	syncCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
+	syncCmd.MarkFlagRequired("repository")
+	syncCmd.MarkFlagRequired("path")
+	syncCmd.MarkFlagRequired("sha")
+	syncCmd.MarkFlagRequired("project_name")
+	syncCmd.MarkFlagRequired("target_name")
 
 	var diffCmd = &cobra.Command{
 		Use:   "diff",
-		Short: "Diffs code based on provided arguments",
-		Long:  "Diffs code based on provided arguments",
+		Short: "Diff target using a manifest in git",
+		Long:  "Diff target using a manifest in git",
 		Run: func(cmd *cobra.Command, args []string) {
-			arguments, err := generateArguments(argumentsCSV)
-			if err != nil {
-				level.Error(logger).Log("message", "error generating arguments", "error", err)
-				os.Exit(1)
-			}
-
-			parameters, err := generateParameters(parametersCSV)
-			if err != nil {
-				level.Error(logger).Log("message", "error generating parameters", "error", err)
-				os.Exit(1)
-			}
-
-			cwr, err := newCreateWorkflowRequest(arguments, parameters, framework, "diff", environmentVariablesCSV, projectName, targetName, workflowTemplateName)
-			if err != nil {
-				level.Error(logger).Log("message", "error creating workflow request", "error", err)
-			}
-
-			result, err := executeWorkflow(cwr)
+			cgwr := newCreateGitWorkflowRequest(gitRepo, gitPath, gitSha)
+			cgwr.Type = "diff"
+			result, err := executeGitWorkflow(cgwr, projectName, targetName)
 			if err != nil {
 				level.Error(logger).Log("message", "error executing workflow", "error", err)
+				os.Exit(1)
 			}
-			fmt.Println(result)
+
+			fmt.Print(result)
 		},
 	}
-	diffCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-a Arg1=ValueA,Arg2=ValueB)")
-	diffCmd.Flags().StringVarP(&environmentVariablesCSV, "environment_variables", "e", "", "CSV string of equals separated environment variable key value pairs (-e Key1=ValueA,Key2=ValueB)")
-	diffCmd.Flags().StringVarP(&framework, "framework", "f", "", "Framework to execute")
-	diffCmd.Flags().StringVarP(&parametersCSV, "parameters", "p", "", "CSV string of equals separated parameters name and value (-p Param1=ValueA,Param2=ValueB).")
+	diffCmd.Flags().StringVarP(&gitRepo, "repository", "r", "", "Git repository ssh url (e.x. git@github.com:myorg/myrepo.git)")
+	diffCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
+	diffCmd.Flags().StringVarP(&gitSha, "sha", "s", "", "Commit sha to use when creating workflow through git")
 	diffCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
-	diffCmd.Flags().StringVarP(&targetName, "target", "t", "", "Target to apply changes against")
-	diffCmd.Flags().StringVarP(&workflowTemplateName, "workflow_template_name", "w", "", "Name of the workflow template")
-	diffCmd.MarkFlagRequired("framework")
+	diffCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
+	diffCmd.MarkFlagRequired("repository")
+	diffCmd.MarkFlagRequired("path")
+	diffCmd.MarkFlagRequired("sha")
 	diffCmd.MarkFlagRequired("project_name")
 	diffCmd.MarkFlagRequired("target_name")
-	diffCmd.MarkFlagRequired("workflow_template_name")
 
 	//TODO Validation and better handle all the errors
 	var getCmd = &cobra.Command{
@@ -517,8 +512,8 @@ func main() {
 	listWorkflowsCmd.MarkFlagRequired("target_name")
 
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(workflowCmd)
 	rootCmd.AddCommand(syncCmd)
-	rootCmd.AddCommand(gitSyncCmd)
 	rootCmd.AddCommand(diffCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(logsCmd)
