@@ -11,11 +11,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
-	memfs "github.com/go-git/go-billy/v5/memfs"
-	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	memory "github.com/go-git/go-git/v5/storage/memory"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
@@ -111,7 +106,7 @@ type handler struct {
 	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
 	argo                   Workflow
 	config                 *Config
-	sshPemFile             string
+	gitClient              GitClient
 }
 
 // Returns a new vaultCredentialsProvider
@@ -191,53 +186,8 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 
 // Creates workflow init params by pulling manifest from given git repo, commit sha, and code path
 func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (createWorkflowRequest, error) {
-	auth, err := ssh.NewPublicKeysFromFile("git", h.sshPemFile, "")
-	if err != nil {
-		return createWorkflowRequest{}, err
-	}
-
-	storer := memory.NewStorage()
-	fs := memfs.New()
-
-	level.Debug(h.logger).Log("message", fmt.Sprintf("cloning repository %s", repository))
-	repo, err := git.Clone(storer, fs, &git.CloneOptions{
-		URL:  repository,
-		Auth: auth,
-	})
-	if err != nil {
-		return createWorkflowRequest{}, err
-	}
-
-	w, err := repo.Worktree()
-	if err != nil {
-		return createWorkflowRequest{}, err
-	}
-
-	level.Debug(h.logger).Log("message", fmt.Sprintf("checking out commit %s", commitHash))
-	err = w.Checkout(&git.CheckoutOptions{
-		Hash: plumbing.NewHash(commitHash),
-	})
-	if err != nil {
-		return createWorkflowRequest{}, err
-	}
-
-	level.Debug(h.logger).Log("message", fmt.Sprintf("reading file %s", path))
-	fileStat, err := fs.Stat(path)
-	if err != nil {
-		return createWorkflowRequest{}, err
-	}
-
-	if fileStat.IsDir() {
-		return createWorkflowRequest{}, fmt.Errorf("path provided is not a file '%s'", path)
-	}
-
-	file, err := fs.Open(path)
-	if err != nil {
-		return createWorkflowRequest{}, err
-	}
-
-	fileContents := make([]byte, fileStat.Size())
-	_, err = file.Read(fileContents)
+	level.Debug(h.logger).Log("message", fmt.Sprintf("retrieving manifest from repository %s at sha %s with path %s", repository, commitHash, path))
+	fileContents, err := h.gitClient.CheckoutFileFromRepository(repository, commitHash, path)
 	if err != nil {
 		return createWorkflowRequest{}, err
 	}

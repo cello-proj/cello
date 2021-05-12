@@ -209,7 +209,8 @@ func executeGitWorkflow(cgwr *createGitWorkflowRequest, project, target string) 
 	if err != nil {
 		return "", err
 	}
-	if resp.StatusCode != 200 {
+	// TODO: status should probably be changed to 201?
+	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
 		return "", fmt.Errorf("execute workflow request failed with status code %d, message %s", resp.StatusCode, resp.Status)
 	}
 
@@ -221,8 +222,7 @@ func executeGitWorkflow(cgwr *createGitWorkflowRequest, project, target string) 
 
 	var wr workflowResponse
 
-	err = json.Unmarshal(body, &wr)
-	if err != nil {
+	if err = json.Unmarshal(body, &wr); err != nil {
 		return "", err
 	}
 

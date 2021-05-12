@@ -61,12 +61,18 @@ func main() {
 		panic("error creating vault service client")
 	}
 
+	gitClient, err := CreateGitClient(sshPemFile)
+	if err != nil {
+		level.Error(logger).Log("message", "error creating git client", "error", err)
+		panic("error creating git client")
+	}
+
 	h := handler{
 		logger:                 logger,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
 		argo:                   newArgoWorkflow(),
 		config:                 config,
-		sshPemFile:             sshPemFile,
+		gitClient:              gitClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)
