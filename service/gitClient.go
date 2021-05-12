@@ -34,9 +34,11 @@ func (g gitClient) CheckoutFileFromRepository(repository, commitHash, path strin
 	storer := memory.NewStorage()
 	fs := memfs.New()
 
+	// TODO: use context version
 	repo, err := git.Clone(storer, fs, &git.CloneOptions{
-		URL:  repository,
-		Auth: g.auth,
+		URL:   repository,
+		Auth:  g.auth,
+		Depth: 1,
 	})
 	if err != nil {
 		return []byte{}, err
