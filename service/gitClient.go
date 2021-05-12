@@ -10,26 +10,26 @@ import (
 	"github.com/go-git/go-git/v5/storage/memory"
 )
 
-type GitClient interface {
+type gitClient interface {
 	CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error)
 }
 
-type gitClient struct {
+type basicGitClient struct {
 	auth *ssh.PublicKeys
 }
 
-func CreateGitClient(sshPemFile string) (GitClient, error) {
+func newBasicGitClient(sshPemFile string) (basicGitClient, error) {
 	auth, err := ssh.NewPublicKeysFromFile("git", sshPemFile, "")
 	if err != nil {
-		return nil, err
+		return basicGitClient{}, err
 	}
 
-	return gitClient{
+	return basicGitClient{
 		auth: auth,
 	}, nil
 }
 
-func (g gitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
+func (g basicGitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
 	// TODO: refactor to not use mem-backed
 	storer := memory.NewStorage()
 	fs := memfs.New()

@@ -106,7 +106,7 @@ type handler struct {
 	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
 	argo                   Workflow
 	config                 *Config
-	gitClient              GitClient
+	gitClient              gitClient
 }
 
 // Returns a new vaultCredentialsProvider

@@ -61,7 +61,7 @@ func main() {
 		panic("error creating vault service client")
 	}
 
-	gitClient, err := CreateGitClient(sshPemFile)
+	gitClient, err := newBasicGitClient(sshPemFile)
 	if err != nil {
 		level.Error(logger).Log("message", "error creating git client", "error", err)
 		panic("error creating git client")

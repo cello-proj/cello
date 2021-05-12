@@ -17,7 +17,7 @@ import (
 
 type mockGitClient struct{}
 
-func newMockGitClient() GitClient {
+func newMockGitClient() gitClient {
 	return mockGitClient{}
 }
 
