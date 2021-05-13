@@ -66,7 +66,6 @@ func main() {
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)
 
-	// TODO: set logger in context and pass to setupRouter?
 	r := setupRouter(h)
 	err = http.ListenAndServeTLS(fmt.Sprintf(":%s", port), "ssl/certificate.crt", "ssl/certificate.key", r)
 	if err != nil {

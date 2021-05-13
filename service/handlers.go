@@ -430,37 +430,43 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	level.Debug(acolog.WithCtx(ctx)).Log("MESSAGE", "TESTING")
 
-	ah := r.Header.Get("Authorization")
-	level.Debug(h.logger).Log("message", "authorizing project creation")
-	a, err := newAuthorization(ah) // todo add validation
-	if err != nil {
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
-		return
-	}
-	level.Debug(h.logger).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
-		h.errorResponse(w, "error must be authorized admin", http.StatusUnauthorized, nil)
-		return
-	}
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		h.errorResponse(w, "error reading request body", http.StatusInternalServerError, nil)
 		return
 	}
-	level.Debug(h.logger).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
-	if err != nil {
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
-		return
-	}
+
 	var capp createProjectRequest
 	err = json.Unmarshal(reqBody, &capp)
 	if err != nil {
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError, err)
 		return
 	}
+
+	ctx = acolog.AddFields(ctx, "project", capp.Name)
+
+	ah := r.Header.Get("Authorization")
+	level.Debug(acolog.WithCtx(ctx)).Log("message", "authorizing project creation")
+	a, err := newAuthorization(ah) // todo add validation
+	if err != nil {
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		return
+	}
+
+	level.Debug(acolog.WithCtx(ctx)).Log("message", "validating authorized admin")
+	if !a.authorizedAdmin() {
+		h.errorResponse(w, "error must be authorized admin", http.StatusUnauthorized, nil)
+		return
+	}
+
+	level.Debug(acolog.WithCtx(ctx)).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a)
+	if err != nil {
+		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
+		return
+	}
+
 	if !h.validateProjectName(capp.Name, w) {
 		return
 	}
@@ -476,13 +482,14 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	level.Debug(h.logger).Log("message", "creating project", "project name", capp.Name)
+	level.Debug(acolog.WithCtx(ctx)).Log("message", "creating project")
 	role, secret, err := cp.createProject(capp.Name)
 	if err != nil {
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError, err)
 		return
 	}
-	level.Debug(h.logger).Log("message", "retrieving argo cloud ops token")
+
+	level.Debug(acolog.WithCtx(ctx)).Log("message", "retrieving Argo CloudOps token")
 	t := newArgoCloudOpsToken("vault", role, secret)
 	jsonResult, err := json.Marshal(t)
 	if err != nil {
