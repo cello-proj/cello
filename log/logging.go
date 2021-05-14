@@ -1,8 +1,5 @@
 package log
 
-// Reasoning for log pkg
-// 1. Logger should not be set as a handler attribute as it is not request-scoped
-
 import (
 	"context"
 	"os"
