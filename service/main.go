@@ -17,6 +17,7 @@ func main() {
 		vaultSecret = os.Getenv("VAULT_SECRET")
 		vaultAddr   = os.Getenv("VAULT_ADDR")
 		argoAddr    = os.Getenv("ARGO_ADDR")
+		sshPemFile  = os.Getenv("SSH_PEM_FILE")
 		logLevel    = os.Getenv("ARGO_CLOUD_OPS_LOG_LEVEL")
 		port        = getenv("ARGO_CLOUD_OPS_PORT", "8443")
 	)
@@ -43,6 +44,10 @@ func main() {
 		panic("ARGO_ADDR is undefined")
 	}
 
+	if sshPemFile == "" {
+		panic("SSH_PEM_FILE is undefined")
+	}
+
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", configFilePath()))
 	config, err := loadConfig()
 	if err != nil {
@@ -56,11 +61,18 @@ func main() {
 		panic("error creating vault service client")
 	}
 
+	gitClient, err := newBasicGitClient(sshPemFile)
+	if err != nil {
+		level.Error(logger).Log("message", "error creating git client", "error", err)
+		panic("error creating git client")
+	}
+
 	h := handler{
 		logger:                 logger,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
 		argo:                   newArgoWorkflow(),
 		config:                 config,
+		gitClient:              gitClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)

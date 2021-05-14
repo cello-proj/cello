@@ -15,6 +15,16 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
+type mockGitClient struct{}
+
+func newMockGitClient() gitClient {
+	return mockGitClient{}
+}
+
+func (g mockGitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
+	return loadFileBytes("TestCreateWorkflow/can_create_workflow.json")
+}
+
 type mockWorkflowSvc struct{}
 
 func (m mockWorkflowSvc) GetStatus(workflowName string) (*workflowStatus, error) {
@@ -334,13 +344,6 @@ func TestDeleteTarget(t *testing.T) {
 }
 
 func TestCreateWorkflow(t *testing.T) {
-	c := createWorkflowRequest{}
-	c.Arguments = make(map[string][]string)
-	c.EnvironmentVariables = make(map[string]string)
-	c.Arguments["execute"] = []string{"blah"}
-	c.EnvironmentVariables["foobar"] = "barfoo"
-	jsonStr, _ := json.Marshal(c)
-	fmt.Println(string(jsonStr))
 	tests := []test{
 		{
 			name:    "can create workflows",
@@ -440,6 +443,26 @@ func TestCreateWorkflow(t *testing.T) {
 		//	method:  "POST",
 		//	url:     "/workflows",
 		//},
+	}
+	runTests(t, tests)
+}
+
+func TestCreateWorkflowFromGit(t *testing.T) {
+	tests := []test{
+		{
+			name: "can create workflows",
+			req: createGitWorkflowRequest{
+				Repository: "repository1",
+				CommitHash: "sha123",
+				Path:       "path/to/manifest.yaml",
+				Type:       "sync",
+			},
+			want:    http.StatusOK,
+			body:    "{\"workflow_name\":\"success\"}\n",
+			asAdmin: true,
+			method:  "POST",
+			url:     "/projects/project1/targets/target1/operations",
+		},
 	}
 	runTests(t, tests)
 }
@@ -551,6 +574,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		newCredentialsProvider: newMockProvider(nil),
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
+		gitClient:              newMockGitClient(),
 	}
 	var router = setupRouter(h)
 	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
@@ -563,6 +587,25 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	return w.Result()
+}
+
+// Unmarshal a JSON file from the testdata directory into output.
+func loadFileBytes(filename string) ([]byte, error) {
+	file := filepath.Join("testdata", filename)
+	fd, err := os.Open(file)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	fileStat, err := fd.Stat()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	fileContents := make([]byte, fileStat.Size())
+	_, err = fd.Read(fileContents)
+
+	return fileContents, err
 }
 
 // Unmarshal a JSON file from the testdata directory into output.

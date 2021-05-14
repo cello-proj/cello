@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Adds operations API for git based sync/diff
 * Fix typos in CLI command description
 
 ## v0.0.2 (2021-05-06)
