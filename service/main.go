@@ -58,7 +58,6 @@ func main() {
 
 	h := handler{
 		logger:                 logger,
-		logLevel:               logLevel,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
 		argo:                   newArgoWorkflow(),
 		config:                 config,

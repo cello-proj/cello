@@ -1,19 +1,20 @@
 package main
 
 import (
-	"context"
 	"net/http"
 
-	acolog "github.com/argoproj-labs/argo-cloudops/log"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+)
+
+const (
+	txIDHeader = "X-TransactionID"
 )
 
 func setupRouter(h handler) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
-	r.Use(contextMiddleware)
-	r.Use(loggingMiddleware(h.logLevel))
+	r.Use(txIDMiddleware)
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
 	r.HandleFunc("/workflows/{workflowName}", h.getWorkflow).Methods(http.MethodGet)
@@ -38,33 +39,11 @@ func commonMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func contextMiddleware(next http.Handler) http.Handler {
+func txIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		txnID := uuid.NewString()
-		ctx := context.WithValue(r.Context(), "txn_id", txnID)
-
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func loggingMiddleware(logLevel string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			ctx = acolog.ToContext(ctx, acolog.GetLogger(ctx))
-			logger := acolog.FromContext(ctx)
-			acolog.SetLevel(&logger, logLevel)
-
-			txnID := ctx.Value("txn_id")
-
-			if txnID == nil {
-				txnID = uuid.NewString()
-			}
-
-			ctx = acolog.AddFields(ctx, "txn_id", txnID)
-
-			next.ServeHTTP(w, r.WithContext(ctx))
+		if r.Header.Get(txIDHeader) == "" {
+			r.Header.Set(txIDHeader, uuid.NewString())
 		}
-		return http.HandlerFunc(fn)
-	}
+		next.ServeHTTP(w, r)
+	})
 }
