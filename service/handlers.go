@@ -428,7 +428,7 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 
 func (h handler) requestLogger(r *http.Request, fields ...string) log.Logger {
 	if r.Header.Get("X-TransactionID") != "" {
-		return log.With(h.logger, "txid", r.Header.Get("X-TransactionID"))
+		return log.With(h.logger, "txid", r.Header.Get(txIDHeader), fields)
 	}
 	return h.logger
 }
@@ -436,6 +436,9 @@ func (h handler) requestLogger(r *http.Request, fields ...string) log.Logger {
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r)
+
+	l = log.With(l, "op", "create-project")
+
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		h.errorResponse(w, "error reading request body", http.StatusInternalServerError, nil)
@@ -448,6 +451,8 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError, err)
 		return
 	}
+
+	l = log.With(l, "project", capp.Name)
 
 	ah := r.Header.Get("Authorization")
 	level.Debug(l).Log("message", "authorizing project creation")
