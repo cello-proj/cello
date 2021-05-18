@@ -154,6 +154,29 @@ Response Body
 }
 ```
 
+## Perform Target Operations From Git Manifest
+
+POST /projects/<project_name>/targets/<target_name>/operations
+
+Request Body
+
+```json
+{
+  "repository": "git@github.com:myorg/myrepo.git",
+  "sha": "1234abdc5678efgh9012ijkl3456mnop7890qrst",
+  "path": "path/to/manifest.yaml",
+  "type": "sync"
+}
+```
+
+Response Body
+
+```json
+{
+  "workflow_name": "abcd"
+}
+```
+
 ## Get Workflow
 
 GET /workflows/<workflow_name>

@@ -30,7 +30,7 @@ code_uri="s3://$ARGO_CLOUDOPS_BUILD_BUCKET/terraform-example.tar.gz"
 execute_container_image_uri='argocloudops/argo-cloudops-terraform:0.15.1'
 workflow_name=argo-cloudops-single-step-vault-aws
 
-$CLI sync \
+$CLI workflow --type sync \
     -a init='-no-color',execute='-auto-approve -no-color' \
     -e AWS_REGION="us-west-2",CODE_URI="$code_uri",VAULT_ADDR="$VAULT_ADDR" \
     -f terraform \
