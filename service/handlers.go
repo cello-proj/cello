@@ -427,10 +427,7 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 }
 
 func (h handler) requestLogger(r *http.Request, fields ...string) log.Logger {
-	if r.Header.Get("X-TransactionID") != "" {
-		return log.With(h.logger, "txid", r.Header.Get(txIDHeader), fields)
-	}
-	return h.logger
+	return log.With(h.logger, "txid", r.Header.Get(txIDHeader), fields)
 }
 
 // Creates a project
