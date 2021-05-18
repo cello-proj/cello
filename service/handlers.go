@@ -19,7 +19,7 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
-// Create workflow request
+// Create workflow request.
 type createWorkflowRequest struct {
 	Arguments            map[string][]string `json:"arguments"`
 	EnvironmentVariables map[string]string   `json:"environment_variables"`
@@ -31,17 +31,17 @@ type createWorkflowRequest struct {
 	WorkflowTemplateName string              `json:"workflow_template_name"`
 }
 
-// Represents a JWT token
+// Represents a JWT token.
 type token struct {
 	Token string `json:"token"`
 }
 
-// Represents an error response
+// Represents an error response.
 type errorResponse struct {
 	ErrorMessage string `json:"error_message"`
 }
 
-// Generates error response JSON
+// Generates error response JSON.
 func generateErrorResponseJSON(message string) string {
 	er := errorResponse{
 		ErrorMessage: message,
@@ -51,21 +51,21 @@ func generateErrorResponseJSON(message string) string {
 	return string(jsonData)
 }
 
-// Convenience method for checking if a string is alphanumeric
+// Convenience method for checking if a string is alphanumeric.
 var isStringAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
 
 // Vault does not allow for dashes
 var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
 
-// Represents a user's authorization token
+// Represents a user's authorization token.
 type Authorization struct {
 	Provider string
 	Key      string
 	Secret   string
 }
 
-// Authorization function for token requests
-// this is separate from admin functions which use the admin env var
+// Authorization function for token requests.
+// This is separate from admin functions which use the admin env var
 func newAuthorization(authorizationHeader string) (*Authorization, error) {
 	var a Authorization
 	auth := strings.SplitN(authorizationHeader, ":", 3)
@@ -83,7 +83,7 @@ func newAuthorization(authorizationHeader string) (*Authorization, error) {
 	return &a, nil
 }
 
-// Returns true, if the user is an admin
+// Returns true, if the user is an admin.
 func (a Authorization) isAdmin() bool {
 	return a.Key == "admin"
 }
