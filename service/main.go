@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"os"
 
+	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/internal/workflow"
+	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	vault "github.com/hashicorp/vault/api"
@@ -18,12 +21,12 @@ func main() {
 		vaultAddr   = os.Getenv("VAULT_ADDR")
 		argoAddr    = os.Getenv("ARGO_ADDR")
 		logLevel    = os.Getenv("ARGO_CLOUD_OPS_LOG_LEVEL")
-		port        = getenv("ARGO_CLOUD_OPS_PORT", "8443")
+		port        = acoEnv.Getenv("ARGO_CLOUD_OPS_PORT", "8443")
 	)
 
 	setLogLevel(&logger, logLevel)
 
-	if len(adminSecret()) < 16 {
+	if len(acoEnv.AdminSecret()) < 16 {
 		panic("ARGO_CLOUDOPS_ADMIN_SECRET must be 16 characers long.")
 	}
 
@@ -43,12 +46,12 @@ func main() {
 		panic("ARGO_ADDR is undefined")
 	}
 
-	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", configFilePath()))
+	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", acoEnv.ConfigFilePath()))
 	config, err := loadConfig()
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
 	}
-	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", configFilePath()))
+	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", acoEnv.ConfigFilePath()))
 
 	vaultSvc, err := newVaultSvc(vaultAddr, vaultRole, vaultSecret)
 	if err != nil {
@@ -56,10 +59,12 @@ func main() {
 		panic("error creating vault service client")
 	}
 
+	ctx, argoClient := client.NewAPIClient()
+
 	h := handler{
 		logger:                 logger,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
-		argo:                   newArgoWorkflow(),
+		argo:                   workflow.NewArgoWorkflow(ctx, argoClient.NewWorkflowServiceClient()),
 		config:                 config,
 	}
 

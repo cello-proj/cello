@@ -1,4 +1,4 @@
-package main
+package workflow
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
+	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	argoWorkflowAPISpec "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	v1 "k8s.io/api/core/v1"
@@ -17,36 +17,35 @@ const mainContainer = "main"
 
 // Workflow interface is used for interacting with workflow services.
 type Workflow interface {
-	ListWorkflows() ([]string, error)
-	GetStatus(workflowName string) (*workflowStatus, error)
-	GetLogs(workflowName string) (*workflowLogs, error)
-	GetLogStream(workflowName string, data http.ResponseWriter) error
+	List() ([]string, error)
+	Status(workflowName string) (*Status, error)
+	Logs(workflowName string) (*Logs, error)
+	LogStream(workflowName string, data http.ResponseWriter) error
 	Submit(from string, parameters map[string]string) (string, error)
 }
 
-func newArgoWorkflow() Workflow {
-	argoCtx, argoClient := client.NewAPIClient()
-	return &argoWorkflow{
-		argoCtx,
-		argoClient.NewWorkflowServiceClient(),
-	}
+// NewArgoWorkflow creates an Argo workflow.
+func NewArgoWorkflow(ctx context.Context, cl argoWorkflowAPIClient.WorkflowServiceClient) Workflow {
+	return &ArgoWorkflow{ctx, cl}
 }
 
-type argoWorkflow struct {
-	argoCtx context.Context
-	argoSvc argoWorkflowAPIClient.WorkflowServiceClient
+// ArgoWorkflow represents an Argo Workflow.
+type ArgoWorkflow struct {
+	ctx context.Context
+	svc argoWorkflowAPIClient.WorkflowServiceClient
 }
 
-// workflowLogs TODO doc
-type workflowLogs struct {
+// Logs represents workflow logs.
+type Logs struct {
 	Logs []string `json:"logs"`
 }
 
-func (a argoWorkflow) ListWorkflows() ([]string, error) {
+// List returns a list of workflows.
+func (a ArgoWorkflow) List() ([]string, error) {
 	workflowIDs := []string{}
 
-	workflowListResult, err := a.argoSvc.ListWorkflows(a.argoCtx, &argoWorkflowAPIClient.WorkflowListRequest{
-		Namespace: argoNamespace(),
+	workflowListResult, err := a.svc.ListWorkflows(a.ctx, &argoWorkflowAPIClient.WorkflowListRequest{
+		Namespace: acoEnv.ArgoNamespace(),
 	})
 
 	if err != nil {
@@ -60,22 +59,26 @@ func (a argoWorkflow) ListWorkflows() ([]string, error) {
 	return workflowIDs, nil
 }
 
-type workflowStatus struct {
+// Status represents a workflow status.
+type Status struct {
 	Name     string `json:"name"`
 	Status   string `json:"status"`
 	Created  string `json:"created"`
 	Finished string `json:"finished"`
 }
 
-func (a argoWorkflow) GetStatus(workflowName string) (*workflowStatus, error) {
-	workflow, err := a.argoSvc.GetWorkflow(a.argoCtx, &argoWorkflowAPIClient.WorkflowGetRequest{
+// Status returns a workflow status.
+func (a ArgoWorkflow) Status(workflowName string) (*Status, error) {
+	workflow, err := a.svc.GetWorkflow(a.ctx, &argoWorkflowAPIClient.WorkflowGetRequest{
 		Name:      workflowName,
-		Namespace: argoNamespace(),
+		Namespace: acoEnv.ArgoNamespace(),
 	})
+
 	if err != nil {
 		return nil, err
 	}
-	workflowData := workflowStatus{
+
+	workflowData := Status{
 		Name:     workflowName,
 		Status:   strings.ToLower(string(workflow.Status.Phase)),
 		Created:  fmt.Sprint(workflow.CreationTimestamp.Unix()),
@@ -85,42 +88,48 @@ func (a argoWorkflow) GetStatus(workflowName string) (*workflowStatus, error) {
 	return &workflowData, nil
 }
 
-func (a argoWorkflow) GetLogs(workflowName string) (*workflowLogs, error) {
-	stream, err := a.argoSvc.WorkflowLogs(a.argoCtx, &argoWorkflowAPIClient.WorkflowLogRequest{
+// Logs returns logs for a workflow.
+func (a ArgoWorkflow) Logs(workflowName string) (*Logs, error) {
+	stream, err := a.svc.WorkflowLogs(a.ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
 		Name:      workflowName,
-		Namespace: argoNamespace(),
+		Namespace: acoEnv.ArgoNamespace(),
 		LogOptions: &v1.PodLogOptions{
 			Container: mainContainer,
 		},
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	var argoWorkflowLogs workflowLogs
+	var argoWorkflowLogs Logs
 	for {
 		event, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
+
 		if err != nil {
 			return nil, err
 		}
+
 		argoWorkflowLogs.Logs = append(argoWorkflowLogs.Logs, fmt.Sprintf("%s: %s", event.PodName, event.Content))
 	}
 
 	return &argoWorkflowLogs, nil
 }
 
-func (a argoWorkflow) GetLogStream(workflowName string, w http.ResponseWriter) error {
-	stream, err := a.argoSvc.WorkflowLogs(a.argoCtx, &argoWorkflowAPIClient.WorkflowLogRequest{
+// LogStream returns a log stream for a workflow.
+func (a ArgoWorkflow) LogStream(workflowName string, w http.ResponseWriter) error {
+	stream, err := a.svc.WorkflowLogs(a.ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
 		Name:      workflowName,
-		Namespace: argoNamespace(),
+		Namespace: acoEnv.ArgoNamespace(),
 		LogOptions: &v1.PodLogOptions{
 			Container: mainContainer,
 			Follow:    true,
 		},
 	})
+
 	if err != nil {
 		return err
 	}
@@ -135,15 +144,18 @@ func (a argoWorkflow) GetLogStream(workflowName string, w http.ResponseWriter) e
 			if err == io.EOF {
 				return nil
 			}
+
 			if err != nil {
 				return err
 			}
+
 			fmt.Fprintf(w, fmt.Sprintf("%s: %s\n", event.GetPodName(), event.GetContent()))
 			w.(http.Flusher).Flush()
-			status, err := a.GetStatus(workflowName)
+			status, err := a.Status(workflowName)
 			if err != nil {
 				return err
 			}
+
 			if event == nil && status.Status != "running" && status.Status != "pending" {
 				return nil
 			}
@@ -151,13 +163,15 @@ func (a argoWorkflow) GetLogStream(workflowName string, w http.ResponseWriter) e
 	}
 }
 
-func (a argoWorkflow) Submit(from string, parameters map[string]string) (string, error) {
+// Submit creates a workflow.
+func (a ArgoWorkflow) Submit(from string, parameters map[string]string) (string, error) {
 	parts := strings.SplitN(from, "/", 2)
 	for _, part := range parts {
 		if part == "" {
 			return "", fmt.Errorf("resource identifier '%s' is malformed. Should be `kind/name`, e.g. cronwf/hello-world-cwf", from)
 		}
 	}
+
 	kind := parts[0]
 	name := parts[1]
 
@@ -168,8 +182,8 @@ func (a argoWorkflow) Submit(from string, parameters map[string]string) (string,
 
 	generateNamePrefix := fmt.Sprintf("%s-%s-", parameters["project_name"], parameters["target_name"])
 
-	created, err := a.argoSvc.SubmitWorkflow(a.argoCtx, &argoWorkflowAPIClient.WorkflowSubmitRequest{
-		Namespace:    argoNamespace(),
+	created, err := a.svc.SubmitWorkflow(a.ctx, &argoWorkflowAPIClient.WorkflowSubmitRequest{
+		Namespace:    acoEnv.ArgoNamespace(),
 		ResourceKind: kind,
 		ResourceName: name,
 		SubmitOptions: &argoWorkflowAPISpec.SubmitOpts{
@@ -177,6 +191,7 @@ func (a argoWorkflow) Submit(from string, parameters map[string]string) (string,
 			Parameters:   parameterStrings,
 		},
 	})
+
 	if err != nil {
 		return "", fmt.Errorf("failed to submit workflow: %v", err)
 	}
@@ -184,7 +199,8 @@ func (a argoWorkflow) Submit(from string, parameters map[string]string) (string,
 	return strings.ToLower(created.Name), nil
 }
 
-func newWorkflowParameters(environmentVariablesString, executeCommand, executeContainerImageURI, targetName, projectName string, cliParameters map[string]string, credentialsToken string) map[string]string {
+// NewParameters creates workflow parameters.
+func NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, targetName, projectName string, cliParameters map[string]string, credentialsToken string) map[string]string {
 	parameters := map[string]string{
 		"environment_variables_string": environmentVariablesString,
 		"execute_command":              executeCommand,
@@ -212,19 +228,7 @@ func newWorkflowParameters(environmentVariablesString, executeCommand, executeCo
 	return parameters
 }
 
-type createWorkflowResponse struct {
+// CreateWorkflowResponse creates a workflow response.
+type CreateWorkflowResponse struct {
 	WorkflowName string `json:"workflow_name"`
-}
-
-func generateEnvVariablesString(environmentVariables map[string]string) string {
-	if len(environmentVariables) == 0 {
-		return ""
-	}
-
-	r := "env"
-	for k, v := range environmentVariables {
-		tmp := r + fmt.Sprintf(" %s=%s", k, v)
-		r = tmp
-	}
-	return r
 }

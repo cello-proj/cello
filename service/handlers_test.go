@@ -11,31 +11,32 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/workflow"
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
 )
 
 type mockWorkflowSvc struct{}
 
-func (m mockWorkflowSvc) GetStatus(workflowName string) (*workflowStatus, error) {
+func (m mockWorkflowSvc) Status(workflowName string) (*workflow.Status, error) {
 	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
-		return &workflowStatus{Status: "success"}, nil
+		return &workflow.Status{Status: "success"}, nil
 	}
-	return &workflowStatus{Status: "failed"}, fmt.Errorf("workflow " + workflowName + " does not exist!")
+	return &workflow.Status{Status: "failed"}, fmt.Errorf("workflow " + workflowName + " does not exist!")
 }
 
-func (m mockWorkflowSvc) GetLogs(workflowName string) (*workflowLogs, error) {
+func (m mockWorkflowSvc) Logs(workflowName string) (*workflow.Logs, error) {
 	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
 		return nil, nil
 	}
 	return nil, fmt.Errorf("workflow " + workflowName + " does not exist!")
 }
 
-func (m mockWorkflowSvc) GetLogStream(workflowName string, w http.ResponseWriter) error {
+func (m mockWorkflowSvc) LogStream(workflowName string, w http.ResponseWriter) error {
 	return nil
 }
 
-func (m mockWorkflowSvc) ListWorkflows() ([]string, error) {
+func (m mockWorkflowSvc) List() ([]string, error) {
 	return []string{"project1-target1-abcde", "project2-target2-12345"}, nil
 }
 

@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/internal/workflow"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
 	"github.com/go-kit/kit/log"
@@ -88,14 +90,14 @@ func (a Authorization) isAdmin() bool {
 
 // Returns true, if the user is an authorized admin
 func (a Authorization) authorizedAdmin() bool {
-	return a.isAdmin() && a.Secret == adminSecret()
+	return a.isAdmin() && a.Secret == acoEnv.AdminSecret()
 }
 
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
 	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
-	argo                   Workflow
+	argo                   workflow.Workflow
 	config                 *Config
 }
 
@@ -143,7 +145,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	projectName := vars["projectName"]
 	targetName := vars["targetName"]
 
-	workflowIDs, err := h.argo.ListWorkflows()
+	workflowIDs, err := h.argo.List()
 	if err != nil {
 		h.errorResponse(w, "error listing workflows", http.StatusBadRequest, err)
 		return
@@ -151,12 +153,12 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 
 	// Only return workflows the target project / target
 	filteredWorkflowIDs := []string{}
-	var workflows []workflowStatus
+	var workflows []workflow.Status
 	prefix := fmt.Sprintf("%s-%s", projectName, targetName)
 	for _, workflowID := range workflowIDs {
 		if strings.HasPrefix(workflowID, prefix) {
 			filteredWorkflowIDs = append(filteredWorkflowIDs, workflowID)
-			workflow, err := h.argo.GetStatus(workflowID)
+			workflow, err := h.argo.Status(workflowID)
 			if err != nil {
 				h.errorResponse(w, "error retrieving workflows", http.StatusBadRequest, err)
 				return
@@ -291,7 +293,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	level.Debug(h.logger).Log("message", "creating workflow parameters")
-	parameters := newWorkflowParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
+	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
 	level.Debug(h.logger).Log("message", "creating workflow")
 	workflowName, err := h.argo.Submit(workflowFrom, parameters)
@@ -302,7 +304,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	level.Debug(h.logger).Log("message", "workflow created", "workflow", workflowName)
 	tokenHead := credentialsToken[0:8]
 	level.Info(h.logger).Log("message", fmt.Sprintf("Received token '%s...'", tokenHead))
-	var cwresp createWorkflowResponse
+	var cwresp workflow.CreateWorkflowResponse
 	cwresp.WorkflowName = workflowName
 	jsonData, err := json.Marshal(cwresp)
 	if err != nil {
@@ -322,7 +324,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	level.Debug(h.logger).Log("message", "getting workflow status", "workflow", workflowName)
-	status, err := h.argo.GetStatus(workflowName)
+	status, err := h.argo.Status(workflowName)
 	if err != nil {
 		h.errorResponse(w, "error getting workflow", http.StatusBadRequest, err)
 		return
@@ -386,7 +388,7 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	level.Debug(h.logger).Log("message", "retrieving workflow logs", "workflow", workflowName)
-	argoWorkflowLogs, err := h.argo.GetLogs(workflowName)
+	argoWorkflowLogs, err := h.argo.Logs(workflowName)
 	if err != nil {
 		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest, err)
 		return
@@ -410,7 +412,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	level.Debug(h.logger).Log("message", "retrieving workflow logs", "workflow", workflowName)
-	err := h.argo.GetLogStream(workflowName, w)
+	err := h.argo.LogStream(workflowName, w)
 	if err != nil {
 		level.Error(h.logger).Log("message", "error getting workflow logstream", "error", err)
 		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest, err)
@@ -791,4 +793,17 @@ func (h handler) isValidImageUri(imageUri string) bool {
 		return false
 	}
 	return true
+}
+
+func generateEnvVariablesString(environmentVariables map[string]string) string {
+	if len(environmentVariables) == 0 {
+		return ""
+	}
+
+	r := "env"
+	for k, v := range environmentVariables {
+		tmp := r + fmt.Sprintf(" %s=%s", k, v)
+		r = tmp
+	}
+	return r
 }
