@@ -4,6 +4,10 @@ unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
 export ARGO_ADDR='http://127.0.0.1:9000'
 
+if [ -z "$SSH_PEM_FILE" ]; then
+    export SSH_PEM_FILE=$HOME/.ssh/id_rsa
+fi
+
 # TODO / HACK: Vault was not loading credentials from the default chain.
 if [ -n "${AWS_PROFILE}" ]; then
     export AWS_ACCESS_KEY_ID=`aws configure get $AWS_PROFILE.aws_access_key_id`
