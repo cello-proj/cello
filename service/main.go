@@ -51,7 +51,7 @@ func main() {
 		panic("SSH_PEM_FILE is undefined")
 	}
 
-	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", acoEnv.configFilePath()))
+	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", acoEnv.ConfigFilePath()))
 	config, err := loadConfig()
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
@@ -70,7 +70,7 @@ func main() {
 		panic("error creating git client")
 	}
 
-  ctx, argoClient := client.NewAPIClient()
+	ctx, argoClient := client.NewAPIClient()
 
 	h := handler{
 		logger:                 logger,
