@@ -435,9 +435,7 @@ func (h handler) requestLogger(r *http.Request, fields ...string) log.Logger {
 
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
-	l := h.requestLogger(r)
-
-	l = log.With(l, "op", "create-project")
+	l := h.requestLogger(r, "op", "create-project")
 
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
