@@ -218,8 +218,6 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.With(l, "workflow", cgwr.Name)
-
 	ah := r.Header.Get("Authorization")
 	a, err := newAuthorization(ah)
 	if err != nil {
@@ -232,6 +230,8 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error loading workflow data from git", http.StatusBadRequest, err)
 		return
 	}
+
+	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflowTemplate", cwr.WorkflowTemplateName)
 
 	level.Debug(l).Log("message", "creating workflow")
 	cwr.Type = cgwr.Type
@@ -256,7 +256,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.With(l, "workflow", cwr.Name)
+	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflowTemplate", cwr.WorkflowTemplateName)
 
 	ah := r.Header.Get("Authorization")
 	a, err := newAuthorization(ah)
