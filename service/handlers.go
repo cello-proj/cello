@@ -147,7 +147,7 @@ func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	response, err := http.Get(vaultEndpoint)
 	if err != nil || response.StatusCode != 200 {
 		level.Error(h.logger).Log("message", fmt.Sprintf("failed to connect to vault endpoint %s", vaultEndpoint))
-		h.errorResponse(w, "error connecting to vault", http.StatusBadRequest, err)
+		h.errorResponse(w, "error connecting to vault", http.StatusInternalServerError, err)
 	} else {
 		w.Write([]byte("Health check succeeded"))
 	}
