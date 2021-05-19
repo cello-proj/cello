@@ -153,7 +153,7 @@ func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Lists workflowGot a s
+// Lists workflows
 func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	// TODO authenticate user can list this workflow once auth figured out
 	// TODO fail if project / target does not exist or are not valid format
