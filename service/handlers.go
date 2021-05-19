@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -141,10 +142,18 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 
 // Service HealthCheck
 func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
-	return
+	level.Debug(h.logger).Log("message", "executing health check")
+	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", os.Getenv("VAULT_ADDR"))
+	response, err := http.Get(vaultEndpoint)
+	if err != nil || response.StatusCode != 200 {
+		level.Error(h.logger).Log("message", fmt.Sprintf("failed to connect to vault endpoint %s", vaultEndpoint))
+		h.errorResponse(w, "error connecting to vault", http.StatusBadRequest, err)
+	} else {
+		w.Write([]byte("Health check succeeded"))
+	}
 }
 
-// Lists workflows
+// Lists workflowGot a s
 func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	// TODO authenticate user can list this workflow once auth figured out
 	// TODO fail if project / target does not exist or are not valid format
