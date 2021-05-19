@@ -183,14 +183,13 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(workflows)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow IDs", "error", err)
-		h.errorResponse(w, "error serializing workflow ids", http.StatusBadRequest, err)
+		h.errorResponse(w, "error serializing workflow IDs", http.StatusBadRequest, err)
 		return
 	}
 
 	fmt.Fprintln(w, string(jsonData))
 }
 
-// TODO: pass in logging?
 // Creates workflow init params by pulling manifest from given git repo, commit sha, and code path
 func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (createWorkflowRequest, error) {
 	level.Debug(h.logger).Log("message", fmt.Sprintf("retrieving manifest from repository %s at sha %s with path %s", repository, commitHash, path))
@@ -473,7 +472,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.authorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be authorized admin", http.StatusUnauthorized, nil)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
 	}
 
@@ -662,7 +661,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.authorizedAdmin() {
-		level.Error(l).Log("message", "must be an authorized admin", "error", err)
+		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
 	}
@@ -865,7 +864,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a, err := newAuthorization(ah) // todo add validation
 	if err != nil {
-		level.Error(l).Log("message", "error authorizing Authorization header", "error", err)
+		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
 		return
 	}
@@ -912,7 +911,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.authorizedAdmin() {
-		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
+		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, err)
 		return
 	}
