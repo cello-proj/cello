@@ -470,7 +470,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.authorizedAdmin() {
-		level.Error(l).Log("error", "must be an authorized admin")
+		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
 	}
