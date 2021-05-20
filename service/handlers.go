@@ -208,7 +208,6 @@ func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path s
 
 func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-workflow-from-git")
-	level.Debug(l).Log("message", "creating workflow")
 
 	ctx := r.Context()
 
