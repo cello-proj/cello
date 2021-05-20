@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -12,9 +11,8 @@ const (
 	txIDHeader = "X-TransactionID"
 )
 
-func setupRouter(ctx context.Context, h handler) *mux.Router {
+func setupRouter(h handler) *mux.Router {
 	r := mux.NewRouter()
-	r.Use(contextMiddleware(ctx))
 	r.Use(commonMiddleware)
 	r.Use(txIDMiddleware)
 
@@ -38,17 +36,8 @@ func setupRouter(ctx context.Context, h handler) *mux.Router {
 func commonMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(r.Context()))
 	})
-}
-
-func contextMiddleware(ctx context.Context) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r.WithContext(ctx))
-		}
-		return http.HandlerFunc(fn)
-	}
 }
 
 func txIDMiddleware(next http.Handler) http.Handler {
@@ -56,6 +45,6 @@ func txIDMiddleware(next http.Handler) http.Handler {
 		if r.Header.Get(txIDHeader) == "" {
 			r.Header.Set(txIDHeader, uuid.NewString())
 		}
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(r.Context()))
 	})
 }

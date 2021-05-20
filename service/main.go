@@ -70,7 +70,7 @@ func main() {
 		panic("error creating git client")
 	}
 
-	ctx, argoClient := client.NewAPIClient()
+	_, argoClient := client.NewAPIClient()
 	namespace := acoEnv.ArgoNamespace()
 
 	h := handler{
@@ -83,7 +83,7 @@ func main() {
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)
 
-	r := setupRouter(ctx, h)
+	r := setupRouter(h)
 	err = http.ListenAndServeTLS(fmt.Sprintf(":%s", port), "ssl/certificate.crt", "ssl/certificate.key", r)
 	if err != nil {
 		level.Error(logger).Log("message", "error starting service", "error", err)

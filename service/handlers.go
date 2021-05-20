@@ -567,12 +567,6 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
-	// TODO: remove
-	ctx := r.Context()
-	fmt.Printf("CONTEXT: %+v\n", ctx)
-	ctx = context.WithValue(ctx, "TEST", "TEST")
-	fmt.Printf("CONTEXT: %+v\n", ctx)
-
 	l := h.requestLogger(r, "op", "create-project")
 
 	reqBody, err := ioutil.ReadAll(r.Body)

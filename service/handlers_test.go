@@ -578,7 +578,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		config:                 config,
 		gitClient:              newMockGitClient(),
 	}
-	var router = setupRouter(context.Background(), h)
+	var router = setupRouter(h)
 	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
 	req, _ := http.NewRequest(method, url, body)
 	authorizationHeader := "vault:user:DEADBEEF"
