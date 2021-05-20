@@ -208,17 +208,9 @@ func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path s
 
 func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-workflow-from-git")
-
 	level.Debug(l).Log("message", "creating workflow")
 
 	ctx := r.Context()
-
-	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah)
-	if err != nil {
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
-		return
-	}
 
 	level.Debug(l).Log("message", "reading request body")
 	reqBody, err := ioutil.ReadAll(r.Body)
@@ -233,6 +225,13 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error deserializing request body", "error", err)
 		h.errorResponse(w, "error deserializing request body", http.StatusBadRequest, err)
+		return
+	}
+
+	ah := r.Header.Get("Authorization")
+	a, err := newAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
 		return
 	}
 
@@ -256,13 +255,6 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah)
-	if err != nil {
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
-		return
-	}
-
 	level.Debug(l).Log("message", "reading request body")
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -280,6 +272,13 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
+
+	ah := r.Header.Get("Authorization")
+	a, err := newAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
+		return
+	}
 
 	level.Debug(l).Log("message", "creating workflow")
 	h.createWorkflowFromRequest(ctx, w, a, cwr, l)
