@@ -11,6 +11,7 @@ require (
 	github.com/go-kit/kit v0.10.0
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/google/go-cmp v0.5.2
+	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault // indirect
