@@ -103,7 +103,6 @@ func (a Authorization) authorizedAdmin() bool {
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
-	logLevel               string
 	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
 	argo                   Workflow
 	config                 *Config
@@ -237,7 +236,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflowTemplate", cwr.WorkflowTemplateName)
+	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	level.Debug(l).Log("message", "creating workflow")
 	cwr.Type = cgwr.Type
@@ -264,7 +263,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflowTemplate", cwr.WorkflowTemplateName)
+	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	ah := r.Header.Get("Authorization")
 	a, err := newAuthorization(ah)
@@ -295,7 +294,7 @@ func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorizati
 	}
 
 	if !stringInSlice(frameworks, cwr.Framework) {
-		level.Error(l).Log("message", "unknown framework", "error", err)
+		level.Error(l).Log("error", "unknown framework")
 		h.errorResponse(w, "unknown framework", http.StatusBadRequest, err)
 		return
 	}
@@ -308,7 +307,7 @@ func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorizati
 	}
 
 	if !stringInSlice(types, cwr.Type) {
-		level.Error(l).Log("message", "unknown type", "error", err)
+		level.Error(l).Log("error", "unknown type")
 		h.errorResponse(w, "unknown type", http.StatusBadRequest, err)
 		return
 	}
@@ -326,13 +325,13 @@ func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorizati
 
 	isValidProjectName, err := h.validateProjectName(cwr.ProjectName, w)
 	if !isValidProjectName {
-		level.Error(l).Log("message", err)
+		level.Error(l).Log("error", err)
 		return
 	}
 
 	isValidTargetName, err := h.validateTargetName(cwr.TargetName, w)
 	if !isValidTargetName {
-		level.Error(l).Log("message", err)
+		level.Error(l).Log("error", err)
 		return
 	}
 
@@ -471,7 +470,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.authorizedAdmin() {
-		level.Error(l).Log("message", "must be an authorized admin")
+		level.Error(l).Log("error", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
 	}
@@ -494,8 +493,8 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 	jsonResult, err := json.Marshal(targetInfo)
 	if err != nil {
-		level.Error(l).Log("message", "error retrieving json target data", "error", err)
-		h.errorResponse(w, "error retrieving json target data", http.StatusInternalServerError, err)
+		level.Error(l).Log("message", "error serializing json target data", "error", err)
+		h.errorResponse(w, "error serializing json target data", http.StatusInternalServerError, err)
 		return
 	}
 
@@ -574,8 +573,8 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	var capp createProjectRequest
 	err = json.Unmarshal(reqBody, &capp)
 	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError, err)
+		level.Error(l).Log("message", "error parsing json", "error", err)
+		h.errorResponse(w, "error parsing json", http.StatusInternalServerError, err)
 		return
 	}
 
@@ -592,7 +591,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.authorizedAdmin() {
-		level.Error(l).Log("message", "must be an authorized admin", "error", err)
+		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
 	}
@@ -619,8 +618,8 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if projectExists {
-		level.Error(l).Log("message", "project already exists", "error", err)
-		h.errorResponse(w, "project already exists", http.StatusBadRequest, err)
+		level.Error(l).Log("error", "project already exists")
+		h.errorResponse(w, "project already exists", http.StatusBadRequest, nil)
 		return
 	}
 
@@ -737,8 +736,8 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(targets) > 0 {
-		level.Error(l).Log("message", "project has existing targets, not deleting", "error", err)
-		h.errorResponse(w, "project has existing targets, not deleting", http.StatusBadRequest, err)
+		level.Error(l).Log("error", "project has existing targets, not deleting")
+		h.errorResponse(w, "project has existing targets, not deleting", http.StatusBadRequest, nil)
 		return
 	}
 
@@ -770,8 +769,8 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	var ctr createTargetRequest
 	err = json.Unmarshal(reqBody, &ctr)
 	if err != nil {
-		level.Error(l).Log("message", "error serializing request body", "error", err)
-		h.errorResponse(w, "error serializing request body to target data", http.StatusBadRequest, err)
+		level.Error(l).Log("message", "error parsing request body to target data", "error", err)
+		h.errorResponse(w, "error parsing request body to target data", http.StatusBadRequest, err)
 		return
 	}
 
@@ -787,8 +786,8 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.authorizedAdmin() {
-		level.Error(l).Log("message", "must be an authorized admin", "error", err)
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, err)
+		level.Error(l).Log("message", "must be an authorized admin")
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
 	}
 
@@ -803,18 +802,18 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "validating target name")
 	isValidTargetName, err := h.validateTargetName(ctr.Name, w)
 	if !isValidTargetName {
-		level.Error(l).Log("message", err)
+		level.Error(l).Log("error", err)
 		return
 	}
 
 	if ctr.Type != "aws_account" {
-		level.Error(l).Log("message", "type must be aws_account")
+		level.Error(l).Log("error", "type must be aws_account")
 		h.errorResponse(w, "type must be aws_account", http.StatusBadRequest, nil)
 		return
 	}
 
 	if len(ctr.Properties.PolicyArns) > 5 {
-		level.Error(l).Log("message", "policy arns list length cannot be greater than 5")
+		level.Error(l).Log("error", "policy arns list length cannot be greater than 5")
 		h.errorResponse(w, "policy arns list length cannot be greater than 5", http.StatusBadRequest, nil)
 		return
 	}
@@ -933,7 +932,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(targets)
 	if err != nil {
-		level.Error(l).Log("message", "error deserializing targets", "error", err)
+		level.Error(l).Log("message", "error serializing targets", "error", err)
 	}
 
 	fmt.Fprint(w, string(data))
