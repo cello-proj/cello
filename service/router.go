@@ -3,12 +3,18 @@ package main
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+)
+
+const (
+	txIDHeader = "X-TransactionID"
 )
 
 func setupRouter(h handler) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
+	r.Use(txIDMiddleware)
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
 	r.HandleFunc("/workflows/{workflowName}", h.getWorkflow).Methods(http.MethodGet)
@@ -30,6 +36,15 @@ func setupRouter(h handler) *mux.Router {
 func commonMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func txIDMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get(txIDHeader) == "" {
+			r.Header.Set(txIDHeader, uuid.NewString())
+		}
 		next.ServeHTTP(w, r)
 	})
 }
