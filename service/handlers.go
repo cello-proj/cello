@@ -158,11 +158,8 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 
 	l := h.requestLogger(r, "op", "list-workflows", "project", projectName, "target", targetName)
 
-	workflowIDs, err := h.argo.List(ctx)
-	l := h.requestLogger(r, "op", "list-workflows", "project", projectName, "target", targetName)
-
 	level.Debug(l).Log("message", "listing workflows")
-	workflowIDs, err := h.argo.ListWorkflows()
+	workflowIDs, err := h.argo.List(ctx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
 		h.errorResponse(w, "error listing workflows", http.StatusBadRequest, err)
@@ -211,7 +208,9 @@ func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path s
 
 func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-workflow-from-git")
+
 	level.Debug(l).Log("message", "creating workflow")
+
 	ctx := r.Context()
 
 	ah := r.Header.Get("Authorization")
@@ -237,14 +236,6 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah)
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing", "error", err)
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
-		return
-	}
-
 	cwr, err := h.loadCreateWorkflowRequestFromGit(cgwr.Repository, cgwr.CommitHash, cgwr.Path)
 	if err != nil {
 		level.Error(l).Log("message", "error loading workflow data from git", "error", err)
@@ -256,12 +247,13 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "creating workflow")
 	cwr.Type = cgwr.Type
-	h.createWorkflowFromRequest(w, a, cwr, l)
+	h.createWorkflowFromRequest(ctx, w, a, cwr, l)
 }
 
 // Creates a workflow
 func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-workflow")
+
 	ctx := r.Context()
 
 	ah := r.Header.Get("Authorization")
@@ -287,24 +279,14 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-// Creates a workflow
-func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest) {
 	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
-	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah)
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing", "error", err)
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating workflow")
-	h.createWorkflowFromRequest(w, a, cwr, l)
+	h.createWorkflowFromRequest(ctx, w, a, cwr, l)
 }
 
 // Creates a workflow
-func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest, l log.Logger) {
+func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		level.Error(l).Log("message", "error in parameters", "error", err)
