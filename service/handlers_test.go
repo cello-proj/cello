@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/workflow"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
 )
@@ -28,29 +29,29 @@ func (g mockGitClient) CheckoutFileFromRepository(repository, commitHash, path s
 
 type mockWorkflowSvc struct{}
 
-func (m mockWorkflowSvc) Status(workflowName string) (*workflow.Status, error) {
+func (m mockWorkflowSvc) Status(ctx context.Context, workflowName string) (*workflow.Status, error) {
 	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
 		return &workflow.Status{Status: "success"}, nil
 	}
 	return &workflow.Status{Status: "failed"}, fmt.Errorf("workflow " + workflowName + " does not exist!")
 }
 
-func (m mockWorkflowSvc) Logs(workflowName string) (*workflow.Logs, error) {
+func (m mockWorkflowSvc) Logs(ctx context.Context, workflowName string) (*workflow.Logs, error) {
 	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
 		return nil, nil
 	}
 	return nil, fmt.Errorf("workflow " + workflowName + " does not exist!")
 }
 
-func (m mockWorkflowSvc) LogStream(workflowName string, w http.ResponseWriter) error {
+func (m mockWorkflowSvc) LogStream(ctx context.Context, workflowName string, w http.ResponseWriter) error {
 	return nil
 }
 
-func (m mockWorkflowSvc) List() ([]string, error) {
+func (m mockWorkflowSvc) List(ctx context.Context) ([]string, error) {
 	return []string{"project1-target1-abcde", "project2-target2-12345"}, nil
 }
 
-func (m mockWorkflowSvc) Submit(from string, parameters map[string]string) (string, error) {
+func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map[string]string) (string, error) {
 	return "success", nil
 }
 
@@ -577,7 +578,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		config:                 config,
 		gitClient:              newMockGitClient(),
 	}
-	var router = setupRouter(h)
+	var router = setupRouter(context.Background(), h)
 	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
 	req, _ := http.NewRequest(method, url, body)
 	authorizationHeader := "vault:user:DEADBEEF"

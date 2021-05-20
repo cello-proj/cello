@@ -6,7 +6,7 @@ import (
 	"os"
 
 	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
-	"github.com/argoproj-labs/argo-cloudops/internal/workflow"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -71,18 +71,19 @@ func main() {
 	}
 
 	ctx, argoClient := client.NewAPIClient()
+	namespace := acoEnv.ArgoNamespace()
 
 	h := handler{
 		logger:                 logger,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
-		argo:                   workflow.NewArgoWorkflow(ctx, argoClient.NewWorkflowServiceClient()),
+		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), namespace),
 		config:                 config,
 		gitClient:              gitClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)
 
-	r := setupRouter(h)
+	r := setupRouter(ctx, h)
 	err = http.ListenAndServeTLS(fmt.Sprintf(":%s", port), "ssl/certificate.crt", "ssl/certificate.key", r)
 	if err != nil {
 		level.Error(logger).Log("message", "error starting service", "error", err)

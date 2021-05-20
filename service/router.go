@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-func setupRouter(h handler) *mux.Router {
+func setupRouter(ctx context.Context, h handler) *mux.Router {
 	r := mux.NewRouter()
+	r.Use(contextMiddleware(ctx))
 	r.Use(commonMiddleware)
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
@@ -32,4 +34,13 @@ func commonMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func contextMiddleware(ctx context.Context) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+		return http.HandlerFunc(fn)
+	}
 }

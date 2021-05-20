@@ -12,7 +12,7 @@ func Getenv(key, fallback string) string {
 	return value
 }
 
-// TODO exit if this is not set to somehting long
+// TODO exit if this is not set to something long
 func AdminSecret() string {
 	return os.Getenv("ARGO_CLOUDOPS_ADMIN_SECRET")
 }

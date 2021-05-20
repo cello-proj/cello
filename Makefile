@@ -3,7 +3,7 @@ GO_LDFLAGS ?= -ldflags="-s -w"
 all: vendor test build_service build_cli
 
 build_service: clean_service
-	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) $(BUILDARGS) -o build/service ./service/...
+	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) $(BUILDARGS) -o build/service ./service/ 
 
 build_cli: clean_cli
 	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) $(BUILDARGS) -o build/argo-cloudops ./cli/...

@@ -35,11 +35,11 @@ func TestArgoWorkflowsList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			argoWf := NewArgoWorkflow(
-				context.Background(),
 				mockArgoClient{err: tt.listErr},
+				"namespace",
 			)
 
-			out, err := argoWf.List()
+			out, err := argoWf.List(context.Background())
 
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
@@ -100,11 +100,11 @@ func TestArgoStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			argoWf := NewArgoWorkflow(
-				context.Background(),
 				mockArgoClient{status: tt.argoWorkflowStatus, err: tt.statusErr},
+				"namespace",
 			)
 
-			status, err := argoWf.Status("workflow")
+			status, err := argoWf.Status(context.Background(), "workflow")
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
@@ -143,11 +143,11 @@ func TestArgoSubmit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			argoWf := NewArgoWorkflow(
-				context.Background(),
 				mockArgoClient{err: tt.err},
+				"namespace",
 			)
 
-			workflow, err := argoWf.Submit("test/test", map[string]string{"param": "value"})
+			workflow, err := argoWf.Submit(context.Background(), "test/test", map[string]string{"param": "value"})
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)

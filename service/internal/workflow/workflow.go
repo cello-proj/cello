@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	argoWorkflowAPISpec "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	v1 "k8s.io/api/core/v1"
@@ -17,22 +16,22 @@ const mainContainer = "main"
 
 // Workflow interface is used for interacting with workflow services.
 type Workflow interface {
-	List() ([]string, error)
-	Status(workflowName string) (*Status, error)
-	Logs(workflowName string) (*Logs, error)
-	LogStream(workflowName string, data http.ResponseWriter) error
-	Submit(from string, parameters map[string]string) (string, error)
+	List(ctx context.Context) ([]string, error)
+	Logs(ctx context.Context, workflowName string) (*Logs, error)
+	LogStream(ctx context.Context, workflowName string, data http.ResponseWriter) error
+	Status(ctx context.Context, workflowName string) (*Status, error)
+	Submit(ctx context.Context, from string, parameters map[string]string) (string, error)
 }
 
 // NewArgoWorkflow creates an Argo workflow.
-func NewArgoWorkflow(ctx context.Context, cl argoWorkflowAPIClient.WorkflowServiceClient) Workflow {
-	return &ArgoWorkflow{ctx, cl}
+func NewArgoWorkflow(cl argoWorkflowAPIClient.WorkflowServiceClient, n string) Workflow {
+	return &ArgoWorkflow{n, cl}
 }
 
 // ArgoWorkflow represents an Argo Workflow.
 type ArgoWorkflow struct {
-	ctx context.Context
-	svc argoWorkflowAPIClient.WorkflowServiceClient
+	namespace string
+	svc       argoWorkflowAPIClient.WorkflowServiceClient
 }
 
 // Logs represents workflow logs.
@@ -41,11 +40,11 @@ type Logs struct {
 }
 
 // List returns a list of workflows.
-func (a ArgoWorkflow) List() ([]string, error) {
+func (a ArgoWorkflow) List(ctx context.Context) ([]string, error) {
 	workflowIDs := []string{}
 
-	workflowListResult, err := a.svc.ListWorkflows(a.ctx, &argoWorkflowAPIClient.WorkflowListRequest{
-		Namespace: acoEnv.ArgoNamespace(),
+	workflowListResult, err := a.svc.ListWorkflows(ctx, &argoWorkflowAPIClient.WorkflowListRequest{
+		Namespace: a.namespace,
 	})
 
 	if err != nil {
@@ -68,10 +67,10 @@ type Status struct {
 }
 
 // Status returns a workflow status.
-func (a ArgoWorkflow) Status(workflowName string) (*Status, error) {
-	workflow, err := a.svc.GetWorkflow(a.ctx, &argoWorkflowAPIClient.WorkflowGetRequest{
+func (a ArgoWorkflow) Status(ctx context.Context, workflowName string) (*Status, error) {
+	workflow, err := a.svc.GetWorkflow(ctx, &argoWorkflowAPIClient.WorkflowGetRequest{
 		Name:      workflowName,
-		Namespace: acoEnv.ArgoNamespace(),
+		Namespace: a.namespace,
 	})
 
 	if err != nil {
@@ -89,10 +88,10 @@ func (a ArgoWorkflow) Status(workflowName string) (*Status, error) {
 }
 
 // Logs returns logs for a workflow.
-func (a ArgoWorkflow) Logs(workflowName string) (*Logs, error) {
-	stream, err := a.svc.WorkflowLogs(a.ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
+func (a ArgoWorkflow) Logs(ctx context.Context, workflowName string) (*Logs, error) {
+	stream, err := a.svc.WorkflowLogs(ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
 		Name:      workflowName,
-		Namespace: acoEnv.ArgoNamespace(),
+		Namespace: a.namespace,
 		LogOptions: &v1.PodLogOptions{
 			Container: mainContainer,
 		},
@@ -120,10 +119,10 @@ func (a ArgoWorkflow) Logs(workflowName string) (*Logs, error) {
 }
 
 // LogStream returns a log stream for a workflow.
-func (a ArgoWorkflow) LogStream(workflowName string, w http.ResponseWriter) error {
-	stream, err := a.svc.WorkflowLogs(a.ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
+func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http.ResponseWriter) error {
+	stream, err := a.svc.WorkflowLogs(ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
 		Name:      workflowName,
-		Namespace: acoEnv.ArgoNamespace(),
+		Namespace: a.namespace,
 		LogOptions: &v1.PodLogOptions{
 			Container: mainContainer,
 			Follow:    true,
@@ -151,7 +150,7 @@ func (a ArgoWorkflow) LogStream(workflowName string, w http.ResponseWriter) erro
 
 			fmt.Fprintf(w, fmt.Sprintf("%s: %s\n", event.GetPodName(), event.GetContent()))
 			w.(http.Flusher).Flush()
-			status, err := a.Status(workflowName)
+			status, err := a.Status(ctx, workflowName)
 			if err != nil {
 				return err
 			}
@@ -163,8 +162,8 @@ func (a ArgoWorkflow) LogStream(workflowName string, w http.ResponseWriter) erro
 	}
 }
 
-// Submit creates a workflow.
-func (a ArgoWorkflow) Submit(from string, parameters map[string]string) (string, error) {
+// Submit submits a workflow execution.
+func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[string]string) (string, error) {
 	parts := strings.SplitN(from, "/", 2)
 	for _, part := range parts {
 		if part == "" {
@@ -182,8 +181,8 @@ func (a ArgoWorkflow) Submit(from string, parameters map[string]string) (string,
 
 	generateNamePrefix := fmt.Sprintf("%s-%s-", parameters["project_name"], parameters["target_name"])
 
-	created, err := a.svc.SubmitWorkflow(a.ctx, &argoWorkflowAPIClient.WorkflowSubmitRequest{
-		Namespace:    acoEnv.ArgoNamespace(),
+	created, err := a.svc.SubmitWorkflow(ctx, &argoWorkflowAPIClient.WorkflowSubmitRequest{
+		Namespace:    a.namespace,
 		ResourceKind: kind,
 		ResourceName: name,
 		SubmitOptions: &argoWorkflowAPISpec.SubmitOpts{

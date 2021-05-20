@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +11,7 @@ import (
 	"strings"
 
 	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
-	"github.com/argoproj-labs/argo-cloudops/internal/workflow"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
 	"github.com/go-kit/kit/log"
@@ -151,11 +152,12 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	// TODO authenticate user can list this workflow once auth figured out
 	// TODO fail if project / target does not exist or are not valid format
 	level.Debug(h.logger).Log("message", "listing workflows")
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	projectName := vars["projectName"]
 	targetName := vars["targetName"]
 
-	workflowIDs, err := h.argo.List()
+	workflowIDs, err := h.argo.List(ctx)
 	if err != nil {
 		h.errorResponse(w, "error listing workflows", http.StatusBadRequest, err)
 		return
@@ -168,7 +170,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	for _, workflowID := range workflowIDs {
 		if strings.HasPrefix(workflowID, prefix) {
 			filteredWorkflowIDs = append(filteredWorkflowIDs, workflowID)
-			workflow, err := h.argo.Status(workflowID)
+			workflow, err := h.argo.Status(ctx, workflowID)
 			if err != nil {
 				h.errorResponse(w, "error retrieving workflows", http.StatusBadRequest, err)
 				return
@@ -201,6 +203,8 @@ func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path s
 
 func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	level.Debug(h.logger).Log("message", "creating workflow")
+	ctx := r.Context()
+
 	ah := r.Header.Get("Authorization")
 	a, err := newAuthorization(ah)
 	if err != nil {
@@ -227,12 +231,14 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cwr.Type = cgwr.Type
-	h.createWorkflowFromRequest(w, a, cwr)
+	h.createWorkflowFromRequest(ctx, w, a, cwr)
 }
 
 // Creates a workflow
 func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	level.Debug(h.logger).Log("message", "creating workflow")
+	ctx := r.Context()
+
 	ah := r.Header.Get("Authorization")
 	a, err := newAuthorization(ah)
 	if err != nil {
@@ -252,11 +258,11 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.createWorkflowFromRequest(w, a, cwr)
+	h.createWorkflowFromRequest(ctx, w, a, cwr)
 }
 
 // Creates a workflow
-func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest) {
+func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest) {
 	level.Debug(h.logger).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		h.errorResponse(w, "error in parameters", http.StatusInternalServerError, err)
@@ -355,7 +361,7 @@ func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorizati
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
 	level.Debug(h.logger).Log("message", "creating workflow")
-	workflowName, err := h.argo.Submit(workflowFrom, parameters)
+	workflowName, err := h.argo.Submit(ctx, workflowFrom, parameters)
 	if err != nil {
 		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError, err)
 		return
@@ -375,6 +381,7 @@ func (h handler) createWorkflowFromRequest(w http.ResponseWriter, a *Authorizati
 
 // Gets a workflow
 func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
 	// TODO: Workflow name must include -
@@ -383,7 +390,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	level.Debug(h.logger).Log("message", "getting workflow status", "workflow", workflowName)
-	status, err := h.argo.Status(workflowName)
+	status, err := h.argo.Status(ctx, workflowName)
 	if err != nil {
 		h.errorResponse(w, "error getting workflow", http.StatusBadRequest, err)
 		return
@@ -439,6 +446,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 // Returns the logs for a workflow
 func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
 	// TODO: Workflow name must include -
@@ -447,7 +455,7 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	level.Debug(h.logger).Log("message", "retrieving workflow logs", "workflow", workflowName)
-	argoWorkflowLogs, err := h.argo.Logs(workflowName)
+	argoWorkflowLogs, err := h.argo.Logs(ctx, workflowName)
 	if err != nil {
 		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest, err)
 		return
@@ -462,6 +470,7 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 
 // Streams workflow logs
 func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	w.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
@@ -471,7 +480,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	level.Debug(h.logger).Log("message", "retrieving workflow logs", "workflow", workflowName)
-	err := h.argo.LogStream(workflowName, w)
+	err := h.argo.LogStream(ctx, workflowName, w)
 	if err != nil {
 		level.Error(h.logger).Log("message", "error getting workflow logstream", "error", err)
 		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest, err)
@@ -488,6 +497,12 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
+	// TODO: remove
+	ctx := r.Context()
+	fmt.Printf("CONTEXT: %+v\n", ctx)
+	ctx = context.WithValue(ctx, "TEST", "TEST")
+	fmt.Printf("CONTEXT: %+v\n", ctx)
+
 	ah := r.Header.Get("Authorization")
 	level.Debug(h.logger).Log("message", "authorizing project creation")
 	a, err := newAuthorization(ah) // todo add validation
