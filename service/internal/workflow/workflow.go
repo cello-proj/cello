@@ -25,7 +25,10 @@ type Workflow interface {
 
 // NewArgoWorkflow creates an Argo workflow.
 func NewArgoWorkflow(cl argoWorkflowAPIClient.WorkflowServiceClient, n string) Workflow {
-	return &ArgoWorkflow{n, cl}
+	return &ArgoWorkflow{
+		namespace: n,
+		svc:       cl,
+	}
 }
 
 // ArgoWorkflow represents an Argo Workflow.

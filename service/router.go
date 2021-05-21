@@ -36,7 +36,7 @@ func setupRouter(h handler) *mux.Router {
 func commonMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		next.ServeHTTP(w, r.WithContext(r.Context()))
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -45,6 +45,6 @@ func txIDMiddleware(next http.Handler) http.Handler {
 		if r.Header.Get(txIDHeader) == "" {
 			r.Header.Set(txIDHeader, uuid.NewString())
 		}
-		next.ServeHTTP(w, r.WithContext(r.Context()))
+		next.ServeHTTP(w, r)
 	})
 }
