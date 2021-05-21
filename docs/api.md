@@ -8,7 +8,8 @@ Request Body
 
 ```json
 {
-  "name": "project1"
+  "name": "project1",
+  "repository": "git@github.com:myorg/myrepo.git"
 }
 ```
 
@@ -162,7 +163,6 @@ Request Body
 
 ```json
 {
-  "repository": "git@github.com:myorg/myrepo.git",
   "sha": "1234abdc5678efgh9012ijkl3456mnop7890qrst",
   "path": "path/to/manifest.yaml",
   "type": "sync"

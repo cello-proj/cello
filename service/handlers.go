@@ -37,7 +37,6 @@ type createWorkflowRequest struct {
 
 // Create workflow from git manifest request
 type createGitWorkflowRequest struct {
-	Repository string `json:"repository"`
 	CommitHash string `json:"sha"`
 	Path       string `json:"path"`
 	Type       string `json:"type"`
@@ -80,6 +79,7 @@ type handler struct {
 	env                    env.Vars
 	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
 	vaultConfig            credentials.VaultConfig
+	dbClient               dbClient
 }
 
 // Validates workflow parameters
@@ -221,7 +221,15 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cwr, err := h.loadCreateWorkflowRequestFromGit(cgwr.Repository, cgwr.CommitHash, cgwr.Path)
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+	projectEntry, err := h.dbClient.ReadProjectEntry(projectName)
+	if err != nil {
+		h.errorResponse(w, "error reading project data", http.StatusBadRequest, err)
+		return
+	}
+
+	cwr, err := h.loadCreateWorkflowRequestFromGit(projectEntry.Repository, cgwr.CommitHash, cgwr.Path)
 	if err != nil {
 		level.Error(l).Log("message", "error loading workflow data from git", "error", err)
 		h.errorResponse(w, "error loading workflow data from git", http.StatusBadRequest)
@@ -631,6 +639,15 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	level.Debug(l).Log("message", "creating project entry in db")
+	err = h.dbClient.CreateProjectEntry(ProjectEntry{
+		ProjectId:  capp.Name,
+		Repository: capp.Repository,
+	})
+	if err != nil {
+		h.errorResponse(w, "error creating project", http.StatusInternalServerError, err)
+		return
+	}
 	level.Debug(l).Log("message", "creating project")
 	role, secret, err := cp.CreateProject(capp.Name)
 	if err != nil {
@@ -768,6 +785,13 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error deleting project", "error", err)
 		h.errorResponse(w, "error deleting project", http.StatusBadRequest)
+		return
+	}
+
+	level.Debug(h.logger).Log("message", "deleting project entry in db", "project name", projectName)
+	err = h.dbClient.DeleteProjectEntry(projectName)
+	if err != nil {
+		h.errorResponse(w, "error deleting project", http.StatusBadRequest, err)
 		return
 	}
 }

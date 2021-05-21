@@ -157,7 +157,8 @@ type CreateTargetRequest struct {
 }
 
 type CreateProjectRequest struct {
-	Name string `json:"name"`
+	Name       string `json:"name"`
+	Repository string `json:"repository"`
 }
 
 func (v VaultProvider) createPolicyState(name, policy string) error {

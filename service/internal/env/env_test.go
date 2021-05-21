@@ -43,6 +43,10 @@ func TestGetEnv(t *testing.T) {
 	os.Setenv("ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE", "argo-ns")
 	os.Setenv("ARGO_CLOUDOPS_CONFIG", "/app/test/config/path")
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
+	os.Setenv("DB_HOST", "localhost")
+	os.Setenv("DB_DATABASE_NAME", "argocloudops")
+	os.Setenv("DB_USER", "argoco")
+	os.Setenv("DB_PASSWORD", "1234")
 	os.Setenv("ARGO_CLOUDOPS_LOG_LEVEL", "DEBUG")
 	os.Setenv("ARGO_CLOUDOPS_PORT", "1234")
 

@@ -53,6 +53,12 @@ func main() {
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
 
+	dbClient, err := newSqlDbClient(env.DbHost, env.DbName, env.DbUser, env.DbPassword)
+	if err != nil {
+		level.Error(logger).Log("message", "error creating db client", "error", err)
+		panic("error creating db client")
+	}
+
 	// Any Argo Workflow client method calls need the context returned from NewAPIClient, otherwise
 	// nil errors will occur. Mux sets its params in context, so passing the Argo Workflow context to
 	// setupRouter and applying it to the request will wipe out Mux vars (or any other data Mux sets in its context).
@@ -70,6 +76,7 @@ func main() {
 		newCredsProviderSvc: credentials.NewVaultSvc,
 		// A Vault config is needed to be able to create a Vault service from within the handlers.
 		vaultConfig: *credentials.NewVaultConfig(&vault.Config{Address: env.VaultAddress}, env.VaultRole, env.VaultSecret),
+		dbClient:    dbClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)

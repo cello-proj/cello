@@ -15,6 +15,8 @@ with Docker Desktop managing resource in AWS (region us-west-2) with credentials
 
 * Install GoLint `go get -u golang.org/x/lint/golint` and ensure `$GOPATH` is in your `$PATH`.
 
+* Install [PostgreSQL](https://www.postgresql.org/download/)
+
 * Submit Argo Hello World workflow and record the **Name** from the output.
 
     ```
@@ -45,6 +47,8 @@ You will need two windows
 ### One Time Setup
 
 * In window **#1**, ensure you have AWS credentials for the target account.
+
+* Create a new database and use the `createdb.sql` script to create the relevant tables
 
 * Create an S3 bucket (change the bucket name below) and set it as **ARGO_CLOUDOPS_BUILD_BUCKET** environment variable:
 

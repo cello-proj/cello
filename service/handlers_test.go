@@ -27,6 +27,32 @@ const (
 	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
+type mockDb struct{}
+
+func newMockDb() dbClient {
+	return mockDb{}
+}
+
+func (d mockDb) CreateProjectEntry(pe ProjectEntry) error {
+	if pe.ProjectId == "somedberror" {
+		return fmt.Errorf("some db error")
+	}
+
+	return nil
+}
+
+func (d mockDb) ReadProjectEntry(project string) (ProjectEntry, error) {
+	return ProjectEntry{}, nil
+}
+
+func (d mockDb) DeleteProjectEntry(project string) error {
+	if project == "somedeletedberror" {
+		return fmt.Errorf("some db error")
+	}
+
+	return nil
+}
+
 type mockGitClient struct{}
 
 func newMockGitClient() gitClient {
@@ -117,6 +143,7 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 		"projectalreadyexists",
 		"undeletableprojecttargets",
 		"undeletableproject",
+		"somedeletedberror",
 	}
 	for _, existingProjects := range existingProjects {
 		if name == existingProjects {
@@ -197,6 +224,14 @@ func TestCreateProject(t *testing.T) {
 			url:     "/projects",
 			method:  "POST",
 		},
+		{
+			name:    "project fails to create db entry",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
+			want:    http.StatusInternalServerError,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
 	}
 	runTests(t, tests)
 }
@@ -229,6 +264,13 @@ func TestDeleteProject(t *testing.T) {
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/undeletableproject",
+			method:  "DELETE",
+		},
+		{
+			name:    "fails to delete project db entry",
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects/somedeletedberror",
 			method:  "DELETE",
 		},
 	}
@@ -465,7 +507,6 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 		{
 			name: "can create workflows",
 			req: createGitWorkflowRequest{
-				Repository: "repository1",
 				CommitHash: "sha123",
 				Path:       "path/to/manifest.yaml",
 				Type:       "sync",
@@ -690,7 +731,9 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		gitClient:              newMockGitClient(),
 		newCredsProviderSvc:    mockCredsProvSvc,
 		env: env.Vars{
-			AdminSecret: testPassword},
+			AdminSecret: testPassword,
+		},
+		dbClient: newMockDb(),
 	}
 
 	var router = setupRouter(h)

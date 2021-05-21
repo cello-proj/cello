@@ -21,6 +21,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.6.1
+	github.com/upper/db/v4 v4.1.0
 	google.golang.org/grpc v1.33.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.6
