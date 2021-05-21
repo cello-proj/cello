@@ -8,6 +8,8 @@ import (
 	"text/template"
 
 	"gopkg.in/yaml.v2"
+
+	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 )
 
 type CommandVariables struct {
@@ -22,7 +24,7 @@ type Config struct {
 }
 
 func loadConfig() (*Config, error) {
-	f, err := ioutil.ReadFile(configFilePath())
+	f, err := ioutil.ReadFile(acoEnv.ConfigFilePath())
 	if err != nil {
 		return nil, err
 	}

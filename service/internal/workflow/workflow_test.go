@@ -1,4 +1,4 @@
-package main
+package workflow
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestArgoListWorkflows(t *testing.T) {
+func TestArgoWorkflowsList(t *testing.T) {
 	tests := []struct {
 		name      string
 		output    []string
@@ -34,24 +34,27 @@ func TestArgoListWorkflows(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := handler{
-				argo: &argoWorkflow{
-					context.Background(),
-					mockArgoClient{err: tt.listErr},
-				},
-			}
-			out, err := h.argo.ListWorkflows()
+			argoWf := NewArgoWorkflow(
+				mockArgoClient{err: tt.listErr},
+				"namespace",
+			)
+
+			out, err := argoWf.List(context.Background())
+
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
 				}
+
 				if tt.errResult == nil {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
 				}
 			}
+
 			if err == nil && tt.errResult != nil {
 				t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
 			}
+
 			if !cmp.Equal(out, tt.output) {
 				t.Errorf("\nwant: %v\n got: %v", tt.output, out)
 			}
@@ -59,7 +62,7 @@ func TestArgoListWorkflows(t *testing.T) {
 	}
 }
 
-func TestArgoGetStatus(t *testing.T) {
+func TestArgoStatus(t *testing.T) {
 	tests := []struct {
 		name               string
 		argoWorkflowStatus v1alpha1.WorkflowPhase
@@ -96,17 +99,17 @@ func TestArgoGetStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := handler{
-				argo: &argoWorkflow{
-					context.Background(),
-					mockArgoClient{status: tt.argoWorkflowStatus, err: tt.statusErr},
-				},
-			}
-			status, err := h.argo.GetStatus("workflow")
+			argoWf := NewArgoWorkflow(
+				mockArgoClient{status: tt.argoWorkflowStatus, err: tt.statusErr},
+				"namespace",
+			)
+
+			status, err := argoWf.Status(context.Background(), "workflow")
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
 				}
+
 				if tt.errResult == nil {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
 				}
@@ -139,13 +142,12 @@ func TestArgoSubmit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := handler{
-				argo: &argoWorkflow{
-					context.Background(),
-					mockArgoClient{err: tt.err},
-				},
-			}
-			workflow, err := h.argo.Submit("test/test", map[string]string{"param": "value"})
+			argoWf := NewArgoWorkflow(
+				mockArgoClient{err: tt.err},
+				"namespace",
+			)
+
+			workflow, err := argoWf.Submit(context.Background(), "test/test", map[string]string{"param": "value"})
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
