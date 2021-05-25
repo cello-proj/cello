@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	vault "github.com/hashicorp/vault/api"
@@ -21,16 +22,17 @@ func (v vaultCredentialsProvider) newCredentialsProvider(authorization Authoriza
 }
 
 type credentialsProvider interface {
-	getToken() (string, error)
 	createProject(string) (string, string, error)
-	getProject(string) (string, error)
-	deleteProject(string) error
 	createTarget(string, createTargetRequest) error
+	deleteProject(string) error
 	deleteTarget(string, string) error
+	getProject(string) (string, error)
 	getTarget(string, string) (targetProperties, error)
+	getToken() (string, error)
 	listTargets(string) ([]string, error)
 	projectExists(string) (bool, error)
 	targetExists(name string) (bool, error)
+	withHeaders(http.Header)
 }
 
 // Vault
@@ -306,4 +308,8 @@ func (v vaultCredentialsProvider) getTarget(projectName, targetName string) (tar
 	}
 
 	return targetProperties{CredentialType: credentialType, RoleArn: roleArn, PolicyArns: policies}, nil
+}
+
+func (v vaultCredentialsProvider) withHeaders(h http.Header) {
+	v.VaultSvc.SetHeaders(h)
 }

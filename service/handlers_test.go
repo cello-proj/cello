@@ -125,6 +125,8 @@ func (m mockCredentialsProvider) targetExists(name string) (bool, error) {
 	return false, nil
 }
 
+func (m mockCredentialsProvider) withHeaders(h http.Header) {}
+
 type test struct {
 	name    string
 	req     interface{}

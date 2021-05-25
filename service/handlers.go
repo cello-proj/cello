@@ -610,6 +610,8 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cp.withHeaders(r.Header)
+
 	isValidProjectName, err := h.validateProjectName(capp.Name, w)
 	if !isValidProjectName {
 		level.Error(l).Log("message", err)
