@@ -17,31 +17,42 @@ type dbClient interface {
 }
 
 type sqlDbClient struct {
-	sess db.Session
+	host     string
+	database string
+	user     string
+	password string
 }
 
 const ProjectEntryDB = "projects"
 
 func newSqlDbClient(host, database, user, password string) (sqlDbClient, error) {
-	settings := postgresql.ConnectionURL{
-		Host:     host,
-		Database: database,
-		User:     user,
-		Password: password,
-	}
-
-	sess, err := postgresql.Open(settings)
-	if err != nil {
-		return sqlDbClient{}, err
-	}
-
 	return sqlDbClient{
-		sess: sess,
+		host:     host,
+		database: database,
+		user:     user,
+		password: password,
 	}, nil
 }
 
+func (d sqlDbClient) createSession() (db.Session, error) {
+	settings := postgresql.ConnectionURL{
+		Host:     d.host,
+		Database: d.database,
+		User:     d.user,
+		Password: d.password,
+	}
+
+	return postgresql.Open(settings)
+}
+
 func (d sqlDbClient) CreateProjectEntry(pe ProjectEntry) error {
-	return d.sess.Tx(func(sess db.Session) error {
+	sess, err := d.createSession()
+	if err != nil {
+		return err
+	}
+	defer sess.Close()
+
+	return sess.Tx(func(sess db.Session) error {
 		err := sess.Collection(ProjectEntryDB).Find("project", pe.ProjectId).Delete()
 		if err != nil {
 			return err
@@ -57,10 +68,23 @@ func (d sqlDbClient) CreateProjectEntry(pe ProjectEntry) error {
 
 func (d sqlDbClient) ReadProjectEntry(project string) (ProjectEntry, error) {
 	res := ProjectEntry{}
-	err := d.sess.Collection(ProjectEntryDB).Find("project", project).One(&res)
+
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.Collection(ProjectEntryDB).Find("project", project).One(&res)
 	return res, err
 }
 
 func (d sqlDbClient) DeleteProjectEntry(project string) error {
-	return d.sess.Collection(ProjectEntryDB).Find("project", project).Delete()
+	sess, err := d.createSession()
+	if err != nil {
+		return err
+	}
+	defer sess.Close()
+
+	return sess.Collection(ProjectEntryDB).Find("project", project).Delete()
 }
