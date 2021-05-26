@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Update environmental variable name to specify workflow execution namespace
 * Adds operations API for git based sync/diff
 * Fix typos in CLI command description
 
