@@ -1,6 +1,6 @@
 GO_LDFLAGS ?= -ldflags="-s -w"
 
-all: vendor test build_service build_cli
+all: test build_service build_cli
 
 build_service: clean_service
 	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) $(BUILDARGS) -o build/service ./service/
@@ -18,7 +18,6 @@ test:
 
 vendor: # Vendors dependencies
 	go mod tidy
-	go mod vendor
 
 vet: ## Runs go vet
 	go vet $(VETARGS) ./...

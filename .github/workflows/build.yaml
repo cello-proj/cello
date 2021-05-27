@@ -14,6 +14,13 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: '1.16.3'
+    - name: cache
+      uses: actions/cache@v2
+      with:
+      path: ~/go/pkg/mod
+      key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      restore-keys: |
+        ${{ runner.os }}-go-
     - name: Run build
       run: make
   lint:
