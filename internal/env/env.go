@@ -18,7 +18,7 @@ func AdminSecret() string {
 }
 
 func ArgoNamespace() string {
-	return Getenv("ARGO_CLOUDOPS_NAMESPACE", "argo")
+	return Getenv("ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE", "argo")
 }
 
 func ConfigFilePath() string {
