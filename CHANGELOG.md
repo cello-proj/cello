@@ -7,6 +7,8 @@
 * Fix issues reported by linter.
 * Perform deeper linting.
 * Add build caching.
+* Remove vendoring from make all target.
+* Ignore updates to README.md and CHANGELOG.md for builds.
 
 ## v0.0.2 (2021-05-06)
 * Set service port via environment variable, default 8443
