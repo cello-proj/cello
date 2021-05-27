@@ -4,7 +4,13 @@ on:
   push:
     branches:
     - main
+    paths-ignore:
+    - CHANGELOG.md
+    - README.md
   pull_request:
+    paths-ignore:
+    - CHANGELOG.md
+    - README.md
 jobs:
   build:
     runs-on: ubuntu-latest
