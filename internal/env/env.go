@@ -21,11 +21,11 @@ type EnvVars struct {
 }
 
 var (
-	instance *EnvVars
+	instance EnvVars
 	once     sync.Once
 )
 
-func GetEnv() *EnvVars {
+func GetEnv() EnvVars {
 	once.Do(func() {
 		err := envconfig.Process("ARGO_CLOUD_OPS", &instance)
 		if err != nil {
@@ -36,7 +36,7 @@ func GetEnv() *EnvVars {
 	return instance
 }
 
-func (values *EnvVars) validate() {
+func (values EnvVars) validate() {
 	if len(values.AdminSecret) <= 16 {
 		panic("Admin secret must be at least 16 characers long.")
 	}
