@@ -1,1 +1,2 @@
 (github.com/go-kit/kit/log.Logger).Log
+(*github.com/spf13/cobra.Command).MarkFlagRequired

@@ -89,8 +89,6 @@ func main() {
 		level.Error(logger).Log("message", "error starting service", "error", err)
 		panic("error starting service")
 	}
-
-	return
 }
 
 func setLogLevel(logger *log.Logger, logLevel string) {
