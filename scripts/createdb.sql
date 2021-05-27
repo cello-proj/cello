@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS argocloudops.projects
+CREATE TABLE IF NOT EXISTS projects
 (
     project character varying(80) NOT NULL,
     repository character varying(80),
