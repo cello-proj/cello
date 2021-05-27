@@ -1,26 +1,43 @@
 package env
 
 import (
-	"os"
+	"log"
+	"sync"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
-func Getenv(key, fallback string) string {
-	value := os.Getenv(key)
-	if len(value) == 0 {
-		return fallback
+type EnvVars struct {
+	AdminSecret    string `split_words:"true"`
+	VaultRole      string `envconfig:"VAULT_ROLE" required:"true"`
+	VaultSecret    string `envconfig:"VAULT_SECRET" required:"true"`
+	VaultAddress   string `envconfig:"VAULT_ADDR" required:"true"`
+	ArgoAddress    string `envconfig:"ARGO_ADDR" required:"true"`
+	Namespace      string `default:"argo"`
+	ConfigFilePath string `envconfig:"CONFIG" default:"argo-cloudops.yaml"`
+	SshPemFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
+	LogLevel       string `split_words:"true"`
+	Port           int32
+}
+
+var (
+	instance *EnvVars
+	once     sync.Once
+)
+
+func GetEnv() *EnvVars {
+	once.Do(func() {
+		err := envconfig.Process("ARGO_CLOUD_OPS", &instance)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		instance.validate()
+	})
+	return instance
+}
+
+func (values *EnvVars) validate() {
+	if len(values.AdminSecret) <= 16 {
+		panic("Admin secret must be at least 16 characers long.")
 	}
-	return value
-}
-
-// TODO exit if this is not set to something long
-func AdminSecret() string {
-	return os.Getenv("ARGO_CLOUDOPS_ADMIN_SECRET")
-}
-
-func ArgoNamespace() string {
-	return Getenv("ARGO_CLOUDOPS_NAMESPACE", "argo")
-}
-
-func ConfigFilePath() string {
-	return Getenv("ARGO_CLOUDOPS_CONFIG", "argo-cloudops.yaml")
 }
