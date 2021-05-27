@@ -5,12 +5,10 @@ on:
     branches:
     - main
     paths-ignore:
-    - CHANGELOG.md
-    - README.md
+    - '*.md'
   pull_request:
     paths-ignore:
-    - CHANGELOG.md
-    - README.md
+    - '*.md'
 jobs:
   build:
     runs-on: ubuntu-latest
