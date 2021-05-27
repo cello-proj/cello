@@ -16,7 +16,7 @@ lint:
 test:
 	env ARGO_CLOUDOPS_CONFIG=../service/testdata/argo-cloudops.yaml go test -race -timeout=180s -coverprofile=coverage.out ./service #github.com/argoproj-labs/argo-cloudops
 
-vendor: # Vendors dependencies
+tidy:
 	go mod tidy
 
 vet: ## Runs go vet
