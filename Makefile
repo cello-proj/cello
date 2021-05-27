@@ -36,4 +36,4 @@ clean_cli:
 up: ## Starts a local vault and api locally
 	bash scripts/start_local.sh
 
-.PHONY: build_service build_cli lint test vendor vet cover clean_cli clean_service up
+.PHONY: build_service build_cli lint test tidy vet cover clean_cli clean_service up
