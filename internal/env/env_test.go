@@ -9,16 +9,16 @@ const testSecret = "tha5hei2Hee5le8neezu"
 
 func TestGetEnv(t *testing.T) {
 	os.Clearenv()
-	os.Setenv("ARGO_CLOUD_OPS_ADMIN_SECRET", testSecret)
+	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", testSecret)
 	os.Setenv("VAULT_ROLE", "vaultRole")
 	os.Setenv("VAULT_SECRET", testSecret)
 	os.Setenv("VAULT_ADDR", "1.2.3.4")
 	os.Setenv("ARGO_ADDR", "2.3.4.5")
-	os.Setenv("ARGO_CLOUD_OPS_NAMESPACE", "argo-ns")
+	os.Setenv("ARGO_CLOUDOPS_NAMESPACE", "argo-ns")
 	os.Setenv("CONFIG", "/app/test/config/path")
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
-	os.Setenv("ARGO_CLOUD_OPS_LOG_LEVEL", "DEBUG")
-	os.Setenv("ARGO_CLOUD_OPS_PORT", "1234")
+	os.Setenv("ARGO_CLOUDOPS_LOG_LEVEL", "DEBUG")
+	os.Setenv("ARGO_CLOUDOPS_PORT", "1234")
 
 	var env EnvVars = GetEnv()
 	if env.AdminSecret != testSecret {
