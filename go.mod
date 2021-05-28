@@ -17,9 +17,10 @@ require (
 	github.com/hashicorp/hcl v1.0.1-vault // indirect
 	github.com/hashicorp/vault/api v1.0.5-0.20201001211907-38d91b749c77
 	github.com/hashicorp/vault/sdk v0.1.14-0.20210127182440-8477cfe632c0 // indirect
-	github.com/kelseyhightower/envconfig v1.4.0 // indirect
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/spf13/cobra v1.1.3
+	github.com/stretchr/testify v1.6.1
 	google.golang.org/grpc v1.33.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.6

@@ -1,7 +1,6 @@
 package env
 
 import (
-	"log"
 	"sync"
 
 	"github.com/kelseyhightower/envconfig"
@@ -29,7 +28,7 @@ func GetEnv() EnvVars {
 	once.Do(func() {
 		err := envconfig.Process("ARGO_CLOUDOPS", &instance)
 		if err != nil {
-			log.Fatal(err.Error())
+			panic(err.Error())
 		}
 		instance.validate()
 	})
@@ -37,7 +36,7 @@ func GetEnv() EnvVars {
 }
 
 func (values EnvVars) validate() {
-	// if len(values.AdminSecret) <= 16 {
-	// 	panic("Admin secret must be at least 16 characers long.")
-	// }
+	if len(values.AdminSecret) <= 16 {
+		panic("Admin secret must be at least 16 characers long.")
+	}
 }
