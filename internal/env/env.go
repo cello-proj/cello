@@ -13,7 +13,7 @@ type EnvVars struct {
 	VaultSecret    string `envconfig:"VAULT_SECRET" required:"true"`
 	VaultAddress   string `envconfig:"VAULT_ADDR" required:"true"`
 	ArgoAddress    string `envconfig:"ARGO_ADDR" required:"true"`
-	Namespace      string `default:"argo"`
+	ArgoNamespace  string `envconfig:"WORKFLOW_EXECUTION_NAMESPACE" default:"argo"`
 	ConfigFilePath string `envconfig:"CONFIG" default:"argo-cloudops.yaml"`
 	SshPemFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
 	LogLevel       string `split_words:"true"`
