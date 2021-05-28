@@ -17,6 +17,10 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
+const (
+	TEST_PW = "D34DB33FD34DB33FD34DB33FD34DB33F"
+)
+
 type mockGitClient struct{}
 
 func newMockGitClient() gitClient {
@@ -64,7 +68,7 @@ func newMockProvider(svc *vault.Client) func(a Authorization) (credentialsProvid
 type mockCredentialsProvider struct{}
 
 func (m mockCredentialsProvider) getToken() (string, error) {
-	return "DEADBEEF", nil
+	return TEST_PW, nil
 }
 
 func (m mockCredentialsProvider) createProject(name string) (string, string, error) {
@@ -579,11 +583,10 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		gitClient:              newMockGitClient(),
 	}
 	var router = setupRouter(h)
-	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
 	req, _ := http.NewRequest(method, url, body)
-	authorizationHeader := "vault:user:DEADBEEF"
+	authorizationHeader := "vault:user:" + TEST_PW
 	if asAdmin {
-		authorizationHeader = "vault:admin:DEADBEEF"
+		authorizationHeader = "vault:admin:" + TEST_PW
 	}
 	req.Header.Add("Authorization", authorizationHeader)
 	w := httptest.NewRecorder()
