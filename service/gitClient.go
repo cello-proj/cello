@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
 
-	"github.com/go-git/go-billy/v5/memfs"
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	"github.com/go-git/go-git/v5/storage/memory"
 )
 
 type gitClient interface {
@@ -16,6 +17,7 @@ type gitClient interface {
 
 type basicGitClient struct {
 	auth *ssh.PublicKeys
+	mu   *sync.Mutex
 }
 
 func newBasicGitClient(sshPemFile string) (basicGitClient, error) {
@@ -26,21 +28,32 @@ func newBasicGitClient(sshPemFile string) (basicGitClient, error) {
 
 	return basicGitClient{
 		auth: auth,
+		mu:   &sync.Mutex{},
 	}, nil
 }
 
 func (g basicGitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
-	// TODO: refactor to not use mem-backed
-	storer := memory.NewStorage()
-	fs := memfs.New()
+	filePath := filepath.Join(os.TempDir(), repository)
 
-	// TODO: use context version and make depth configurable
-	repo, err := git.Clone(storer, fs, &git.CloneOptions{
-		URL:  repository,
-		Auth: g.auth,
-	})
-	if err != nil {
-		return []byte{}, err
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	var repo *git.Repository
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		// TODO: use context version and make depth configurable
+		repo, err = git.PlainClone(filePath, false, &git.CloneOptions{
+			URL:  repository,
+			Auth: g.auth,
+		})
+		if err != nil {
+			return []byte{}, err
+		}
+	} else {
+		repo, err = git.PlainOpen(filePath)
+		if err != nil {
+			return []byte{}, err
+		}
 	}
 
 	w, err := repo.Worktree()
@@ -55,7 +68,8 @@ func (g basicGitClient) CheckoutFileFromRepository(repository, commitHash, path 
 		return []byte{}, err
 	}
 
-	fileStat, err := fs.Stat(path)
+	pathToManifest := filepath.Join(filePath, path)
+	fileStat, err := os.Stat(pathToManifest)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -64,7 +78,7 @@ func (g basicGitClient) CheckoutFileFromRepository(repository, commitHash, path 
 		return []byte{}, fmt.Errorf("path provided is not a file '%s'", path)
 	}
 
-	file, err := fs.Open(path)
+	file, err := os.Open(pathToManifest)
 	if err != nil {
 		return []byte{}, err
 	}
