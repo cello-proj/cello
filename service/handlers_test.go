@@ -123,13 +123,9 @@ func (m mockCredentialsProvider) targetExists(name string) (bool, error) {
 	return false, nil
 }
 
-func (m mockCredentialsProvider) getHeaders() http.Header {
-	return http.Header{"foo": []string{"bar"}}
+func mockCredsProvSvc(c vaultConfig, h http.Header) (*vault.Client, error) {
+	return &vault.Client{}, nil
 }
-
-func (m mockCredentialsProvider) clearHeaders() {}
-
-func (m mockCredentialsProvider) withHeaders(h http.Header) {}
 
 type test struct {
 	name    string
@@ -583,6 +579,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
+		credsProvSvc:           mockCredsProvSvc,
 	}
 	var router = setupRouter(h)
 	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")

@@ -616,7 +616,6 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: create new vault svc
 	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
