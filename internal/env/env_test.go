@@ -14,7 +14,7 @@ func TestGetEnv(t *testing.T) {
 	os.Setenv("VAULT_SECRET", testSecret)
 	os.Setenv("VAULT_ADDR", "1.2.3.4")
 	os.Setenv("ARGO_ADDR", "2.3.4.5")
-	os.Setenv("ARGO_CLOUDOPS_NAMESPACE", "argo-ns")
+	os.Setenv("ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE", "argo-ns")
 	os.Setenv("ARGO_CLOUDOPS_CONFIG", "/app/test/config/path")
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
 	os.Setenv("ARGO_CLOUDOPS_LOG_LEVEL", "DEBUG")
@@ -36,8 +36,8 @@ func TestGetEnv(t *testing.T) {
 	if env.ArgoAddress != "2.3.4.5" {
 		t.Errorf("expected %v, got %v", "2.3.4.5", env.ArgoAddress)
 	}
-	if env.Namespace != "argo-ns" {
-		t.Errorf("expected %v, got %v", "argo-ns", env.Namespace)
+	if env.ArgoNamespace != "argo-ns" {
+		t.Errorf("expected %v, got %v", "argo-ns", env.ArgoNamespace)
 	}
 	if env.ConfigFilePath != "/app/test/config/path" {
 		t.Errorf("expected %v, got %v", "/app/test/config/path", env.ConfigFilePath)
@@ -62,8 +62,8 @@ func TestDefaults(t *testing.T) {
 	os.Setenv("ARGO_ADDR", "2.3.4.5")
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
 	var env EnvVars = GetEnv()
-	if env.Namespace != "argo" {
-		t.Errorf("expected %v, got %v", "argo-ns", env.Namespace)
+	if env.ArgoNamespace != "argo" {
+		t.Errorf("expected %v, got %v", "argo-ns", env.ArgoNamespace)
 	}
 	if env.ConfigFilePath != "argo-cloudops.yaml" {
 		t.Errorf("expected %v, got %v", "/app/test/config/path", env.ConfigFilePath)

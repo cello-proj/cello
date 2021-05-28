@@ -46,7 +46,7 @@ func main() {
 	h := handler{
 		logger:                 logger,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
-		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.Namespace),
+		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
 		config:                 config,
 		gitClient:              gitClient,
 	}
