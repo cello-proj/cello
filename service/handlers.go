@@ -67,7 +67,7 @@ var isStringAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
 // Vault does not allow for dashes
 var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
 
-// Represents a user's authorization token.
+// Authorization represents a user's authorization token.
 type Authorization struct {
 	Provider string
 	Key      string
@@ -144,7 +144,6 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 
 // Service HealthCheck
 func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
-	return
 }
 
 // Lists workflows
@@ -167,12 +166,10 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Only return workflows the target project / target
-	filteredWorkflowIDs := []string{}
 	var workflows []workflow.Status
 	prefix := fmt.Sprintf("%s-%s", projectName, targetName)
 	for _, workflowID := range workflowIDs {
 		if strings.HasPrefix(workflowID, prefix) {
-			filteredWorkflowIDs = append(filteredWorkflowIDs, workflowID)
 			workflow, err := h.argo.Status(ctx, workflowID)
 			if err != nil {
 				level.Error(l).Log("message", "error retrieving workflows", "error", err)
@@ -991,42 +988,10 @@ func (h handler) validateTargetName(targetName string, w http.ResponseWriter) (b
 	return true, nil
 }
 
-// TODO: Fix to include -
-// Validates a workflow name
-//func (h handler) validateWorkflowName(workflowName string, w http.ResponseWriter) bool {
-//	return h.validateName(workflowName, "workflow name", w)
-//}
-
-// Validates name according to naming rules:
-// 1. Must be alphanumeric
-// 2. Must have a minimum length of 4
-// 3. Must have a maximum length of 32
-func (h handler) validateName(name string, desc string, w http.ResponseWriter) (bool, error) {
-	if !isStringAlphaNumericUnderscore(name) {
-		h.errorResponse(w, fmt.Sprintf("%s must be alpha-numeric", desc), http.StatusBadRequest, nil)
-		return false, errors.New(fmt.Sprintf("%s must be alpha-numeric", desc))
-	}
-
-	if len(name) < 4 {
-		h.errorResponse(w, fmt.Sprintf("%s must be greater than 3 characters", desc), http.StatusBadRequest, nil)
-		return false, errors.New(fmt.Sprintf("%s must be greater than 3 characters", desc))
-	}
-
-	if len(name) > 32 {
-		h.errorResponse(w, fmt.Sprintf("%s must be less than 32 characters", desc), http.StatusBadRequest, nil)
-		return false, errors.New(fmt.Sprintf("%s must be less than 32 characters", desc))
-	}
-
-	return true, nil
-}
-
 // Returns true, if the image uri is a valid container image uri
 func (h handler) isValidImageUri(imageUri string) bool {
 	_, err := reference.ParseAnyReference(imageUri)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func generateEnvVariablesString(environmentVariables map[string]string) string {

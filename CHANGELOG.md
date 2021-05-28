@@ -9,6 +9,11 @@
 
 ### Fixed
 * Fix typos in CLI command description
+* Use GitHub Action for linting.
+* Fix issues reported by linter.
+* Perform deeper linting.
+* Add build caching.
+* Remove vendoring.
 
 ## v0.0.2 (2021-05-06)
 ### Changed

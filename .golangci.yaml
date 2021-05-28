@@ -1,0 +1,5 @@
+run:
+  timeout: 3m
+linters-settings:
+  errcheck:
+    exclude: .errcheck_excludes.txt

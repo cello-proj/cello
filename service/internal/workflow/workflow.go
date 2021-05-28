@@ -136,10 +136,9 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 		return err
 	}
 
-	clientGone := w.(http.CloseNotifier).CloseNotify()
 	for {
 		select {
-		case <-clientGone:
+		case <-ctx.Done():
 			return nil
 		default:
 			event, err := stream.Recv()
@@ -151,7 +150,7 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 				return err
 			}
 
-			fmt.Fprintf(w, fmt.Sprintf("%s: %s\n", event.GetPodName(), event.GetContent()))
+			fmt.Fprintf(w, "%s: %s\n", event.GetPodName(), event.GetContent())
 			w.(http.Flusher).Flush()
 			status, err := a.Status(ctx, workflowName)
 			if err != nil {
