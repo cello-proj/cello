@@ -58,12 +58,6 @@ func main() {
 	}
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", acoEnv.ConfigFilePath()))
 
-	vaultSvc, err := newVaultSvc(vaultAddr, vaultRole, vaultSecret)
-	if err != nil {
-		level.Error(logger).Log("message", "error creating vault service client", "error", err)
-		panic("error creating vault service client")
-	}
-
 	gitClient, err := newBasicGitClient(sshPemFile)
 	if err != nil {
 		level.Error(logger).Log("message", "error creating git client", "error", err)
@@ -75,10 +69,16 @@ func main() {
 
 	h := handler{
 		logger:                 logger,
-		newCredentialsProvider: newVaultProvider(vaultSvc),
+		newCredentialsProvider: newVaultProvider,
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), namespace),
 		config:                 config,
 		gitClient:              gitClient,
+		credsProvSvc:           newVaultSvcV2,
+		vaultConfig: vaultConfig{
+			config: &vault.Config{Address: vaultAddr},
+			role:   vaultRole,
+			secret: vaultSecret,
+		},
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", vaultAddr, "argoAddr", argoAddr)

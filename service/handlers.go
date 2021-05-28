@@ -106,21 +106,21 @@ func (a Authorization) authorizedAdmin() bool {
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
-	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
+	newCredentialsProvider func(a Authorization, svc *vault.Client) (credentialsProvider, error)
 	argo                   workflow.Workflow
 	config                 *Config
 	gitClient              gitClient
+	credsProvSvc           func(c vaultConfig, h http.Header) (*vault.Client, error)
+	vaultConfig            vaultConfig
 }
 
 // Returns a new vaultCredentialsProvider
-func newVaultProvider(svc *vault.Client) func(a Authorization) (credentialsProvider, error) {
-	return func(a Authorization) (credentialsProvider, error) {
-		return &vaultCredentialsProvider{
-			VaultSvc: svc,
-			RoleID:   a.Key,
-			SecretID: a.Secret,
-		}, nil
-	}
+func newVaultProvider(a Authorization, svc *vault.Client) (credentialsProvider, error) {
+	return &vaultCredentialsProvider{
+		VaultSvc: svc,
+		RoleID:   a.Key,
+		SecretID: a.Secret,
+	}, nil
 }
 
 // Validates workflow parameters
@@ -245,7 +245,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "creating workflow")
 	cwr.Type = cgwr.Type
-	h.createWorkflowFromRequest(ctx, w, a, cwr, l)
+	h.createWorkflowFromRequest(ctx, w, r, a, cwr, l)
 }
 
 // Creates a workflow
@@ -280,11 +280,11 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating workflow")
-	h.createWorkflowFromRequest(ctx, w, a, cwr, l)
+	h.createWorkflowFromRequest(ctx, w, r, a, cwr, l)
 }
 
 // Creates a workflow
-func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest, l log.Logger) {
+func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request, a *Authorization, cwr createWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		level.Error(l).Log("message", "error in parameters", "error", err)
@@ -364,8 +364,15 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 		return
 	}
 
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating new credentials provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "bad or unknown credentials provider", "error", err)
 		h.errorResponse(w, "bad or unknown credentials provider", http.StatusInternalServerError, err)
@@ -481,8 +488,15 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
@@ -602,15 +616,21 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: create new vault svc
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
 		return
 	}
-
-	cp.withHeaders(r.Header)
 
 	isValidProjectName, err := h.validateProjectName(capp.Name, w)
 	if !isValidProjectName {
@@ -673,8 +693,15 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
@@ -714,8 +741,15 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
@@ -799,8 +833,15 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError, err)
@@ -883,8 +924,15 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
@@ -923,8 +971,15 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cpSvc, err := h.credsProvSvc(h.vaultConfig, r.Header)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a)
+	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError, err)

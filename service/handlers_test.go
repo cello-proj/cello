@@ -55,10 +55,8 @@ func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map
 	return "success", nil
 }
 
-func newMockProvider(svc *vault.Client) func(a Authorization) (credentialsProvider, error) {
-	return func(a Authorization) (credentialsProvider, error) {
-		return &mockCredentialsProvider{}, nil
-	}
+func newMockProvider(a Authorization, svc *vault.Client) (credentialsProvider, error) {
+	return &mockCredentialsProvider{}, nil
 }
 
 type mockCredentialsProvider struct{}
@@ -124,6 +122,12 @@ func (m mockCredentialsProvider) targetExists(name string) (bool, error) {
 	}
 	return false, nil
 }
+
+func (m mockCredentialsProvider) getHeaders() http.Header {
+	return http.Header{"foo": []string{"bar"}}
+}
+
+func (m mockCredentialsProvider) clearHeaders() {}
 
 func (m mockCredentialsProvider) withHeaders(h http.Header) {}
 
@@ -575,7 +579,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 
 	h := handler{
 		logger:                 log.NewNopLogger(),
-		newCredentialsProvider: newMockProvider(nil),
+		newCredentialsProvider: newMockProvider,
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),

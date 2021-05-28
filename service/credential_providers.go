@@ -32,7 +32,6 @@ type credentialsProvider interface {
 	listTargets(string) ([]string, error)
 	projectExists(string) (bool, error)
 	targetExists(name string) (bool, error)
-	withHeaders(http.Header)
 }
 
 // Vault
@@ -49,6 +48,33 @@ type vaultCredentialsProvider struct {
 	VaultSvc *vault.Client
 	RoleID   string
 	SecretID string
+}
+
+type vaultConfig struct {
+	config *vault.Config
+	role   string
+	secret string
+}
+
+func newVaultSvcV2(c vaultConfig, h http.Header) (*vault.Client, error) {
+	vaultSvc, err := vault.NewClient(c.config)
+	if err != nil {
+		return nil, err
+	}
+
+	options := map[string]interface{}{
+		"role_id":   c.role,
+		"secret_id": c.secret,
+	}
+
+	sec, err := vaultSvc.Logical().Write("auth/approle/login", options)
+	if err != nil {
+		return nil, err
+	}
+
+	vaultSvc.SetToken(sec.Auth.ClientToken)
+	vaultSvc.SetHeaders(h)
+	return vaultSvc, nil
 }
 
 type targetProperties struct {
@@ -308,8 +334,4 @@ func (v vaultCredentialsProvider) getTarget(projectName, targetName string) (tar
 	}
 
 	return targetProperties{CredentialType: credentialType, RoleArn: roleArn, PolicyArns: policies}, nil
-}
-
-func (v vaultCredentialsProvider) withHeaders(h http.Header) {
-	v.VaultSvc.SetHeaders(h)
 }
