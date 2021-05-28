@@ -93,6 +93,7 @@ func TestRequiredVars(t *testing.T) {
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
 	os.Setenv("ARGO_CLOUDOPS_LOG_LEVEL", "DEBUG")
 	os.Setenv("ARGO_CLOUDOPS_PORT", "1234")
+
 	// When
 	subject := func() { GetEnv() }
 
