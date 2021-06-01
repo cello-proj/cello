@@ -63,6 +63,8 @@ func newVaultSvc(c vaultConfig, h http.Header) (*vault.Client, error) {
 		return nil, err
 	}
 
+	vaultSvc.SetHeaders(h)
+
 	options := map[string]interface{}{
 		"role_id":   c.role,
 		"secret_id": c.secret,
@@ -74,7 +76,6 @@ func newVaultSvc(c vaultConfig, h http.Header) (*vault.Client, error) {
 	}
 
 	vaultSvc.SetToken(sec.Auth.ClientToken)
-	vaultSvc.SetHeaders(h)
 	return vaultSvc, nil
 }
 
