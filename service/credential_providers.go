@@ -56,7 +56,8 @@ type vaultConfig struct {
 	secret string
 }
 
-func newVaultSvcV2(c vaultConfig, h http.Header) (*vault.Client, error) {
+// TODO before open sourcing we should provide the token instead of generating it
+func newVaultSvc(c vaultConfig, h http.Header) (*vault.Client, error) {
 	vaultSvc, err := vault.NewClient(c.config)
 	if err != nil {
 		return nil, err

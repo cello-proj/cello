@@ -73,7 +73,7 @@ func main() {
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), namespace),
 		config:                 config,
 		gitClient:              gitClient,
-		credsProvSvc:           newVaultSvcV2,
+		newCredsProviderSvc:    newVaultSvc,
 		vaultConfig: vaultConfig{
 			config: &vault.Config{Address: vaultAddr},
 			role:   vaultRole,
@@ -100,30 +100,4 @@ func setLogLevel(logger *log.Logger, logLevel string) {
 	default:
 		*logger = level.NewFilter(*logger, level.AllowInfo())
 	}
-}
-
-// TODO before open sourcing we should provide the token instead of generating it
-func newVaultSvc(vaultAddr, role, secret string) (*vault.Client, error) {
-	config := &vault.Config{
-		Address: vaultAddr,
-	}
-
-	vaultSvc, err := vault.NewClient(config)
-	if err != nil {
-		return nil, err
-
-	}
-
-	options := map[string]interface{}{
-		"role_id":   role,
-		"secret_id": secret,
-	}
-
-	sec, err := vaultSvc.Logical().Write("auth/approle/login", options)
-	if err != nil {
-		return nil, err
-	}
-
-	vaultSvc.SetToken(sec.Auth.ClientToken)
-	return vaultSvc, nil
 }

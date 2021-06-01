@@ -579,8 +579,9 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
-		credsProvSvc:           mockCredsProvSvc,
+		newCredsProviderSvc:    mockCredsProvSvc,
 	}
+
 	var router = setupRouter(h)
 	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
 	req, _ := http.NewRequest(method, url, body)
