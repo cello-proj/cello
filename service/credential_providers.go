@@ -233,8 +233,10 @@ func (v vaultCredentialsProvider) listTargets(project string) ([]string, error) 
 	if sec != nil {
 		for _, target := range sec.Data["keys"].([]interface{}) {
 			value := target.(string)
-			if strings.HasPrefix(value, fmt.Sprintf("argo-cloudops-projects-%s-target-", project)) {
-				list = append(list, value)
+
+			prefix := fmt.Sprintf("argo-cloudops-projects-%s-target-", project)
+			if strings.HasPrefix(value, prefix) {
+				list = append(list, strings.Replace(value, prefix, "", 1))
 			}
 		}
 	}
