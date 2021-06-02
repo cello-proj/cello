@@ -36,7 +36,7 @@ func GetEnv() EnvVars {
 }
 
 func (values EnvVars) validate() {
-	if len(values.AdminSecret) <= 16 {
+	if len(values.AdminSecret) < 16 {
 		panic("Admin secret must be at least 16 characers long.")
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testSecret = "tha5hei2Hee5le8neezu"
+const testSecret = "tha5hei2Hee5le8n"
 
 func setup() {
 	os.Clearenv()
