@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -38,7 +37,7 @@ func argoCloudOpsUserToken() (string, error) {
 	key := "ARGO_CLOUDOPS_USER_TOKEN"
 	result := os.Getenv(key)
 	if len(result) == 0 {
-		return "", errors.New(fmt.Sprintf("%s not found", key))
+		return "", fmt.Errorf("%s not found", key)
 	}
 	return result, nil
 }
@@ -306,7 +305,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			fmt.Printf(result)
+			fmt.Print(result)
 		},
 	}
 	workflowCmd.Flags().StringVarP(&argumentsCSV, "arguments", "a", "", "CSV string of equals separated arguments to pass to command (-a Arg1=ValueA,Arg2=ValueB).")

@@ -134,7 +134,6 @@ type test struct {
 	req     interface{}
 	want    int
 	body    string
-	err     error
 	asAdmin bool
 	url     string
 	method  string
