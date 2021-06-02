@@ -73,7 +73,12 @@ func main() {
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), namespace),
 		config:                 config,
 		gitClient:              gitClient,
-		newCredsProviderSvc:    newVaultSvc,
+		// Function that handler will use to create a Vault svc using the vaultConfig below.
+		// Vault svc needs to be created within the handler because Vault uses headers
+		// to add metadata to its logs.
+		newCredsProviderSvc: newVaultSvc,
+		// Needed to pass some Vault config to the handlers to be able to create
+		// a Vault service in the handlers.
 		vaultConfig: vaultConfig{
 			config: &vault.Config{Address: vaultAddr},
 			role:   vaultRole,
