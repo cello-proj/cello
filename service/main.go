@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	int_env "github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
+	"github.com/argoproj/argo-workflows/v3/pkg/apiclient"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	vault "github.com/hashicorp/vault/api"
@@ -41,7 +44,7 @@ func main() {
 		panic("error creating git client")
 	}
 
-	_, argoClient := client.NewAPIClient()
+	_, argoClient := NewArgoAPIClient(logger)
 
 	h := handler{
 		logger:                 logger,
@@ -59,6 +62,30 @@ func main() {
 		level.Error(logger).Log("message", "error starting service", "error", err)
 		panic("error starting service")
 	}
+}
+
+func NewArgoAPIClient(logger log.Logger) (context.Context, apiclient.Client) {
+	url := env.ArgoAddress[strings.LastIndex(env.ArgoAddress, "/")+1:]
+	secure := strings.HasPrefix(env.ArgoAddress, "https")
+	argoOpts := &apiclient.ArgoServerOpts{
+		URL:                url,
+		Secure:             secure,
+		InsecureSkipVerify: false,
+		HTTP1:              false,
+	}
+
+	ctx, client, err := apiclient.NewClientFromOpts(
+		apiclient.Opts{
+			ArgoServerOpts:       *argoOpts,
+			InstanceID:           "",
+			AuthSupplier:         client.GetAuthString,
+			ClientConfigSupplier: client.GetConfig,
+		})
+	if err != nil {
+		level.Error(logger).Log("message", "error during creating Argo API Client", "error", err)
+		panic("error during creating argo api client")
+	}
+	return ctx, client
 }
 
 func setLogLevel(logger *log.Logger, logLevel string) {

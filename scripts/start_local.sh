@@ -2,8 +2,10 @@
 
 unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
-export ARGO_ADDR='http://127.0.0.1:9000'
-
+export ARGO_ADDR='http://localhost:2746'
+export ARGO_CLOUD_OPS_LOG_LEVEL="DEBUG"
+export ARGO_CLOUDOPS_BUILD_BUCKET="<YOUR_VALUE>"
+export ARGO_CLOUDOPS_ADMIN_SECRET="<YOUR_VALUE>"
 if [ -z "$SSH_PEM_FILE" ]; then
     export SSH_PEM_FILE=$HOME/.ssh/id_rsa
 fi
@@ -105,6 +107,18 @@ mkdir -p ./ssl
 # generate certificate, suppress output unless there is an error
 output=$(openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=CA/L=Mountain View/O=Cognition/CN=app" -keyout ./ssl/certificate.key -out ./ssl/certificate.crt 2>&1) || echo "$output"
 
+echo "Exposing Argo UI & REST API on localhost:2746 (background process)"
+argo server &
+sleep 2
+
+# Wait until Ctrl-C and kill background processes.
+trap 'killall' INT
+killall() {
+  trap '' INT TERM
+  echo "Stopping background processes.."
+  kill -TERM 0
+  wait
+}
 echo "Starting Argo CloudOps Service"
 build/service
 echo "Argo CloudOps Serivce Stopped"

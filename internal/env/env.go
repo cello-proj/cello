@@ -11,7 +11,8 @@ type EnvVars struct {
 	VaultRole      string `envconfig:"VAULT_ROLE" required:"true"`
 	VaultSecret    string `envconfig:"VAULT_SECRET" required:"true"`
 	VaultAddress   string `envconfig:"VAULT_ADDR" required:"true"`
-	ArgoAddress    string `envconfig:"ARGO_ADDR" required:"true"`
+	ArgoAddress    string `envconfig:"ARGO_ADDR" required:"true" default:"http://localhost:2746"`
+	KubeConfig     string `split_words:"false"`
 	ArgoNamespace  string `envconfig:"WORKFLOW_EXECUTION_NAMESPACE" default:"argo"`
 	ConfigFilePath string `envconfig:"CONFIG" default:"argo-cloudops.yaml"`
 	SshPemFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
