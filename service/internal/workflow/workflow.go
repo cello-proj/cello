@@ -7,8 +7,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
+	"github.com/argoproj/argo-workflows/v3/pkg/apiclient"
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	argoWorkflowAPISpec "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -40,6 +44,31 @@ type ArgoWorkflow struct {
 // Logs represents workflow logs.
 type Logs struct {
 	Logs []string `json:"logs"`
+}
+
+func NewArgoAPIClient(argoAddr string, logger log.Logger) (context.Context, apiclient.Client) {
+
+	url := argoAddr[strings.LastIndex(argoAddr, "/")+1:]
+	secure := strings.HasPrefix(argoAddr, "https")
+	argoOpts := &apiclient.ArgoServerOpts{
+		URL:                url,
+		Secure:             secure,
+		InsecureSkipVerify: false,
+		HTTP1:              false,
+	}
+
+	ctx, client, err := apiclient.NewClientFromOpts(
+		apiclient.Opts{
+			ArgoServerOpts:       *argoOpts,
+			InstanceID:           "",
+			AuthSupplier:         client.GetAuthString,
+			ClientConfigSupplier: client.GetConfig,
+		})
+	if err != nil {
+		level.Error(logger).Log("message", "error during creating Argo API Client", "error", err)
+		panic("error during creating argo api client")
+	}
+	return ctx, client
 }
 
 // List returns a list of workflows.

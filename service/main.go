@@ -7,7 +7,6 @@ import (
 
 	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
-	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	vault "github.com/hashicorp/vault/api"
@@ -70,7 +69,7 @@ func main() {
 		panic("error creating git client")
 	}
 
-	_, argoClient := client.NewAPIClient()
+	_, argoClient := workflow.NewArgoAPIClient(argoAddr, logger)
 	namespace := acoEnv.ArgoNamespace()
 
 	h := handler{
