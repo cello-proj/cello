@@ -50,12 +50,12 @@ func (c Config) getCommandDefinition(framework, commandType string) (string, err
 	return c.Commands[framework][commandType], nil
 }
 
-func (c Config) listFrameworks() ([]string, error) {
-	keys := make([]string, 0, len(c.Commands))
+func (c Config) listFrameworks() []string {
+	keys := make([]string, len(c.Commands))
 	for k := range c.Commands {
 		keys = append(keys, k)
 	}
-	return keys, nil
+	return keys
 }
 
 func (c Config) listTypes(framework string) ([]string, error) {

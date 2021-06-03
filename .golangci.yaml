@@ -1,5 +1,15 @@
 run:
   timeout: 3m
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - exportloopref
+    - goconst
+    - gofmt
+    - gosec
+    - unparam
+    - wastedassign
 linters-settings:
   errcheck:
     exclude: .errcheck_excludes.txt

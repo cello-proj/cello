@@ -225,7 +225,7 @@ func (v vaultCredentialsProvider) listTargets(project string) ([]string, error) 
 
 	sec, err := v.VaultSvc.Logical().List("aws/roles/")
 	if err != nil {
-		return nil, fmt.Errorf("vault list error: %v", err)
+		return nil, fmt.Errorf("vault list error: %w", err)
 	}
 
 	// allow empty array to render json as []
@@ -245,7 +245,7 @@ func (v vaultCredentialsProvider) listTargets(project string) ([]string, error) 
 func (v vaultCredentialsProvider) getProject(projectName string) (string, error) {
 	sec, err := v.VaultSvc.Logical().Read(genProjectAppRole(projectName))
 	if err != nil {
-		return "", fmt.Errorf("vault get project error: %v", err)
+		return "", fmt.Errorf("vault get project error: %w", err)
 	}
 	if sec == nil {
 		return "", ErrNotFound
@@ -260,12 +260,12 @@ func (v vaultCredentialsProvider) deleteProject(name string) error {
 
 	err := v.deletePolicyState(name)
 	if err != nil {
-		return fmt.Errorf("vault delete project error: %v", err)
+		return fmt.Errorf("vault delete project error: %w", err)
 	}
 
 	_, err = v.VaultSvc.Logical().Delete(genProjectAppRole(name))
 	if err != nil {
-		return fmt.Errorf("vault delete project error: %v", err)
+		return fmt.Errorf("vault delete project error: %w", err)
 	}
 	return nil
 }
@@ -277,7 +277,7 @@ func (v vaultCredentialsProvider) getTarget(projectName, targetName string) (tar
 
 	sec, err := v.VaultSvc.Logical().Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
 	if err != nil {
-		return targetProperties{}, fmt.Errorf("vault get target error: %v", err)
+		return targetProperties{}, fmt.Errorf("vault get target error: %w", err)
 	}
 
 	if sec == nil {

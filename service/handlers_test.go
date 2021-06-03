@@ -552,6 +552,7 @@ func runTests(t *testing.T, tests []test) {
 
 			if tt.body != "" {
 				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				defer resp.Body.Close()
 				if err != nil {
 					t.Errorf("Error loading body")
 				}

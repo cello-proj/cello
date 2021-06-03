@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -177,7 +178,7 @@ func generateParameters(parametersCSV string) (map[string]string, error) {
 	if parametersCSV != "" {
 		parameters, err := parseEqualsSeparatedCSVToMap(parametersCSV)
 		if err != nil {
-			return make(map[string]string), nil
+			return make(map[string]string), err
 		}
 		return parameters, nil
 	}
@@ -232,7 +233,7 @@ func printLogStreamOutput(body io.ReadCloser) {
 	p := make([]byte, 256)
 	for {
 		n, err := body.Read(p)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		fmt.Print(string(p[:n]))
@@ -243,6 +244,8 @@ func main() {
 	logger := log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
 
 	if argoCloudOpsServiceAddr() == "https://localhost:8443" {
+		// TODO handle this better
+		// #nosec
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
