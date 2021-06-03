@@ -69,7 +69,12 @@ func main() {
 		panic("error creating git client")
 	}
 
-	_, argoClient := workflow.NewArgoAPIClient(argoAddr, logger)
+	_, argoClient, err := workflow.NewArgoAPIClient(argoAddr, logger)
+	if err != nil {
+		level.Error(logger).Log("message", "error creating argo client", "error", err)
+		panic("error creating argo client")
+	}
+
 	namespace := acoEnv.ArgoNamespace()
 
 	h := handler{

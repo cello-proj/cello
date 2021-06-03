@@ -3,9 +3,7 @@
 unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
 export ARGO_ADDR='http://localhost:2746'
-export ARGO_CLOUD_OPS_LOG_LEVEL="DEBUG"
-export ARGO_CLOUDOPS_BUILD_BUCKET="<YOUR_VALUE>"
-export ARGO_CLOUDOPS_ADMIN_SECRET="<YOUR_VALUE>"
+
 if [ -z "$SSH_PEM_FILE" ]; then
     export SSH_PEM_FILE=$HOME/.ssh/id_rsa
 fi

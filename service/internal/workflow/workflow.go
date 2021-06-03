@@ -46,7 +46,7 @@ type Logs struct {
 	Logs []string `json:"logs"`
 }
 
-func NewArgoAPIClient(argoAddr string, logger log.Logger) (context.Context, apiclient.Client) {
+func NewArgoAPIClient(argoAddr string, logger log.Logger) (context.Context, apiclient.Client, error) {
 	argoOpts := &apiclient.ArgoServerOpts{
 		URL:                argoAddr[strings.LastIndex(argoAddr, "/")+1:],
 		Secure:             strings.HasPrefix(argoAddr, "https"),
@@ -63,9 +63,9 @@ func NewArgoAPIClient(argoAddr string, logger log.Logger) (context.Context, apic
 		})
 	if err != nil {
 		level.Error(logger).Log("message", "error during creating Argo API Client", "error", err)
-		panic("error during creating argo api client")
+		return nil, nil, err
 	}
-	return ctx, client
+	return ctx, client, nil
 }
 
 // List returns a list of workflows.
