@@ -488,7 +488,6 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create the Vault svc
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
@@ -497,7 +496,6 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating credential provider")
-	// Create new credentials provider using Vault svc above.
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
