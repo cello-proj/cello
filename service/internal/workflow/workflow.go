@@ -47,12 +47,9 @@ type Logs struct {
 }
 
 func NewArgoAPIClient(argoAddr string, logger log.Logger) (context.Context, apiclient.Client) {
-
-	url := argoAddr[strings.LastIndex(argoAddr, "/")+1:]
-	secure := strings.HasPrefix(argoAddr, "https")
 	argoOpts := &apiclient.ArgoServerOpts{
-		URL:                url,
-		Secure:             secure,
+		URL:                argoAddr[strings.LastIndex(argoAddr, "/")+1:],
+		Secure:             strings.HasPrefix(argoAddr, "https"),
 		InsecureSkipVerify: false,
 		HTTP1:              false,
 	}
