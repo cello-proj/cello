@@ -6,6 +6,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+const APP_PREFIX = "ARGO_CLOUDOPS"
+
 type EnvVars struct {
 	AdminSecret    string `split_words:"true" required:"true"`
 	VaultRole      string `envconfig:"VAULT_ROLE" required:"true"`
@@ -26,7 +28,7 @@ var (
 
 func GetEnv() EnvVars {
 	once.Do(func() {
-		err := envconfig.Process("ARGO_CLOUDOPS", &instance)
+		err := envconfig.Process(APP_PREFIX, &instance)
 		if err != nil {
 			panic(err.Error())
 		}
