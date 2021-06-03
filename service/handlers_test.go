@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	TEST_PW = "D34DB33FD34DB33FD34DB33FD34DB33F"
+	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
 type mockGitClient struct{}
@@ -68,7 +68,7 @@ func newMockProvider(svc *vault.Client) func(a Authorization) (credentialsProvid
 type mockCredentialsProvider struct{}
 
 func (m mockCredentialsProvider) getToken() (string, error) {
-	return TEST_PW, nil
+	return testPassword, nil
 }
 
 func (m mockCredentialsProvider) createProject(name string) (string, string, error) {
@@ -583,9 +583,9 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 	}
 	var router = setupRouter(h)
 	req, _ := http.NewRequest(method, url, body)
-	authorizationHeader := "vault:user:" + TEST_PW
+	authorizationHeader := "vault:user:" + testPassword
 	if asAdmin {
-		authorizationHeader = "vault:admin:" + TEST_PW
+		authorizationHeader = "vault:admin:" + testPassword
 	}
 	req.Header.Add("Authorization", authorizationHeader)
 	w := httptest.NewRecorder()

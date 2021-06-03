@@ -6,7 +6,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-const APP_PREFIX = "ARGO_CLOUDOPS"
+const appPrefix = "ARGO_CLOUDOPS"
 
 type EnvVars struct {
 	AdminSecret    string `split_words:"true" required:"true"`
@@ -16,9 +16,9 @@ type EnvVars struct {
 	ArgoAddress    string `envconfig:"ARGO_ADDR" required:"true"`
 	ArgoNamespace  string `envconfig:"WORKFLOW_EXECUTION_NAMESPACE" default:"argo"`
 	ConfigFilePath string `envconfig:"CONFIG" default:"argo-cloudops.yaml"`
-	SshPemFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
+	SSHPEMFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
 	LogLevel       string `split_words:"true"`
-	Port           int32  `default:"8443"`
+	Port           int  `default:"8443"`
 }
 
 var (
@@ -28,7 +28,7 @@ var (
 
 func GetEnv() EnvVars {
 	once.Do(func() {
-		err := envconfig.Process(APP_PREFIX, &instance)
+		err := envconfig.Process(appPrefix, &instance)
 		if err != nil {
 			panic(err.Error())
 		}
