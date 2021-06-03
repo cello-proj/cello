@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
@@ -99,7 +100,7 @@ func (a Authorization) isAdmin() bool {
 
 // Returns true, if the user is an authorized admin
 func (a Authorization) authorizedAdmin() bool {
-	return a.isAdmin() && a.Secret == env.AdminSecret
+	return a.isAdmin() && a.Secret == env.GetEnv().AdminSecret
 }
 
 // HTTP handler

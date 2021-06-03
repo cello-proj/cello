@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	int_env "github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/kit/log"
@@ -13,11 +13,10 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
-var env = int_env.GetEnv()
-
 func main() {
 	var (
 		logger = log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
+		env    = env.GetEnv()
 	)
 
 	setLogLevel(&logger, env.LogLevel)

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,7 +23,7 @@ type Config struct {
 }
 
 func loadConfig() (*Config, error) {
-	f, err := ioutil.ReadFile(env.ConfigFilePath)
+	f, err := ioutil.ReadFile(env.GetEnv().ConfigFilePath)
 	if err != nil {
 		return nil, err
 	}
