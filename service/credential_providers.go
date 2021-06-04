@@ -9,18 +9,6 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
-func (v vaultCredentialsProvider) newCredentialsProvider(authorization Authorization) (credentialsProvider, error) {
-	if authorization.Provider == "vault" {
-		return &vaultCredentialsProvider{
-			VaultSvc: v.VaultSvc,
-			RoleID:   authorization.Key,
-			SecretID: authorization.Secret,
-		}, nil
-	}
-
-	return nil, errors.New("Unknown provider")
-}
-
 type credentialsProvider interface {
 	createProject(string) (string, string, error)
 	createTarget(string, createTargetRequest) error

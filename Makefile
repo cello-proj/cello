@@ -1,6 +1,6 @@
 GO_LDFLAGS ?= -ldflags="-s -w"
 
-all: vendor test build_service build_cli
+all: test build_service build_cli
 
 build_service: clean_service
 	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) $(BUILDARGS) -o build/service ./service/
@@ -11,14 +11,13 @@ build_cli: clean_cli
 lint:
 	@#Install the linter from here:
 	@#https://github.com/golangci/golangci-lint#install
-	golangci-lint run --fast
+	golangci-lint run
 
 test:
 	env ARGO_CLOUDOPS_CONFIG=../service/testdata/argo-cloudops.yaml go test -race -timeout=180s -coverprofile=coverage.out ./service #github.com/argoproj-labs/argo-cloudops
 
-vendor: # Vendors dependencies
+tidy:
 	go mod tidy
-	go mod vendor
 
 vet: ## Runs go vet
 	go vet $(VETARGS) ./...
@@ -34,7 +33,7 @@ clean_service:
 clean_cli:
 	@rm -f ./build/argo-cloudops
 
-up: ## Starts a local valut and api locally
+up: ## Starts a local vault and api locally
 	bash scripts/start_local.sh
 
-.PHONY: build_service build_cli lint test vendor vet cover clean_cli clean_service up
+.PHONY: build_service build_cli lint test tidy vet cover clean_cli clean_service up
