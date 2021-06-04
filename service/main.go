@@ -80,7 +80,7 @@ func main() {
 		gitClient:              gitClient,
 		// Function that the handler will use to create a Vault svc using the vaultConfig below.
 		// Vault svc needs to be created within the handler methods because Vault uses headers
-		// to add metadata to its logs.
+		// to add metadata (e.g. transaction ID) to its logs.
 		newCredsProviderSvc: newVaultSvc,
 		// Needed to pass some Vault config to the handlers to be able to create
 		// a Vault service within the handlers.
