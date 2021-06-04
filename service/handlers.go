@@ -108,6 +108,7 @@ type handler struct {
 	logger                 log.Logger
 	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
 	argo                   workflow.Workflow
+	argoCtx                context.Context
 	config                 *Config
 	gitClient              gitClient
 }
@@ -150,7 +151,6 @@ func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	// TODO authenticate user can list this workflow once auth figured out
 	// TODO fail if project / target does not exist or are not valid format
-	ctx := r.Context()
 	vars := mux.Vars(r)
 	projectName := vars["projectName"]
 	targetName := vars["targetName"]
@@ -158,7 +158,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "list-workflows", "project", projectName, "target", targetName)
 
 	level.Debug(l).Log("message", "listing workflows")
-	workflowIDs, err := h.argo.List(ctx)
+	workflowIDs, err := h.argo.List(h.argoCtx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
 		h.errorResponse(w, "error listing workflows", http.StatusBadRequest)
@@ -170,7 +170,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	prefix := fmt.Sprintf("%s-%s", projectName, targetName)
 	for _, workflowID := range workflowIDs {
 		if strings.HasPrefix(workflowID, prefix) {
-			workflow, err := h.argo.Status(ctx, workflowID)
+			workflow, err := h.argo.Status(h.argoCtx, workflowID)
 			if err != nil {
 				level.Error(l).Log("message", "error retrieving workflows", "error", err)
 				h.errorResponse(w, "error retrieving workflows", http.StatusBadRequest)
@@ -395,7 +395,7 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
 	level.Debug(l).Log("message", "creating workflow")
-	workflowName, err := h.argo.Submit(ctx, workflowFrom, parameters)
+	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters)
 	if err != nil {
 		level.Error(l).Log("message", "error creating workflow", "error", err)
 		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError)
@@ -420,7 +420,6 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 
 // Gets a workflow
 func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
 	// TODO: Workflow name must include -
@@ -431,7 +430,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "get-workflow", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "getting workflow status")
-	status, err := h.argo.Status(ctx, workflowName)
+	status, err := h.argo.Status(h.argoCtx, workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow", "error", err)
 		h.errorResponse(w, "error getting workflow", http.StatusBadRequest)
@@ -501,7 +500,6 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 // Returns the logs for a workflow
 func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
 	// TODO: Workflow name must include -
@@ -512,7 +510,7 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "get-workflow-logs", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "retrieving workflow logs")
-	argoWorkflowLogs, err := h.argo.Logs(ctx, workflowName)
+	argoWorkflowLogs, err := h.argo.Logs(h.argoCtx, workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logs", "error", err)
 		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest)
@@ -530,7 +528,6 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 
 // Streams workflow logs
 func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	w.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
@@ -542,7 +539,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "get-workflow-log-stream", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "retrieving workflow logs", "workflow", workflowName)
-	err := h.argo.LogStream(ctx, workflowName, w)
+	err := h.argo.LogStream(h.argoCtx, workflowName, w)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logstream", "error", err)
 		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest)
