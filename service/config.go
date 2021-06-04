@@ -18,9 +18,8 @@ type CommandVariables struct {
 }
 
 type Config struct {
-	Version     string
-	Commands    map[string]map[string]string `yaml:"commands"`
-	adminSecret string
+	Version  string
+	Commands map[string]map[string]string `yaml:"commands"`
 }
 
 func loadConfig(env env.EnvVars) (*Config, error) {
