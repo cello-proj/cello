@@ -22,7 +22,7 @@ func main() {
 	setLogLevel(&logger, env.LogLevel)
 
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", env.ConfigFilePath))
-	config, err := loadConfig(env)
+	config, err := loadConfig(env.ConfigFilePath)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
 	}

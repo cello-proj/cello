@@ -570,11 +570,7 @@ func runTests(t *testing.T, tests []test) {
 
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
 func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool) *http.Response {
-	testEnv := env.EnvVars{
-		AdminSecret:    testPassword,
-		ConfigFilePath: "../service/testdata/argo-cloudops.yaml",
-	}
-	config, err := loadConfig(testEnv)
+	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
 	}
@@ -585,7 +581,8 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
-		env:                    testEnv,
+		env: env.EnvVars{
+			AdminSecret: testPassword},
 	}
 	var router = setupRouter(h)
 	req, _ := http.NewRequest(method, url, body)

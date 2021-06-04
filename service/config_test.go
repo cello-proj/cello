@@ -2,8 +2,10 @@ package main
 
 import (
 	"testing"
+)
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
+const (
+	testConfigPath = "../service/testdata/argo-cloudops.yaml"
 )
 
 func TestGenerateExecuteCommand(t *testing.T) {
@@ -11,10 +13,7 @@ func TestGenerateExecuteCommand(t *testing.T) {
 	arguments["init"] = []string{"--initialize", "--debug"}
 	arguments["execute"] = []string{"--go"}
 
-	testEnv := env.EnvVars{
-		ConfigFilePath: "../service/testdata/argo-cloudops.yaml",
-	}
-	config, err := loadConfig(testEnv)
+	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		t.Errorf("Unable to load config %s", err)
 	}
@@ -49,10 +48,7 @@ func TestGenerateExecuteCommand(t *testing.T) {
 }
 
 func TestGetCommandDefinition(t *testing.T) {
-	testEnv := env.EnvVars{
-		ConfigFilePath: "../service/testdata/argo-cloudops.yaml",
-	}
-	config, err := loadConfig(testEnv)
+	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		t.Errorf("Unable to load config %s", err)
 	}

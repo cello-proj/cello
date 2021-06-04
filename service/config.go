@@ -7,7 +7,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,8 +21,8 @@ type Config struct {
 	Commands map[string]map[string]string `yaml:"commands"`
 }
 
-func loadConfig(env env.EnvVars) (*Config, error) {
-	f, err := ioutil.ReadFile(env.ConfigFilePath)
+func loadConfig(configFilePath string) (*Config, error) {
+	f, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return nil, err
 	}
