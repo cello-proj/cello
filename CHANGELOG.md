@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+* Add more linting.
+* Fix issues reported by linter.
+
 ## v0.0.4 (2021-06-03)
 ### Fixed
 * Passing Argo context to Argo Workflow calls
