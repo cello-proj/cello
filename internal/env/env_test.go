@@ -40,9 +40,9 @@ func TestGetEnv(t *testing.T) {
 	assert.Equal(t, env.VaultAddress, "1.2.3.4")
 	assert.Equal(t, env.ArgoNamespace, "argo-ns")
 	assert.Equal(t, env.ConfigFilePath, "/app/test/config/path")
-	assert.Equal(t, env.SshPemFile, "/app/test/ssh.pem")
+	assert.Equal(t, env.SSHPEMFile, "/app/test/ssh.pem")
 	assert.Equal(t, env.LogLevel, "DEBUG")
-	assert.Equal(t, env.Port, int32(1234))
+	assert.Equal(t, env.Port, 1234)
 }
 
 func TestDefaults(t *testing.T) {
@@ -61,7 +61,7 @@ func TestDefaults(t *testing.T) {
 	// Then
 	assert.Equal(t, env.ArgoNamespace, "argo")
 	assert.Equal(t, env.ConfigFilePath, "argo-cloudops.yaml")
-	assert.Equal(t, env.Port, int32(8443))
+	assert.Equal(t, env.Port, 8443)
 }
 
 func TestValidations(t *testing.T) {

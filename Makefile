@@ -14,8 +14,6 @@ lint:
 	golangci-lint run
 
 test:
-	env ARGO_CLOUDOPS_ADMIN_SECRET="D34DB33FD34DB33FD34DB33FD34DB33F" VAULT_ADDR="1.2.3.4" ARGO_ADDR="2.3.4.5" VAULT_ROLE="vault-role" \
-	VAULT_SECRET="pw123" SSH_PEM_FILE="~/.ssh/id_rsa.pub" ARGO_CLOUDOPS_CONFIG=../service/testdata/argo-cloudops.yaml \
 	go test -race -timeout=180s -coverprofile=coverage.out ./service #github.com/argoproj-labs/argo-cloudops
 
 tidy:

@@ -1,6 +1,7 @@
 package env
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/kelseyhightower/envconfig"
@@ -18,7 +19,7 @@ type EnvVars struct {
 	ConfigFilePath string `envconfig:"CONFIG" default:"argo-cloudops.yaml"`
 	SSHPEMFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
 	LogLevel       string `split_words:"true"`
-	Port           int  `default:"8443"`
+	Port           int    `default:"8443"`
 }
 
 var (
@@ -32,13 +33,17 @@ func GetEnv() EnvVars {
 		if err != nil {
 			panic(err.Error())
 		}
-		instance.validate()
+		err = instance.validate()
+		if err != nil {
+			panic(err.Error())
+		}
 	})
 	return instance
 }
 
-func (values EnvVars) validate() {
+func (values EnvVars) validate() error {
 	if len(values.AdminSecret) < 16 {
-		panic("Admin secret must be at least 16 characers long.")
+		return errors.New("admin secret must be at least 16 characers long")
 	}
+	return nil
 }

@@ -22,7 +22,7 @@ func main() {
 	setLogLevel(&logger, env.LogLevel)
 
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s'", env.ConfigFilePath))
-	config, err := loadConfig()
+	config, err := loadConfig(env)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
 	}
@@ -48,6 +48,7 @@ func main() {
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
 		config:                 config,
 		gitClient:              gitClient,
+		env:                    env,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)

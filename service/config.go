@@ -18,12 +18,13 @@ type CommandVariables struct {
 }
 
 type Config struct {
-	Version  string
-	Commands map[string]map[string]string `yaml:"commands"`
+	Version     string
+	Commands    map[string]map[string]string `yaml:"commands"`
+	adminSecret string
 }
 
-func loadConfig() (*Config, error) {
-	f, err := ioutil.ReadFile(env.GetEnv().ConfigFilePath)
+func loadConfig(env env.EnvVars) (*Config, error) {
+	f, err := ioutil.ReadFile(env.ConfigFilePath)
 	if err != nil {
 		return nil, err
 	}

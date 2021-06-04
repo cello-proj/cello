@@ -99,8 +99,8 @@ func (a Authorization) isAdmin() bool {
 }
 
 // Returns true, if the user is an authorized admin
-func (a Authorization) authorizedAdmin() bool {
-	return a.isAdmin() && a.Secret == env.GetEnv().AdminSecret
+func (a Authorization) authorizedAdmin(env env.EnvVars) bool {
+	return a.isAdmin() && a.Secret == env.AdminSecret
 }
 
 // HTTP handler
@@ -110,6 +110,7 @@ type handler struct {
 	argo                   workflow.Workflow
 	config                 *Config
 	gitClient              gitClient
+	env                    env.EnvVars
 }
 
 // Returns a new vaultCredentialsProvider
@@ -472,7 +473,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.authorizedAdmin(h.env) {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -593,7 +594,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.authorizedAdmin(h.env) {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -662,7 +663,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.authorizedAdmin(h.env) {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -703,7 +704,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.authorizedAdmin(h.env) {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -788,7 +789,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.authorizedAdmin(h.env) {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -872,7 +873,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.authorizedAdmin(h.env) {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -912,7 +913,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.authorizedAdmin(h.env) {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, err)
 		return
