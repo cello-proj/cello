@@ -281,7 +281,9 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 }
 
 // Creates a workflow
-func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest, l log.Logger) {
+// Context is not currently used as Argo has its own and Vault doesn't
+// currently support it.
+func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		level.Error(l).Log("message", "error in parameters", "error", err)
