@@ -11,7 +11,9 @@ import (
 	"strings"
 
 	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
 	"github.com/go-kit/kit/log"
@@ -106,7 +108,7 @@ func (a Authorization) authorizedAdmin() bool {
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
-	newCredentialsProvider func(a Authorization) (credentialsProvider, error)
+	newCredentialsProvider func(a Authorization) (credentials.Provider, error)
 	argo                   workflow.Workflow
 	argoCtx                context.Context
 	config                 *Config
@@ -114,12 +116,13 @@ type handler struct {
 }
 
 // Returns a new vaultCredentialsProvider
-func newVaultProvider(svc *vault.Client) func(a Authorization) (credentialsProvider, error) {
-	return func(a Authorization) (credentialsProvider, error) {
-		return &vaultCredentialsProvider{
-			VaultSvc: svc,
-			RoleID:   a.Key,
-			SecretID: a.Secret,
+func newVaultProvider(svc *vault.Client) func(a Authorization) (credentials.Provider, error) {
+	return func(a Authorization) (credentials.Provider, error) {
+		return &credentials.VaultProvider{
+			VaultLogicalSvc: credentials.VaultLogical(svc.Logical()),
+			VaultSysSvc:     credentials.VaultSys(svc.Sys()),
+			RoleID:          a.Key,
+			SecretID:        a.Secret,
 		}, nil
 	}
 }
@@ -370,14 +373,14 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	}
 
 	level.Debug(l).Log("message", "getting credentials provider token")
-	credentialsToken, err := cp.getToken()
+	credentialsToken, err := cp.GetToken()
 	if err != nil {
 		level.Error(l).Log("message", "error getting credentials provider token", "error", err)
 		h.errorResponse(w, "error getting credentials provider token", http.StatusInternalServerError, err)
 		return
 	}
 
-	projectExists, err := cp.projectExists(cwr.ProjectName)
+	projectExists, err := cp.ProjectExists(cwr.ProjectName)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
 		h.errorResponse(w, "error checking project", http.StatusInternalServerError, err)
@@ -486,7 +489,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "getting target information")
-	targetInfo, err := cp.getTarget(projectName, targetName)
+	targetInfo, err := cp.GetTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving target information", "error", err)
 		h.errorResponse(w, "error retrieving target information", http.StatusBadRequest, err)
@@ -570,7 +573,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var capp createProjectRequest
+	var capp credentials.CreateProjectRequest
 	err = json.Unmarshal(reqBody, &capp)
 	if err != nil {
 		level.Error(l).Log("message", "error parsing json", "error", err)
@@ -610,7 +613,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectExists, err := cp.projectExists(capp.Name)
+	projectExists, err := cp.ProjectExists(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
 		h.errorResponse(w, "error checking project", http.StatusInternalServerError, err)
@@ -624,7 +627,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating project")
-	role, secret, err := cp.createProject(capp.Name)
+	role, secret, err := cp.CreateProject(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error creating project", "error", err)
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError, err)
@@ -674,7 +677,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "getting project")
-	jsonResult, err := cp.getProject(projectName)
+	jsonResult, err := cp.GetProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project", "error", err)
 		h.errorResponse(w, "error retrieving project", http.StatusNotFound, err)
@@ -715,7 +718,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "checking if project exists")
-	projectExists, err := cp.projectExists(projectName)
+	projectExists, err := cp.ProjectExists(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
 		h.errorResponse(w, "error checking project", http.StatusInternalServerError, err)
@@ -728,7 +731,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "getting all targets in project")
-	targets, err := cp.listTargets(projectName)
+	targets, err := cp.ListTargets(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting all targets", "error", err)
 		h.errorResponse(w, "error getting all targets", http.StatusInternalServerError, err)
@@ -742,7 +745,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "deleting project")
-	err = cp.deleteProject(projectName)
+	err = cp.DeleteProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error deleting project", "error", err)
 		h.errorResponse(w, "error deleting project", http.StatusBadRequest, err)
@@ -766,7 +769,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ctr createTargetRequest
+	var ctr credentials.CreateTargetRequest
 	err = json.Unmarshal(reqBody, &ctr)
 	if err != nil {
 		level.Error(l).Log("message", "error parsing request body to target data", "error", err)
@@ -832,7 +835,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetExists, _ := cp.targetExists(ctr.Name)
+	targetExists, _ := cp.TargetExists(ctr.Name)
 	// TODO: handle error when implemented
 	if targetExists {
 		level.Error(l).Log("message", "target name must not already exist")
@@ -841,7 +844,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating target")
-	err = cp.createTarget(projectName, ctr)
+	err = cp.CreateTarget(projectName, ctr)
 	if err != nil {
 		level.Error(l).Log("message", "error creating target", "error", err)
 		h.errorResponse(w, "error creating target", http.StatusInternalServerError, err)
@@ -884,7 +887,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "deleting target")
-	err = cp.deleteTarget(projectName, targetName)
+	err = cp.DeleteTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error deleting target", "error", err)
 		h.errorResponse(w, "error deleting target", http.StatusBadRequest, err)
@@ -923,7 +926,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targets, err := cp.listTargets(projectName)
+	targets, err := cp.ListTargets(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error listing targets", "error", err)
 		h.errorResponse(w, "error listing targets", http.StatusInternalServerError, err)

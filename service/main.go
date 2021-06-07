@@ -1,3 +1,5 @@
+// +build !test
+
 package main
 
 import (
@@ -7,6 +9,7 @@ import (
 
 	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"

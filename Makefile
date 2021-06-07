@@ -14,7 +14,7 @@ lint:
 	golangci-lint run
 
 test:
-	env ARGO_CLOUDOPS_CONFIG=../service/testdata/argo-cloudops.yaml go test -race -timeout=180s -coverprofile=coverage.out ./service #github.com/argoproj-labs/argo-cloudops
+	env ARGO_CLOUDOPS_CONFIG=../service/testdata/argo-cloudops.yaml go test -race -timeout=180s -coverprofile=coverage.out ./... #github.com/argoproj-labs/argo-cloudops
 
 tidy:
 	go mod tidy

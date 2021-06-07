@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -55,56 +56,56 @@ func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map
 	return "success", nil
 }
 
-func newMockProvider(svc *vault.Client) func(a Authorization) (credentialsProvider, error) {
-	return func(a Authorization) (credentialsProvider, error) {
+func newMockProvider(svc *vault.Client) func(a Authorization) (credentials.Provider, error) {
+	return func(a Authorization) (credentials.Provider, error) {
 		return &mockCredentialsProvider{}, nil
 	}
 }
 
 type mockCredentialsProvider struct{}
 
-func (m mockCredentialsProvider) getToken() (string, error) {
+func (m mockCredentialsProvider) GetToken() (string, error) {
 	return "DEADBEEF", nil
 }
 
-func (m mockCredentialsProvider) createProject(name string) (string, string, error) {
+func (m mockCredentialsProvider) CreateProject(name string) (string, string, error) {
 	return "", "", nil
 }
 
-func (m mockCredentialsProvider) deleteProject(name string) error {
+func (m mockCredentialsProvider) DeleteProject(name string) error {
 	if name == "undeletableproject" {
 		return fmt.Errorf("Some error occured deleting this project")
 	}
 	return nil
 }
 
-func (m mockCredentialsProvider) getProject(string) (string, error) {
+func (m mockCredentialsProvider) GetProject(string) (string, error) {
 	return `{"name":"project1"}`, nil
 }
 
-func (m mockCredentialsProvider) createTarget(name string, req createTargetRequest) error {
+func (m mockCredentialsProvider) CreateTarget(name string, req credentials.CreateTargetRequest) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) getTarget(string, string) (targetProperties, error) {
-	return targetProperties{}, nil
+func (m mockCredentialsProvider) GetTarget(string, string) (credentials.TargetProperties, error) {
+	return credentials.TargetProperties{}, nil
 }
 
-func (m mockCredentialsProvider) deleteTarget(string, t string) error {
+func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
 	if t == "undeletabletarget" {
 		return fmt.Errorf("Some error occured deleting this target")
 	}
 	return nil
 }
 
-func (m mockCredentialsProvider) listTargets(name string) ([]string, error) {
+func (m mockCredentialsProvider) ListTargets(name string) ([]string, error) {
 	if name == "undeletableprojecttargets" {
 		return []string{"target1", "target2", "undeletabletarget"}, nil
 	}
 	return []string{}, nil
 }
 
-func (m mockCredentialsProvider) projectExists(name string) (bool, error) {
+func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 	existingProjects := []string{
 		"projectalreadyexists",
 		"undeletableprojecttargets",
@@ -118,7 +119,7 @@ func (m mockCredentialsProvider) projectExists(name string) (bool, error) {
 	return false, nil
 }
 
-func (m mockCredentialsProvider) targetExists(name string) (bool, error) {
+func (m mockCredentialsProvider) TargetExists(name string) (bool, error) {
 	if name == "TARGET_ALREADY_EXISTS" {
 		return true, nil
 	}
@@ -622,13 +623,13 @@ func loadJSON(t *testing.T, filename string, output interface{}) {
 }
 
 // Load a createTargetRequest from the testdata directory.
-func loadCreateTargetRequest(t *testing.T, filename string) (r *createTargetRequest) {
+func loadCreateTargetRequest(t *testing.T, filename string) (r *credentials.CreateTargetRequest) {
 	loadJSON(t, filename, &r)
 	return
 }
 
 // Load a createProjectRequest from the testdata directory.
-func loadCreateProjectRequest(t *testing.T, filename string) (r *createProjectRequest) {
+func loadCreateProjectRequest(t *testing.T, filename string) (r *credentials.CreateProjectRequest) {
 	loadJSON(t, filename, &r)
 	return
 }
