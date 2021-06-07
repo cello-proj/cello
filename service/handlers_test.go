@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
@@ -29,11 +30,11 @@ const (
 
 type mockDb struct{}
 
-func newMockDb() dbClient {
+func newMockDb() db.DbClient {
 	return mockDb{}
 }
 
-func (d mockDb) CreateProjectEntry(pe ProjectEntry) error {
+func (d mockDb) CreateProjectEntry(pe db.ProjectEntry) error {
 	if pe.ProjectId == "somedberror" {
 		return fmt.Errorf("some db error")
 	}
@@ -41,8 +42,8 @@ func (d mockDb) CreateProjectEntry(pe ProjectEntry) error {
 	return nil
 }
 
-func (d mockDb) ReadProjectEntry(project string) (ProjectEntry, error) {
-	return ProjectEntry{}, nil
+func (d mockDb) ReadProjectEntry(project string) (db.ProjectEntry, error) {
+	return db.ProjectEntry{}, nil
 }
 
 func (d mockDb) DeleteProjectEntry(project string) error {

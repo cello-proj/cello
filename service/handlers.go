@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
@@ -79,7 +80,7 @@ type handler struct {
 	env                    env.Vars
 	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
 	vaultConfig            credentials.VaultConfig
-	dbClient               dbClient
+	dbClient               db.DbClient
 }
 
 // Validates workflow parameters
@@ -640,7 +641,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating project entry in db")
-	err = h.dbClient.CreateProjectEntry(ProjectEntry{
+	err = h.dbClient.CreateProjectEntry(db.ProjectEntry{
 		ProjectId:  capp.Name,
 		Repository: capp.Repository,
 	})

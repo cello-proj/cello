@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"github.com/upper/db/v4"
@@ -10,13 +10,15 @@ type ProjectEntry struct {
 	Repository string `db:"repository"`
 }
 
-type dbClient interface {
+// DbClient allows for db crud operations
+type DbClient interface {
 	CreateProjectEntry(pe ProjectEntry) error
 	ReadProjectEntry(project string) (ProjectEntry, error)
 	DeleteProjectEntry(project string) error
 }
 
-type sqlDbClient struct {
+// SqlDbClient allows for db crud operations using postgres db
+type SqlDbClient struct {
 	host     string
 	database string
 	user     string
@@ -25,8 +27,8 @@ type sqlDbClient struct {
 
 const ProjectEntryDB = "projects"
 
-func newSqlDbClient(host, database, user, password string) (sqlDbClient, error) {
-	return sqlDbClient{
+func NewSqlDbClient(host, database, user, password string) (SqlDbClient, error) {
+	return SqlDbClient{
 		host:     host,
 		database: database,
 		user:     user,
@@ -34,7 +36,7 @@ func newSqlDbClient(host, database, user, password string) (sqlDbClient, error) 
 	}, nil
 }
 
-func (d sqlDbClient) createSession() (db.Session, error) {
+func (d SqlDbClient) createSession() (db.Session, error) {
 	settings := postgresql.ConnectionURL{
 		Host:     d.host,
 		Database: d.database,
@@ -45,7 +47,7 @@ func (d sqlDbClient) createSession() (db.Session, error) {
 	return postgresql.Open(settings)
 }
 
-func (d sqlDbClient) CreateProjectEntry(pe ProjectEntry) error {
+func (d SqlDbClient) CreateProjectEntry(pe ProjectEntry) error {
 	sess, err := d.createSession()
 	if err != nil {
 		return err
@@ -66,7 +68,7 @@ func (d sqlDbClient) CreateProjectEntry(pe ProjectEntry) error {
 	})
 }
 
-func (d sqlDbClient) ReadProjectEntry(project string) (ProjectEntry, error) {
+func (d SqlDbClient) ReadProjectEntry(project string) (ProjectEntry, error) {
 	res := ProjectEntry{}
 
 	sess, err := d.createSession()
@@ -79,7 +81,7 @@ func (d sqlDbClient) ReadProjectEntry(project string) (ProjectEntry, error) {
 	return res, err
 }
 
-func (d sqlDbClient) DeleteProjectEntry(project string) error {
+func (d SqlDbClient) DeleteProjectEntry(project string) error {
 	sess, err := d.createSession()
 	if err != nil {
 		return err

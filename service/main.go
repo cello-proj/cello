@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
@@ -53,7 +54,7 @@ func main() {
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
 
-	dbClient, err := newSqlDbClient(env.DbHost, env.DbName, env.DbUser, env.DbPassword)
+	dbClient, err := db.NewSqlDbClient(env.DbHost, env.DbName, env.DbUser, env.DbPassword)
 	if err != nil {
 		level.Error(logger).Log("message", "error creating db client", "error", err)
 		panic("error creating db client")
