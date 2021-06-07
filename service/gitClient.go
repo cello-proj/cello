@@ -35,6 +35,7 @@ func newBasicGitClient(sshPemFile string) (basicGitClient, error) {
 func (g basicGitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
 	filePath := filepath.Join(os.TempDir(), repository)
 
+	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
