@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +12,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
 )

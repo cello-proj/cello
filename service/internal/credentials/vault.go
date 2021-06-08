@@ -3,8 +3,9 @@ package credentials
 import (
 	"errors"
 	"fmt"
-	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 	"strings"
+
+	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 
 	vault "github.com/hashicorp/vault/api"
 )
