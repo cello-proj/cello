@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
 )
@@ -27,29 +29,29 @@ func (g mockGitClient) CheckoutFileFromRepository(repository, commitHash, path s
 
 type mockWorkflowSvc struct{}
 
-func (m mockWorkflowSvc) GetStatus(workflowName string) (*workflowStatus, error) {
+func (m mockWorkflowSvc) Status(ctx context.Context, workflowName string) (*workflow.Status, error) {
 	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
-		return &workflowStatus{Status: "success"}, nil
+		return &workflow.Status{Status: "success"}, nil
 	}
-	return &workflowStatus{Status: "failed"}, fmt.Errorf("workflow " + workflowName + " does not exist!")
+	return &workflow.Status{Status: "failed"}, fmt.Errorf("workflow " + workflowName + " does not exist!")
 }
 
-func (m mockWorkflowSvc) GetLogs(workflowName string) (*workflowLogs, error) {
+func (m mockWorkflowSvc) Logs(ctx context.Context, workflowName string) (*workflow.Logs, error) {
 	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
 		return nil, nil
 	}
 	return nil, fmt.Errorf("workflow " + workflowName + " does not exist!")
 }
 
-func (m mockWorkflowSvc) GetLogStream(workflowName string, w http.ResponseWriter) error {
+func (m mockWorkflowSvc) LogStream(ctx context.Context, workflowName string, w http.ResponseWriter) error {
 	return nil
 }
 
-func (m mockWorkflowSvc) ListWorkflows() ([]string, error) {
+func (m mockWorkflowSvc) List(ctx context.Context) ([]string, error) {
 	return []string{"project1-target1-abcde", "project2-target2-12345"}, nil
 }
 
-func (m mockWorkflowSvc) Submit(from string, parameters map[string]string) (string, error) {
+func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map[string]string) (string, error) {
 	return "success", nil
 }
 
@@ -128,7 +130,6 @@ type test struct {
 	req     interface{}
 	want    int
 	body    string
-	err     error
 	asAdmin bool
 	url     string
 	method  string

@@ -5,9 +5,6 @@ on:
     branches:
     - main
   pull_request:
-    branches:
-    - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,10 +14,18 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: '1.16.3'
-    - name: Install dependencies
-      run: |
-        go version
-        go get -u golang.org/x/lint/golint
-        go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0
+    - name: cache
+      uses: actions/cache@v2
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
     - name: Run build
       run: make
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v2
