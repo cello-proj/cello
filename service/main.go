@@ -16,8 +16,12 @@ import (
 func main() {
 	var (
 		logger = log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
-		env    = env.GetEnv()
 	)
+
+	env, err := env.GetEnv()
+	if err != nil {
+		panic(fmt.Sprintf("Unable to initialize environment variables %s", err))
+	}
 
 	setLogLevel(&logger, env.LogLevel)
 

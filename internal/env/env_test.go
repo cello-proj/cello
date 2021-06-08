@@ -10,8 +10,23 @@ import (
 
 const testSecret = "tha5hei2Hee5le8n"
 
+var allEnvVars = []string{
+	"ARGO_CLOUDOPS_ADMIN_SECRET",
+	"VAULT_ROLE",
+	"VAULT_SECRET",
+	"VAULT_ADDR",
+	"ARGO_ADDR",
+	"ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE",
+	"ARGO_CLOUDOPS_CONFIG",
+	"SSH_PEM_FILE",
+	"ARGO_CLOUDOPS_LOG_LEVEL",
+	"ARGO_CLOUDOPS_PORT",
+}
+
 func setup() {
-	os.Clearenv()
+	for _, envVar := range allEnvVars {
+		os.Unsetenv(envVar)
+	}
 	instance = EnvVars{}
 	once = sync.Once{}
 }
@@ -31,7 +46,7 @@ func TestGetEnv(t *testing.T) {
 	os.Setenv("ARGO_CLOUDOPS_PORT", "1234")
 
 	// When
-	var env EnvVars = GetEnv()
+	var env, _ = GetEnv()
 
 	// Then
 	assert.Equal(t, env.AdminSecret, testSecret)
@@ -56,7 +71,7 @@ func TestDefaults(t *testing.T) {
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
 
 	// When
-	var env EnvVars = GetEnv()
+	var env, _ = GetEnv()
 
 	// Then
 	assert.Equal(t, env.ArgoNamespace, "argo")
@@ -75,10 +90,10 @@ func TestValidations(t *testing.T) {
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
 
 	// When
-	subject := func() { GetEnv() }
+	_, err := GetEnv()
 
 	// Then
-	assert.Panics(t, subject, "The code did not panic")
+	assert.Error(t, err)
 }
 
 func TestRequiredVars(t *testing.T) {
@@ -95,8 +110,8 @@ func TestRequiredVars(t *testing.T) {
 	os.Setenv("ARGO_CLOUDOPS_PORT", "1234")
 
 	// When
-	subject := func() { GetEnv() }
+	_, err := GetEnv()
 
 	// Then
-	assert.Panics(t, subject, "The code did not panic")
+	assert.Error(t, err)
 }

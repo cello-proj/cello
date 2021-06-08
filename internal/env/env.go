@@ -25,20 +25,18 @@ type EnvVars struct {
 var (
 	instance EnvVars
 	once     sync.Once
+	err      error
 )
 
-func GetEnv() EnvVars {
+func GetEnv() (EnvVars, error) {
 	once.Do(func() {
-		err := envconfig.Process(appPrefix, &instance)
+		err = envconfig.Process(appPrefix, &instance)
 		if err != nil {
-			panic(err.Error())
+			return
 		}
 		err = instance.validate()
-		if err != nil {
-			panic(err.Error())
-		}
 	})
-	return instance
+	return instance, err
 }
 
 func (values EnvVars) validate() error {
