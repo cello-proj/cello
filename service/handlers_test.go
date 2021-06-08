@@ -56,8 +56,8 @@ func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map
 	return "success", nil
 }
 
-func newMockProvider(svc *vault.Client) func(a Authorization) (credentials.Provider, error) {
-	return func(a Authorization) (credentials.Provider, error) {
+func newMockProvider(svc *vault.Client) func(a credentials.Authorization) (credentials.Provider, error) {
+	return func(a credentials.Authorization) (credentials.Provider, error) {
 		return &mockCredentialsProvider{}, nil
 	}
 }

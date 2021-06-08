@@ -52,12 +52,12 @@ func TestVaultCreateProject(t *testing.T) {
 				role = "admin"
 			}
 			v := VaultProvider{
-				RoleID: role,
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
+				roleID: role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
 					"secret_id": tt.expectedSecret,
 					"role_id":   tt.expectedRole,
 				}},
-				VaultSysSvc: &mockVaultSys{},
+				vaultSysSvc: &mockVaultSys{},
 			}
 
 			roleID, secretID, err := v.CreateProject("testProject")
@@ -113,8 +113,8 @@ func TestVaultCreateTarget(t *testing.T) {
 				role = "admin"
 			}
 			v := VaultProvider{
-				RoleID:          role,
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
+				roleID:          role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
 			err := v.CreateTarget("test", CreateTargetRequest{})
@@ -170,9 +170,9 @@ func TestVaultDeleteProject(t *testing.T) {
 				role = "admin"
 			}
 			v := VaultProvider{
-				RoleID:          role,
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
-				VaultSysSvc:     &mockVaultSys{err: tt.vaultPolicyErr},
+				roleID:          role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
+				vaultSysSvc:     &mockVaultSys{err: tt.vaultPolicyErr},
 			}
 
 			err := v.DeleteProject("testProject")
@@ -221,8 +221,8 @@ func TestVaultDeleteTarget(t *testing.T) {
 				role = "admin"
 			}
 			v := VaultProvider{
-				RoleID:          role,
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
+				roleID:          role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
 			err := v.DeleteTarget("testProject", "testTarget")
@@ -272,8 +272,8 @@ func TestVaultGetTarget(t *testing.T) {
 				role = "admin"
 			}
 			v := VaultProvider{
-				RoleID: role,
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
+				roleID: role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
 					"role_arns":       []interface{}{"test-role-arn"},
 					"policy_arns":     []interface{}{"test-policy-arn"},
 					"credential_type": "test-cred-type",
@@ -326,8 +326,8 @@ func TestVaultGetToken(t *testing.T) {
 				role = "admin"
 			}
 			v := VaultProvider{
-				RoleID:          role,
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, token: tt.token},
+				roleID:          role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, token: tt.token},
 			}
 
 			token, err := v.GetToken()
@@ -386,8 +386,8 @@ func TestVaultListTargets(t *testing.T) {
 				testTargets = append(testTargets, fmt.Sprintf("argo-cloudops-projects-test-target-%s", i))
 			}
 			v := VaultProvider{
-				RoleID: role,
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
+				roleID: role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
 					"keys": testTargets,
 				}},
 			}
@@ -435,7 +435,7 @@ func TestVaultProjectExists(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			v := VaultProvider{
-				VaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
 			status, err := v.ProjectExists(tt.path)

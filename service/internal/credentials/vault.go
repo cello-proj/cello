@@ -3,6 +3,7 @@ package credentials
 import (
 	"errors"
 	"fmt"
+	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 	"strings"
 
 	vault "github.com/hashicorp/vault/api"
@@ -21,14 +22,14 @@ type Provider interface {
 	TargetExists(name string) (bool, error)
 }
 
-type VaultLogical interface {
+type vaultLogical interface {
 	Delete(path string) (*vault.Secret, error)
 	List(path string) (*vault.Secret, error)
 	Read(path string) (*vault.Secret, error)
 	Write(path string, data map[string]interface{}) (*vault.Secret, error)
 }
 
-type VaultSys interface {
+type vaultSys interface {
 	DeletePolicy(name string) error
 	PutPolicy(name, rules string) error
 }
@@ -44,10 +45,58 @@ var (
 )
 
 type VaultProvider struct {
-	RoleID          string
-	SecretID        string
-	VaultLogicalSvc VaultLogical
-	VaultSysSvc     VaultSys
+	roleID          string
+	secretID        string
+	vaultLogicalSvc vaultLogical
+	vaultSysSvc     vaultSys
+}
+
+// Returns a new vaultCredentialsProvider
+func NewVaultProvider(svc *vault.Client) func(a Authorization) (Provider, error) {
+	return func(a Authorization) (Provider, error) {
+		return &VaultProvider{
+			vaultLogicalSvc: vaultLogical(svc.Logical()),
+			vaultSysSvc:     vaultSys(svc.Sys()),
+			roleID:          a.Key,
+			secretID:        a.Secret,
+		}, nil
+	}
+}
+
+// Authorization represents a user's authorization token.
+type Authorization struct {
+	Provider string
+	Key      string
+	Secret   string
+}
+
+// Authorization function for token requests.
+// This is separate from admin functions which use the admin env var
+func NewAuthorization(authorizationHeader string) (*Authorization, error) {
+	var a Authorization
+	auth := strings.SplitN(authorizationHeader, ":", 3)
+	for _, i := range auth {
+		if i == "" {
+			return nil, fmt.Errorf("invalid authorization header provided")
+		}
+	}
+	if len(auth) < 3 {
+		return nil, fmt.Errorf("invalid authorization header provided")
+	}
+	a.Provider = auth[0]
+	a.Key = auth[1]
+	a.Secret = auth[2]
+	return &a, nil
+}
+
+// Returns true, if the user is an admin.
+func (a Authorization) IsAdmin() bool {
+	return a.Key == "admin"
+}
+
+// Returns true, if the user is an authorized admin
+func (a Authorization) AuthorizedAdmin() bool {
+	return a.IsAdmin() && a.Secret == acoEnv.AdminSecret()
 }
 
 type TargetProperties struct {
@@ -67,7 +116,7 @@ type CreateProjectRequest struct {
 }
 
 func (v VaultProvider) createPolicyState(name, policy string) error {
-	return v.VaultSysSvc.PutPolicy(fmt.Sprintf("%s-%s", vaultProjectPrefix, name), policy)
+	return v.vaultSysSvc.PutPolicy(fmt.Sprintf("%s-%s", vaultProjectPrefix, name), policy)
 }
 
 func genProjectAppRole(name string) string {
@@ -85,8 +134,7 @@ func (v VaultProvider) CreateProject(name string) (string, string, error) {
 		return "", "", err
 	}
 
-	err = v.writeProjectState(name)
-	if err != nil {
+	if err := v.writeProjectState(name); err != nil {
 		return "", "", err
 	}
 
@@ -122,7 +170,7 @@ func (v VaultProvider) CreateTarget(projectName string, ctr CreateTargetRequest)
 	}
 
 	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
-	_, err := v.VaultLogicalSvc.Write(path, options)
+	_, err := v.vaultLogicalSvc.Write(path, options)
 	return err
 }
 
@@ -134,7 +182,7 @@ func defaultVaultReadonlyPolicyAWS(projectName string) string {
 }
 
 func (v VaultProvider) deletePolicyState(name string) error {
-	return v.VaultSysSvc.DeletePolicy(fmt.Sprintf("%s-%s", vaultProjectPrefix, name))
+	return v.vaultSysSvc.DeletePolicy(fmt.Sprintf("%s-%s", vaultProjectPrefix, name))
 }
 
 func (v VaultProvider) DeleteProject(name string) error {
@@ -147,8 +195,7 @@ func (v VaultProvider) DeleteProject(name string) error {
 		return fmt.Errorf("vault delete project error: %v", err)
 	}
 
-	_, err = v.VaultLogicalSvc.Delete(genProjectAppRole(name))
-	if err != nil {
+	if _, err = v.vaultLogicalSvc.Delete(genProjectAppRole(name)); err != nil {
 		return fmt.Errorf("vault delete project error: %v", err)
 	}
 	return nil
@@ -160,7 +207,7 @@ func (v VaultProvider) DeleteTarget(projectName string, targetName string) error
 	}
 
 	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
-	_, err := v.VaultLogicalSvc.Delete(path)
+	_, err := v.vaultLogicalSvc.Delete(path)
 	return err
 }
 
@@ -173,7 +220,7 @@ const (
 )
 
 func (v VaultProvider) GetProject(projectName string) (string, error) {
-	sec, err := v.VaultLogicalSvc.Read(genProjectAppRole(projectName))
+	sec, err := v.vaultLogicalSvc.Read(genProjectAppRole(projectName))
 	if err != nil {
 		return "", fmt.Errorf("vault get project error: %v", err)
 	}
@@ -188,7 +235,7 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (TargetProperti
 		return TargetProperties{}, errors.New("admin credentials must be used to get target information")
 	}
 
-	sec, err := v.VaultLogicalSvc.Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
+	sec, err := v.vaultLogicalSvc.Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
 	if err != nil {
 		return TargetProperties{}, fmt.Errorf("vault get target error: %v", err)
 	}
@@ -215,11 +262,11 @@ func (v VaultProvider) GetToken() (string, error) {
 	}
 
 	options := map[string]interface{}{
-		"role_id":   v.RoleID,
-		"secret_id": v.SecretID,
+		"role_id":   v.roleID,
+		"secret_id": v.secretID,
 	}
 
-	sec, err := v.VaultLogicalSvc.Write("auth/approle/login", options)
+	sec, err := v.vaultLogicalSvc.Write("auth/approle/login", options)
 	if err != nil {
 		fmt.Println(err.Error())
 		return "", err
@@ -228,8 +275,9 @@ func (v VaultProvider) GetToken() (string, error) {
 	return sec.Auth.ClientToken, nil
 }
 
+// TODO See if this can be removed when refactoring auth.
 func (v VaultProvider) isAdmin() bool {
-	return v.RoleID == "admin"
+	return v.roleID == "admin"
 }
 
 func (v VaultProvider) ListTargets(project string) ([]string, error) {
@@ -237,7 +285,7 @@ func (v VaultProvider) ListTargets(project string) ([]string, error) {
 		return nil, errors.New("admin credentials must be used to list targets")
 	}
 
-	sec, err := v.VaultLogicalSvc.List("aws/roles/")
+	sec, err := v.vaultLogicalSvc.List("aws/roles/")
 	if err != nil {
 		return nil, fmt.Errorf("vault list error: %v", err)
 	}
@@ -271,7 +319,7 @@ func (v VaultProvider) ProjectExists(name string) (bool, error) {
 }
 
 func (v VaultProvider) readRoleID(appRoleName string) (string, error) {
-	secret, err := v.VaultLogicalSvc.Read(fmt.Sprintf("%s/role-id", genProjectAppRole(appRoleName)))
+	secret, err := v.vaultLogicalSvc.Read(fmt.Sprintf("%s/role-id", genProjectAppRole(appRoleName)))
 	if err != nil {
 		return "", err
 	}
@@ -282,7 +330,7 @@ func (v VaultProvider) readSecretID(appRoleName string) (string, error) {
 	options := map[string]interface{}{
 		"force": true,
 	}
-	secret, err := v.VaultLogicalSvc.Write(fmt.Sprintf("%s/secret-id", genProjectAppRole(appRoleName)), options)
+	secret, err := v.vaultLogicalSvc.Write(fmt.Sprintf("%s/secret-id", genProjectAppRole(appRoleName)), options)
 	if err != nil {
 		return "", err
 	}
@@ -303,7 +351,7 @@ func (v VaultProvider) writeProjectState(name string) error {
 		"token_policies":          fmt.Sprintf("%s-%s", vaultProjectPrefix, name),
 	}
 
-	_, err := v.VaultLogicalSvc.Write(genProjectAppRole(name), options)
+	_, err := v.vaultLogicalSvc.Write(genProjectAppRole(name), options)
 	if err != nil {
 		return err
 	}

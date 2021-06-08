@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strings"
 
-	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
-	vault "github.com/hashicorp/vault/api"
 	"gopkg.in/yaml.v2"
 )
 
@@ -69,62 +67,14 @@ var isStringAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
 // Vault does not allow for dashes
 var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
 
-// Authorization represents a user's authorization token.
-type Authorization struct {
-	Provider string
-	Key      string
-	Secret   string
-}
-
-// Authorization function for token requests.
-// This is separate from admin functions which use the admin env var
-func newAuthorization(authorizationHeader string) (*Authorization, error) {
-	var a Authorization
-	auth := strings.SplitN(authorizationHeader, ":", 3)
-	for _, i := range auth {
-		if i == "" {
-			return nil, fmt.Errorf("invalid authorization header provided")
-		}
-	}
-	if len(auth) < 3 {
-		return nil, fmt.Errorf("invalid authorization header provided")
-	}
-	a.Provider = auth[0]
-	a.Key = auth[1]
-	a.Secret = auth[2]
-	return &a, nil
-}
-
-// Returns true, if the user is an admin.
-func (a Authorization) isAdmin() bool {
-	return a.Key == "admin"
-}
-
-// Returns true, if the user is an authorized admin
-func (a Authorization) authorizedAdmin() bool {
-	return a.isAdmin() && a.Secret == acoEnv.AdminSecret()
-}
-
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
-	newCredentialsProvider func(a Authorization) (credentials.Provider, error)
+	newCredentialsProvider func(a credentials.Authorization) (credentials.Provider, error)
 	argo                   workflow.Workflow
 	argoCtx                context.Context
 	config                 *Config
 	gitClient              gitClient
-}
-
-// Returns a new vaultCredentialsProvider
-func newVaultProvider(svc *vault.Client) func(a Authorization) (credentials.Provider, error) {
-	return func(a Authorization) (credentials.Provider, error) {
-		return &credentials.VaultProvider{
-			VaultLogicalSvc: credentials.VaultLogical(svc.Logical()),
-			VaultSysSvc:     credentials.VaultSys(svc.Sys()),
-			RoleID:          a.Key,
-			SecretID:        a.Secret,
-		}, nil
-	}
 }
 
 // Validates workflow parameters
@@ -228,7 +178,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
 		return
@@ -273,7 +223,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
 		return
@@ -284,7 +234,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 }
 
 // Creates a workflow
-func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, a *Authorization, cwr createWorkflowRequest, l log.Logger) {
+func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, a *credentials.Authorization, cwr createWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		level.Error(l).Log("message", "error in parameters", "error", err)
@@ -466,7 +416,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing get target permissions")
 	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah) // todo add validation
+	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
@@ -474,7 +424,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.AuthorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -585,7 +535,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing project creation")
 	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah) // todo add validation
+	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
@@ -593,7 +543,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.AuthorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -654,7 +604,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing get project")
 	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah) // todo add validation
+	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization token", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
@@ -662,7 +612,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.AuthorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -695,7 +645,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing delete project")
 	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah) // todo add validation
+	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
@@ -703,7 +653,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.AuthorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -780,7 +730,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	l = log.With(l, "target", ctr.Name)
 
 	level.Debug(l).Log("message", "authorizing target creation")
-	a, err := newAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
@@ -788,7 +738,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.AuthorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -864,7 +814,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing delete target permissions")
 	ah := r.Header.Get("Authorization")
-	a, err := newAuthorization(ah) // todo add validation
+	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
@@ -872,7 +822,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.AuthorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
 		return
@@ -904,7 +854,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "list-targets", "project", projectName)
 
 	level.Debug(l).Log("message", "authorizing target list retrieval")
-	a, err := newAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
@@ -912,7 +862,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.authorizedAdmin() {
+	if !a.AuthorizedAdmin() {
 		level.Error(l).Log("message", "must be an authorized admin")
 		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, err)
 		return
