@@ -12,9 +12,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
+)
+
+const (
+	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
 type mockGitClient struct{}
@@ -64,7 +69,7 @@ func newMockProvider(svc *vault.Client) func(a Authorization) (credentialsProvid
 type mockCredentialsProvider struct{}
 
 func (m mockCredentialsProvider) getToken() (string, error) {
-	return "DEADBEEF", nil
+	return testPassword, nil
 }
 
 func (m mockCredentialsProvider) createProject(name string) (string, string, error) {
@@ -565,7 +570,7 @@ func runTests(t *testing.T, tests []test) {
 
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
 func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool) *http.Response {
-	config, err := loadConfig()
+	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
 	}
@@ -576,13 +581,14 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
+		env: env.EnvVars{
+			AdminSecret: testPassword},
 	}
 	var router = setupRouter(h)
-	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
 	req, _ := http.NewRequest(method, url, body)
-	authorizationHeader := "vault:user:DEADBEEF"
+	authorizationHeader := "vault:user:" + testPassword
 	if asAdmin {
-		authorizationHeader = "vault:admin:DEADBEEF"
+		authorizationHeader = "vault:admin:" + testPassword
 	}
 	req.Header.Add("Authorization", authorizationHeader)
 	w := httptest.NewRecorder()

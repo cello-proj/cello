@@ -4,12 +4,16 @@ import (
 	"testing"
 )
 
+const (
+	testConfigPath = "../service/testdata/argo-cloudops.yaml"
+)
+
 func TestGenerateExecuteCommand(t *testing.T) {
 	arguments := map[string][]string{}
 	arguments["init"] = []string{"--initialize", "--debug"}
 	arguments["execute"] = []string{"--go"}
 
-	config, err := loadConfig()
+	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		t.Errorf("Unable to load config %s", err)
 	}
@@ -44,7 +48,7 @@ func TestGenerateExecuteCommand(t *testing.T) {
 }
 
 func TestGetCommandDefinition(t *testing.T) {
-	config, err := loadConfig()
+	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		t.Errorf("Unable to load config %s", err)
 	}
