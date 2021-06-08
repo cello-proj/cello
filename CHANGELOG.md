@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.4 (2021-06-03)
+### Fixed
+* Passing Argo context to Argo Workflow calls
+
 ## v0.0.3 (2021-05-27)
 ### Changed
 * Update environmental variable name to specify workflow execution namespace

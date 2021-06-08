@@ -40,12 +40,17 @@ func main() {
 		panic("error creating git client")
 	}
 
-	_, argoClient := client.NewAPIClient()
+	// The Argo context is needed for any Argo client method calls or else, nil errors.
+	argoCtx, argoClient := client.NewAPIClient()
 
+	// Any Argo Workflow client method calls need the context returned from NewAPIClient, otherwise
+	// nil errors will occur. Mux sets its params in context, so passing the Argo Workflow context to
+	// setupRouter and applying it to the request will wipe out Mux vars (or any other data Mux sets in its context).
 	h := handler{
 		logger:                 logger,
 		newCredentialsProvider: newVaultProvider(vaultSvc),
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
+		argoCtx:                argoCtx,
 		config:                 config,
 		gitClient:              gitClient,
 		env:                    env,
