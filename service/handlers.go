@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -145,6 +146,18 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 
 // Service HealthCheck
 func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
+	level.Debug(h.logger).Log("message", "executing health check")
+	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", os.Getenv("VAULT_ADDR"))
+	response, err := http.Get(vaultEndpoint)
+	if err != nil {
+		level.Error(h.logger).Log("message", fmt.Sprintf("received error connecting to vault endpoint %s", vaultEndpoint))
+		w.Write([]byte("Health check failed"))
+	} else if response.StatusCode != 200 {
+		level.Error(h.logger).Log("message", fmt.Sprintf("received code other than 200 %s", vaultEndpoint))
+		w.Write([]byte("Health check failed"))
+	} else {
+		w.Write([]byte("Health check succeeded"))
+	}
 }
 
 // Lists workflows
