@@ -456,6 +456,85 @@ func TestVaultProjectExists(t *testing.T) {
 	}
 }
 
+func TestIsAdmin(t *testing.T) {
+	tests := []struct {
+		name      string
+		admin     bool
+		expect    bool
+	}{
+		{
+			name:   "is admin",
+			admin:   true,
+			expect: true,
+		},
+		{
+			name:   "isn't admin",
+			admin:   false,
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			var key = "test"
+			if tt.admin {
+				key = "admin"
+			}
+			admin := Authorization{Key: key}.IsAdmin()
+			if admin != tt.expect {
+				t.Errorf("\nwant: %v\n got: %v", tt.expect, admin)
+			}
+		})
+	}
+}
+
+func TestIsAuthorizedAdmin(t *testing.T) {
+	tests := []struct {
+		name      string
+		admin     bool
+		validSecret bool
+		expect    bool
+	}{
+		{
+			name:   "is authorized admin",
+			admin:   true,
+			validSecret: true,
+			expect: true,
+		},
+		{
+			name:   "isn't admin, with valid secret",
+			admin:   false,
+			validSecret: true,
+			expect: false,
+		},
+		{
+			name:   "is admin, with invalid secret",
+			admin:   true,
+			validSecret: false,
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			var key = "test"
+			if tt.admin {
+				key = "admin"
+			}
+			var secret = "invalidSecret"
+			if tt.validSecret {
+				secret = "validSecret"
+			}
+			admin := Authorization{Key: key, Secret: secret}.AuthorizedAdmin("validSecret")
+			if admin != tt.expect {
+				t.Errorf("\nwant: %v\n got: %v", tt.expect, admin)
+			}
+		})
+	}
+}
+
 type mockVaultLogical struct {
 	vault.Logical
 	data  map[string]interface{}

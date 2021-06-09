@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	acoEnv "github.com/argoproj-labs/argo-cloudops/internal/env"
-
 	vault "github.com/hashicorp/vault/api"
 )
 
@@ -97,8 +95,8 @@ func (a Authorization) IsAdmin() bool {
 }
 
 // Returns true, if the user is an authorized admin
-func (a Authorization) AuthorizedAdmin() bool {
-	return a.IsAdmin() && a.Secret == acoEnv.AdminSecret()
+func (a Authorization) AuthorizedAdmin(adminSecret string) bool {
+	return a.IsAdmin() && a.Secret == adminSecret
 }
 
 type TargetProperties struct {
