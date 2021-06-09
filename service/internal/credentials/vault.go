@@ -91,6 +91,7 @@ func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 }
 
 // Returns true, if the user is an admin.
+// TODO See if this can be removed when refactoring auth.
 func (a Authorization) IsAdmin() bool {
 	return a.Key == "admin"
 }
