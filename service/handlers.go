@@ -108,10 +108,23 @@ func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	response, err := http.Get(vaultEndpoint)
 	if err != nil {
 		level.Error(h.logger).Log("message", fmt.Sprintf("received error connecting to vault endpoint %s", vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable, err)
-	} else if response.StatusCode != 200 && response.StatusCode != 429 {
+		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
+		return
+	}
+
+	// We don't care about the body but need to read it all and close it
+	// regardless.
+	// https://golang.org/pkg/net/http/#Client.Do
+	defer response.Body.Close()
+	_, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		level.Error(h.logger).Log("message", "unable to read body; continuing", "error", err)
+		// Continue on and handle the actual response code from Vault accordingly.
+	}
+
+	if response.StatusCode != 200 && response.StatusCode != 429 {
 		level.Error(h.logger).Log("message", fmt.Sprintf("received code %d which is not 200 (initialized, unsealed, and active) or 429 (unsealed and standby) when connecting to vault endpoint %s", response.StatusCode, vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable, err)
+		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
 	} else {
 		fmt.Fprintln(w, "Health check succeeded")
 	}
