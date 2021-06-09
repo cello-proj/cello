@@ -8,7 +8,7 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
-var testErr = fmt.Errorf("error")
+var errTest = fmt.Errorf("error")
 
 func TestVaultCreateProject(t *testing.T) {
 	tests := []struct {
@@ -33,13 +33,13 @@ func TestVaultCreateProject(t *testing.T) {
 		{
 			name:      "create prolicy error",
 			admin:     true,
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 		{
 			name:      "create project error",
 			admin:     true,
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 	}
@@ -49,7 +49,7 @@ func TestVaultCreateProject(t *testing.T) {
 
 			var role = "testRole"
 			if tt.admin == true {
-				role = "admin"
+				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
 				roleID: role,
@@ -100,7 +100,7 @@ func TestVaultCreateTarget(t *testing.T) {
 		{
 			name:      "create target error",
 			admin:     true,
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 	}
@@ -110,7 +110,7 @@ func TestVaultCreateTarget(t *testing.T) {
 
 			var role = "testRole"
 			if tt.admin == true {
-				role = "admin"
+				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
 				roleID:          role,
@@ -151,13 +151,13 @@ func TestVaultDeleteProject(t *testing.T) {
 		{
 			name:      "delete project error",
 			admin:     true,
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 		{
 			name:           "delete project policy error",
 			admin:          true,
-			vaultPolicyErr: testErr,
+			vaultPolicyErr: errTest,
 			errResult:      true,
 		},
 	}
@@ -167,7 +167,7 @@ func TestVaultDeleteProject(t *testing.T) {
 
 			var role = "testRole"
 			if tt.admin == true {
-				role = "admin"
+				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
 				roleID:          role,
@@ -208,7 +208,7 @@ func TestVaultDeleteTarget(t *testing.T) {
 		{
 			name:      "delete target error",
 			admin:     true,
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 	}
@@ -218,7 +218,7 @@ func TestVaultDeleteTarget(t *testing.T) {
 
 			var role = "testRole"
 			if tt.admin == true {
-				role = "admin"
+				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
 				roleID:          role,
@@ -259,7 +259,7 @@ func TestVaultGetTarget(t *testing.T) {
 		{
 			name:      "delete target error",
 			admin:     true,
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 	}
@@ -269,7 +269,7 @@ func TestVaultGetTarget(t *testing.T) {
 
 			var role = "testRole"
 			if tt.admin == true {
-				role = "admin"
+				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
 				roleID: role,
@@ -313,7 +313,7 @@ func TestVaultGetToken(t *testing.T) {
 		},
 		{
 			name:      "get token error",
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 	}
@@ -323,7 +323,7 @@ func TestVaultGetToken(t *testing.T) {
 
 			var role = "testRole"
 			if tt.admin == true {
-				role = "admin"
+				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
 				roleID:          role,
@@ -369,7 +369,7 @@ func TestVaultListTargets(t *testing.T) {
 		{
 			name:      "list target error",
 			admin:     true,
-			vaultErr:  testErr,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 	}
@@ -379,7 +379,7 @@ func TestVaultListTargets(t *testing.T) {
 
 			var role = "testRole"
 			if tt.admin == true {
-				role = "admin"
+				role = authorizationKeyAdmin
 			}
 			var testTargets []interface{}
 			for _, i := range tt.targets {
@@ -458,18 +458,18 @@ func TestVaultProjectExists(t *testing.T) {
 
 func TestIsAdmin(t *testing.T) {
 	tests := []struct {
-		name      string
-		admin     bool
-		expect    bool
+		name   string
+		admin  bool
+		expect bool
 	}{
 		{
 			name:   "is admin",
-			admin:   true,
+			admin:  true,
 			expect: true,
 		},
 		{
 			name:   "isn't admin",
-			admin:   false,
+			admin:  false,
 			expect: false,
 		},
 	}
@@ -479,7 +479,7 @@ func TestIsAdmin(t *testing.T) {
 
 			var key = "test"
 			if tt.admin {
-				key = "admin"
+				key = authorizationKeyAdmin
 			}
 			admin := Authorization{Key: key}.IsAdmin()
 			if admin != tt.expect {
@@ -491,28 +491,28 @@ func TestIsAdmin(t *testing.T) {
 
 func TestIsAuthorizedAdmin(t *testing.T) {
 	tests := []struct {
-		name      string
-		admin     bool
+		name        string
+		admin       bool
 		validSecret bool
-		expect    bool
+		expect      bool
 	}{
 		{
-			name:   "is authorized admin",
-			admin:   true,
+			name:        "is authorized admin",
+			admin:       true,
 			validSecret: true,
-			expect: true,
+			expect:      true,
 		},
 		{
-			name:   "isn't admin, with valid secret",
-			admin:   false,
+			name:        "isn't admin, with valid secret",
+			admin:       false,
 			validSecret: true,
-			expect: false,
+			expect:      false,
 		},
 		{
-			name:   "is admin, with invalid secret",
-			admin:   true,
+			name:        "is admin, with invalid secret",
+			admin:       true,
 			validSecret: false,
-			expect: false,
+			expect:      false,
 		},
 	}
 
@@ -521,7 +521,7 @@ func TestIsAuthorizedAdmin(t *testing.T) {
 
 			var key = "test"
 			if tt.admin {
-				key = "admin"
+				key = authorizationKeyAdmin
 			}
 			var secret = "invalidSecret"
 			if tt.validSecret {

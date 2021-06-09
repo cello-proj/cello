@@ -38,11 +38,11 @@ func loadConfig(configFilePath string) (*Config, error) {
 
 func (c Config) getCommandDefinition(framework, commandType string) (string, error) {
 	if _, ok := c.Commands[framework]; !ok {
-		return "", fmt.Errorf("Unknown framework '%s'", framework)
+		return "", fmt.Errorf("unknown framework '%s'", framework)
 	}
 
 	if _, ok := c.Commands[framework][commandType]; !ok {
-		return "", fmt.Errorf("Unknown command type '%s'", commandType)
+		return "", fmt.Errorf("unknown command type '%s'", commandType)
 	}
 
 	return c.Commands[framework][commandType], nil
@@ -58,7 +58,7 @@ func (c Config) listFrameworks() []string {
 
 func (c Config) listTypes(framework string) ([]string, error) {
 	if _, ok := c.Commands[framework]; !ok {
-		return []string{}, fmt.Errorf("Unknown framework '%s'", framework)
+		return []string{}, fmt.Errorf("unknown framework '%s'", framework)
 	}
 
 	keys := make([]string, 0, len(c.Commands[framework]))

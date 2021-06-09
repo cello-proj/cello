@@ -86,12 +86,12 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 		return errors.New("parameters must include execute_container_image_uri")
 	}
 
-	if !h.isValidImageUri(parameters["execute_container_image_uri"]) {
+	if !h.isValidImageURI(parameters["execute_container_image_uri"]) {
 		return errors.New("execute_container_image_uri must be a valid container uri")
 	}
 
 	if _, ok := parameters["pre_container_image_uri"]; ok {
-		if !h.isValidImageUri(parameters["pre_container_image_uri"]) {
+		if !h.isValidImageURI(parameters["pre_container_image_uri"]) {
 			return errors.New("pre_container_image_uri must be a valid container uri")
 		}
 	}
@@ -103,13 +103,15 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	level.Debug(h.logger).Log("message", "executing health check")
 	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", os.Getenv("VAULT_ADDR"))
+
+	// #nosec
 	response, err := http.Get(vaultEndpoint)
 	if err != nil {
 		level.Error(h.logger).Log("message", fmt.Sprintf("received error connecting to vault endpoint %s", vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable, err)
+		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
 	} else if response.StatusCode != 200 {
 		level.Error(h.logger).Log("message", fmt.Sprintf("received code other than 200 %s", vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable, err)
+		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
 	} else {
 		fmt.Fprintln(w, "Health check succeeded")
 	}
@@ -954,8 +956,8 @@ func (h handler) validateTargetName(targetName string, w http.ResponseWriter) (b
 }
 
 // Returns true, if the image uri is a valid container image uri
-func (h handler) isValidImageUri(imageUri string) bool {
-	_, err := reference.ParseAnyReference(imageUri)
+func (h handler) isValidImageURI(imageURI string) bool {
+	_, err := reference.ParseAnyReference(imageURI)
 	return err == nil
 }
 

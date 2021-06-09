@@ -8,6 +8,10 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
+const (
+	authorizationKeyAdmin = "admin"
+)
+
 type Provider interface {
 	CreateProject(string) (string, string, error)
 	CreateTarget(string, CreateTargetRequest) error
@@ -91,7 +95,7 @@ func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 // Returns true, if the user is an admin.
 // TODO See if this can be removed when refactoring auth.
 func (a Authorization) IsAdmin() bool {
-	return a.Key == "admin"
+	return a.Key == authorizationKeyAdmin
 }
 
 // Returns true, if the user is an authorized admin
@@ -192,11 +196,11 @@ func (v VaultProvider) DeleteProject(name string) error {
 
 	err := v.deletePolicyState(name)
 	if err != nil {
-		return fmt.Errorf("vault delete project error: %v", err)
+		return fmt.Errorf("vault delete project error: %w", err)
 	}
 
 	if _, err = v.vaultLogicalSvc.Delete(genProjectAppRole(name)); err != nil {
-		return fmt.Errorf("vault delete project error: %v", err)
+		return fmt.Errorf("vault delete project error: %w", err)
 	}
 	return nil
 }
@@ -222,7 +226,7 @@ const (
 func (v VaultProvider) GetProject(projectName string) (string, error) {
 	sec, err := v.vaultLogicalSvc.Read(genProjectAppRole(projectName))
 	if err != nil {
-		return "", fmt.Errorf("vault get project error: %v", err)
+		return "", fmt.Errorf("vault get project error: %w", err)
 	}
 	if sec == nil {
 		return "", ErrNotFound
@@ -237,7 +241,7 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (TargetProperti
 
 	sec, err := v.vaultLogicalSvc.Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
 	if err != nil {
-		return TargetProperties{}, fmt.Errorf("vault get target error: %v", err)
+		return TargetProperties{}, fmt.Errorf("vault get target error: %w", err)
 	}
 
 	if sec == nil {
@@ -277,7 +281,7 @@ func (v VaultProvider) GetToken() (string, error) {
 
 // TODO See if this can be removed when refactoring auth.
 func (v VaultProvider) isAdmin() bool {
-	return v.roleID == "admin"
+	return v.roleID == authorizationKeyAdmin
 }
 
 func (v VaultProvider) ListTargets(project string) ([]string, error) {
@@ -287,7 +291,7 @@ func (v VaultProvider) ListTargets(project string) ([]string, error) {
 
 	sec, err := v.vaultLogicalSvc.List("aws/roles/")
 	if err != nil {
-		return nil, fmt.Errorf("vault list error: %v", err)
+		return nil, fmt.Errorf("vault list error: %w", err)
 	}
 
 	// allow empty array to render json as []

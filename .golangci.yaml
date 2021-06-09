@@ -6,8 +6,11 @@ linters:
     - errorlint
     - exportloopref
     - goconst
-    - gofmt
+    - goimports
     - gosec
+    - ifshort
+    - nilerr
+    - stylecheck
     - unparam
     - wastedassign
 linters-settings:

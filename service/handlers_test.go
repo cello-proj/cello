@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	// #nosec
 	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
@@ -69,7 +70,6 @@ func newMockProvider(svc *vault.Client) func(a credentials.Authorization) (crede
 }
 
 type mockCredentialsProvider struct{}
-
 
 func (m mockCredentialsProvider) GetToken() (string, error) {
 	return testPassword, nil
