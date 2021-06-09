@@ -14,7 +14,7 @@ lint:
 	golangci-lint run
 
 test:
-	go test -race -timeout=180s -coverprofile=coverage.out ./service
+	go test -race -timeout=180s -coverprofile=coverage.out ./...
 
 tidy:
 	go mod tidy

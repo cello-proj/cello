@@ -1,3 +1,5 @@
+// +build !test
+
 package main
 
 import (
@@ -6,7 +8,9 @@ import (
 	"os"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -52,7 +56,7 @@ func main() {
 	// setupRouter and applying it to the request will wipe out Mux vars (or any other data Mux sets in its context).
 	h := handler{
 		logger:                 logger,
-		newCredentialsProvider: newVaultProvider(vaultSvc),
+		newCredentialsProvider: credentials.NewVaultProvider(vaultSvc),
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
 		argoCtx:                argoCtx,
 		config:                 config,
