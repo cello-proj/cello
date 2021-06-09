@@ -16,6 +16,7 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/git"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -34,7 +35,7 @@ func newMockDb() db.DbClient {
 	return mockDb{}
 }
 
-func (d mockDb) CreateProjectEntry(pe db.ProjectEntry) error {
+func (d mockDb) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) error {
 	if pe.ProjectId == "somedberror" {
 		return fmt.Errorf("some db error")
 	}
@@ -42,11 +43,11 @@ func (d mockDb) CreateProjectEntry(pe db.ProjectEntry) error {
 	return nil
 }
 
-func (d mockDb) ReadProjectEntry(project string) (db.ProjectEntry, error) {
+func (d mockDb) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
 	return db.ProjectEntry{}, nil
 }
 
-func (d mockDb) DeleteProjectEntry(project string) error {
+func (d mockDb) DeleteProjectEntry(ctx context.Context, project string) error {
 	if project == "somedeletedberror" {
 		return fmt.Errorf("some db error")
 	}
@@ -56,11 +57,11 @@ func (d mockDb) DeleteProjectEntry(project string) error {
 
 type mockGitClient struct{}
 
-func newMockGitClient() gitClient {
+func newMockGitClient() git.GitClient {
 	return mockGitClient{}
 }
 
-func (g mockGitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
+func (g mockGitClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
 	return loadFileBytes("TestCreateWorkflow/can_create_workflow.json")
 }
 

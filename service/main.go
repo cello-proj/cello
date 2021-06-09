@@ -10,6 +10,7 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/git"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
@@ -45,7 +46,7 @@ func main() {
 	}
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", env.ConfigFilePath))
 
-	gitClient, err := newBasicGitClient(env.SSHPEMFile)
+	gitClient, err := git.NewBasicGitClient(env.SSHPEMFile)
 	if err != nil {
 		level.Error(logger).Log("message", "error creating git client", "error", err)
 		panic("error creating git client")

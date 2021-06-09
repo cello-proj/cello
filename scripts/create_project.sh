@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 ACCOUNT_ID=$1
-GITHUB_REPO=$2
+GIT_REPO=$2
 
 ROLE_NAME=ArgoCloudOpsSampleRole
 
@@ -27,8 +27,8 @@ if [ -z $ACCOUNT_ID ]; then
     exit 1
 fi
 
-if [ -z $GITHUB_REPO ]; then
-    echo "Error: GitHub repo not set."
+if [ -z $GIT_REPO ]; then
+    echo "Error: Git repo not set."
     exit 1
 fi
 
@@ -39,7 +39,7 @@ echo "Creating project with target in AWS account '$ACCOUNT_ID' role '$ROLE_NAME
 cat > /tmp/create_project_request.json<<EOF
 {
   "name": "$ARGO_CLOUDOPS_PROJECT_NAME",
-  "repository": "$GITHUB_REPO"
+  "repository": "$GIT_REPO"
 }
 EOF
 

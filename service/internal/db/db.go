@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
 )
@@ -12,9 +14,9 @@ type ProjectEntry struct {
 
 // DbClient allows for db crud operations
 type DbClient interface {
-	CreateProjectEntry(pe ProjectEntry) error
-	ReadProjectEntry(project string) (ProjectEntry, error)
-	DeleteProjectEntry(project string) error
+	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
+	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
+	DeleteProjectEntry(ctx context.Context, project string) error
 }
 
 // SqlDbClient allows for db crud operations using postgres db
@@ -47,20 +49,19 @@ func (d SqlDbClient) createSession() (db.Session, error) {
 	return postgresql.Open(settings)
 }
 
-func (d SqlDbClient) CreateProjectEntry(pe ProjectEntry) error {
+func (d SqlDbClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) error {
 	sess, err := d.createSession()
 	if err != nil {
 		return err
 	}
 	defer sess.Close()
 
-	return sess.Tx(func(sess db.Session) error {
-		err := sess.Collection(ProjectEntryDB).Find("project", pe.ProjectId).Delete()
-		if err != nil {
+	return sess.WithContext(ctx).Tx(func(sess db.Session) error {
+		if err := sess.Collection(ProjectEntryDB).Find("project", pe.ProjectId).Delete(); err != nil {
 			return err
 		}
-		_, err = sess.Collection(ProjectEntryDB).Insert(pe)
-		if err != nil {
+
+		if _, err = sess.Collection(ProjectEntryDB).Insert(pe); err != nil {
 			return err
 		}
 
@@ -68,7 +69,7 @@ func (d SqlDbClient) CreateProjectEntry(pe ProjectEntry) error {
 	})
 }
 
-func (d SqlDbClient) ReadProjectEntry(project string) (ProjectEntry, error) {
+func (d SqlDbClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
 	res := ProjectEntry{}
 
 	sess, err := d.createSession()
@@ -77,16 +78,16 @@ func (d SqlDbClient) ReadProjectEntry(project string) (ProjectEntry, error) {
 	}
 	defer sess.Close()
 
-	err = sess.Collection(ProjectEntryDB).Find("project", project).One(&res)
+	err = sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).One(&res)
 	return res, err
 }
 
-func (d SqlDbClient) DeleteProjectEntry(project string) error {
+func (d SqlDbClient) DeleteProjectEntry(ctx context.Context, project string) error {
 	sess, err := d.createSession()
 	if err != nil {
 		return err
 	}
 	defer sess.Close()
 
-	return sess.Collection(ProjectEntryDB).Find("project", project).Delete()
+	return sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).Delete()
 }

@@ -1,4 +1,4 @@
-package main
+package git
 
 import (
 	"fmt"
@@ -11,28 +11,31 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 )
 
-type gitClient interface {
-	CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error)
+// GitClient allows for retrieving data from git repo
+type GitClient interface {
+	GetManifestFile(repository, commitHash, path string) ([]byte, error)
 }
 
-type basicGitClient struct {
+// BasicGitClient connects to git using ssh
+type BasicGitClient struct {
 	auth *ssh.PublicKeys
 	mu   *sync.Mutex
 }
 
-func newBasicGitClient(sshPemFile string) (basicGitClient, error) {
+// NewBasicGitClient creates a new ssh based git client
+func NewBasicGitClient(sshPemFile string) (BasicGitClient, error) {
 	auth, err := ssh.NewPublicKeysFromFile("git", sshPemFile, "")
 	if err != nil {
-		return basicGitClient{}, err
+		return BasicGitClient{}, err
 	}
 
-	return basicGitClient{
+	return BasicGitClient{
 		auth: auth,
 		mu:   &sync.Mutex{},
 	}, nil
 }
 
-func (g basicGitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
+func (g BasicGitClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
 	filePath := filepath.Join(os.TempDir(), repository)
 
 	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
