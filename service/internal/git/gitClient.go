@@ -39,6 +39,7 @@ func (g BasicGitClient) GetManifestFile(repository, commitHash, path string) ([]
 	filePath := filepath.Join(os.TempDir(), repository)
 
 	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
+	// TODO: use a lock per repository instead of a single global lock
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -56,6 +57,10 @@ func (g BasicGitClient) GetManifestFile(repository, commitHash, path string) ([]
 	} else {
 		repo, err = git.PlainOpen(filePath)
 		if err != nil {
+			return []byte{}, err
+		}
+		err = repo.Fetch(&git.FetchOptions{})
+		if err != nil && err != git.NoErrAlreadyUpToDate {
 			return []byte{}, err
 		}
 	}
