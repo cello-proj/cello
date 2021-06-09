@@ -152,8 +152,8 @@ func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(h.logger).Log("message", fmt.Sprintf("received error connecting to vault endpoint %s", vaultEndpoint))
 		w.Write([]byte("Health check failed"))
-	} else if response.StatusCode != 200 {
-		level.Error(h.logger).Log("message", fmt.Sprintf("received code other than 200 %s", vaultEndpoint))
+	} else if response.StatusCode != 200 && response.StatusCode != 429 {
+		level.Error(h.logger).Log("message", fmt.Sprintf("received code other than 200 (initialized, unsealed, and active) or 429 (unsealed and standby) %s", vaultEndpoint))
 		w.Write([]byte("Health check failed"))
 	} else {
 		w.Write([]byte("Health check succeeded"))
