@@ -14,7 +14,7 @@ lint:
 	golangci-lint run
 
 test:
-	go test -race -timeout=180s -coverprofile=coverage.out ./service #github.com/argoproj-labs/argo-cloudops
+	go test -race -timeout=180s -coverprofile=coverage.out ./... #github.com/argoproj-labs/argo-cloudops
 
 tidy:
 	go mod tidy
