@@ -9,7 +9,6 @@
 ### Fixed
 * Add additional valid status codes for Vault health check
 
-
 ## v0.1.0 (2021-06-08)
 ### Added
 * Tests for vault credential provider
