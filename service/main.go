@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"

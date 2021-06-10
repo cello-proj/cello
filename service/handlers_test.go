@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -584,7 +584,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
-		env: env.EnvVars{
+		env: env.Vars{
 			AdminSecret: testPassword},
 	}
 	var router = setupRouter(h)

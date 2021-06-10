@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/aws/aws-sdk-go/aws/arn"
@@ -77,7 +77,7 @@ type handler struct {
 	argoCtx                context.Context
 	config                 *Config
 	gitClient              gitClient
-	env                    env.EnvVars
+	env                    env.Vars
 }
 
 // Validates workflow parameters
