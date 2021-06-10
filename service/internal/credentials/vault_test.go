@@ -427,6 +427,13 @@ func TestVaultProjectExists(t *testing.T) {
 			path:      "test-path",
 			exists:    false,
 			vaultErr:  ErrNotFound,
+			errResult: false,
+		},
+		{
+			name:      "vault error",
+			path:      "test-path",
+			exists:    false,
+			vaultErr:  errTest,
 			errResult: true,
 		},
 	}
