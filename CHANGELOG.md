@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.2 (2021-06-14)
+### Changed
+* Adding HTTP headers to Vault client for logging (e.g. transaction ID)
+
 ## v0.1.1 (2021-06-09)
 ### Fixed
 * Add additional valid status codes for Vault health check
