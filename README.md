@@ -1,6 +1,6 @@
 **Argo CloudOps is Alpha on a good day, please only use as appropriate!!!**
 
-[![build](https://github.com/bw-intuit/argo-cloudops/actions/workflows/build.yaml/badge.svg)](https://github.com/bw-intuit/argo-cloudops/actions/workflows/build.yaml)
+[![build](https://github.com/argoproj-labs/argo-cloudops/actions/workflows/build.yaml/badge.svg)](https://github.com/bw-intuit/argo-cloudops/actions/workflows/build.yaml)
 
 # What Is Argo CloudOps?
 

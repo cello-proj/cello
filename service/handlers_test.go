@@ -12,9 +12,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
+)
+
+const (
+	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
 type mockGitClient struct{}
@@ -55,54 +62,54 @@ func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map
 	return "success", nil
 }
 
-func newMockProvider(a Authorization, svc *vault.Client) (credentialsProvider, error) {
+func newMockProvider(a credentials.Authorization, svc *vault.Client) (credentials.Provider, error) {
 	return &mockCredentialsProvider{}, nil
 }
 
 type mockCredentialsProvider struct{}
 
-func (m mockCredentialsProvider) getToken() (string, error) {
-	return "DEADBEEF", nil
+func (m mockCredentialsProvider) GetToken() (string, error) {
+	return testPassword, nil
 }
 
-func (m mockCredentialsProvider) createProject(name string) (string, string, error) {
+func (m mockCredentialsProvider) CreateProject(name string) (string, string, error) {
 	return "", "", nil
 }
 
-func (m mockCredentialsProvider) deleteProject(name string) error {
+func (m mockCredentialsProvider) DeleteProject(name string) error {
 	if name == "undeletableproject" {
 		return fmt.Errorf("Some error occured deleting this project")
 	}
 	return nil
 }
 
-func (m mockCredentialsProvider) getProject(string) (string, error) {
+func (m mockCredentialsProvider) GetProject(string) (string, error) {
 	return `{"name":"project1"}`, nil
 }
 
-func (m mockCredentialsProvider) createTarget(name string, req createTargetRequest) error {
+func (m mockCredentialsProvider) CreateTarget(name string, req credentials.CreateTargetRequest) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) getTarget(string, string) (targetProperties, error) {
-	return targetProperties{}, nil
+func (m mockCredentialsProvider) GetTarget(string, string) (credentials.TargetProperties, error) {
+	return credentials.TargetProperties{}, nil
 }
 
-func (m mockCredentialsProvider) deleteTarget(string, t string) error {
+func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
 	if t == "undeletabletarget" {
 		return fmt.Errorf("Some error occured deleting this target")
 	}
 	return nil
 }
 
-func (m mockCredentialsProvider) listTargets(name string) ([]string, error) {
+func (m mockCredentialsProvider) ListTargets(name string) ([]string, error) {
 	if name == "undeletableprojecttargets" {
 		return []string{"target1", "target2", "undeletabletarget"}, nil
 	}
 	return []string{}, nil
 }
 
-func (m mockCredentialsProvider) projectExists(name string) (bool, error) {
+func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 	existingProjects := []string{
 		"projectalreadyexists",
 		"undeletableprojecttargets",
@@ -116,14 +123,14 @@ func (m mockCredentialsProvider) projectExists(name string) (bool, error) {
 	return false, nil
 }
 
-func (m mockCredentialsProvider) targetExists(name string) (bool, error) {
+func (m mockCredentialsProvider) TargetExists(name string) (bool, error) {
 	if name == "TARGET_ALREADY_EXISTS" {
 		return true, nil
 	}
 	return false, nil
 }
 
-func mockCredsProvSvc(c vaultConfig, h http.Header) (*vault.Client, error) {
+func mockCredsProvSvc(c credentials.VaultConfig, h http.Header) (*vault.Client, error) {
 	return &vault.Client{}, nil
 }
 
@@ -567,7 +574,7 @@ func runTests(t *testing.T, tests []test) {
 
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
 func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool) *http.Response {
-	config, err := loadConfig()
+	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
 	}
@@ -579,14 +586,15 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		config:                 config,
 		gitClient:              newMockGitClient(),
 		newCredsProviderSvc:    mockCredsProvSvc,
+		env: env.EnvVars{
+			AdminSecret: testPassword},
 	}
 
 	var router = setupRouter(h)
-	os.Setenv("ARGO_CLOUDOPS_ADMIN_SECRET", "DEADBEEF")
 	req, _ := http.NewRequest(method, url, body)
-	authorizationHeader := "vault:user:DEADBEEF"
+	authorizationHeader := "vault:user:" + testPassword
 	if asAdmin {
-		authorizationHeader = "vault:admin:DEADBEEF"
+		authorizationHeader = "vault:admin:" + testPassword
 	}
 	req.Header.Add("Authorization", authorizationHeader)
 	w := httptest.NewRecorder()
@@ -626,13 +634,13 @@ func loadJSON(t *testing.T, filename string, output interface{}) {
 }
 
 // Load a createTargetRequest from the testdata directory.
-func loadCreateTargetRequest(t *testing.T, filename string) (r *createTargetRequest) {
+func loadCreateTargetRequest(t *testing.T, filename string) (r *credentials.CreateTargetRequest) {
 	loadJSON(t, filename, &r)
 	return
 }
 
 // Load a createProjectRequest from the testdata directory.
-func loadCreateProjectRequest(t *testing.T, filename string) (r *createProjectRequest) {
+func loadCreateProjectRequest(t *testing.T, filename string) (r *credentials.CreateProjectRequest) {
 	loadJSON(t, filename, &r)
 	return
 }
