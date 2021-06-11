@@ -60,13 +60,8 @@ func main() {
 		// Vault svc needs to be created within the handler methods because Vault uses headers
 		// to add metadata (e.g. transaction ID) to its logs.
 		newCredsProviderSvc: credentials.NewVaultSvc,
-		// Needed to pass some Vault config to the handlers to be able to create
-		// a Vault service within the handlers.
-		vaultConfig: vaultConfig{
-			config: &vault.Config{Address: env.VaultAddress},
-			role:   env.VaultRole,
-			secret: env.VaultSecret,
-		},
+		// A Vault config is needed to be able to create a Vault service from within the handlers.
+		vaultConfig: *credentials.NewVaultConfig(&vault.Config{Address: env.VaultAddress}, env.VaultRole, env.VaultSecret),
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)

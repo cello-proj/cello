@@ -83,17 +83,6 @@ type handler struct {
 	vaultConfig            credentials.VaultConfig
 }
 
-// Returns a new vaultCredentialsProvider
-/*
-func newVaultProvider(a Authorization, svc *vault.Client) (credentialsProvider, error) {
-	return &vaultCredentialsProvider{
-		VaultSvc: svc,
-		RoleID:   a.Key,
-		SecretID: a.Secret,
-	}, nil
-}
-*/
-
 // Validates workflow parameters
 func (h handler) validateWorkflowParameters(parameters map[string]string) error {
 	if _, ok := parameters["execute_container_image_uri"]; !ok {
