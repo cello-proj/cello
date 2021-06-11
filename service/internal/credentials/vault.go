@@ -67,6 +67,7 @@ type VaultConfig struct {
 	secret string
 }
 
+// NewVaultConfig returns a new VaultConfig.
 func NewVaultConfig(config *vault.Config, role, secret string) *VaultConfig {
 	return &VaultConfig{
 		config: config,
