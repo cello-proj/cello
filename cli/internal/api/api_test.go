@@ -73,7 +73,7 @@ func TestGetWorkflowStatus(t *testing.T) {
 					w.Header().Set("Content-Length", "1")
 				}
 				w.WriteHeader(tt.apiRespStatusCode)
-				fmt.Fprintf(w, string(tt.apiRespBody))
+				fmt.Fprint(w, string(tt.apiRespBody))
 			}))
 			defer server.Close()
 
