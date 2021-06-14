@@ -16,12 +16,18 @@ var rootCmd = &cobra.Command{
 
 var (
 	// Flags
-	gitPath     string
-	gitSHA      string
-	projectName string
-	repository  string
-	sha         string
-	targetName  string
+	argumentsCSV            string
+	environmentVariablesCSV string
+	framework               string
+	gitPath                 string
+	gitSHA                  string
+	parametersCSV           string
+	projectName             string
+	repository              string
+	sha                     string
+	targetName              string
+	workflowTemplateName    string
+	workflowType            string
 
 	// TODO populate during build/release
 	version = "0.1.1"

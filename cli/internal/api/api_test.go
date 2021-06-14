@@ -101,6 +101,7 @@ func TestGetWorkflowStatus(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
+			// TODO rename var
 			status, err := client.GetWorkflowStatus(context.Background(), "project1")
 
 			if tt.wantErr != nil {
@@ -196,6 +197,7 @@ func TestGetWorkflows(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
+			// TODO rename var
 			workflows, err := client.GetWorkflows(context.Background(), "project1", "target1")
 
 			if tt.wantErr != nil {
@@ -310,6 +312,7 @@ func TestDiff(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
+			// TODO rename var
 			diff, err := client.Diff(
 				context.Background(),
 				"project1",
@@ -323,6 +326,128 @@ func TestDiff(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 				assert.Equal(t, diff, tt.want)
+			}
+		})
+	}
+}
+
+func TestExecuteWorkflow(t *testing.T) {
+	tests := []struct {
+		name                  string
+		input                 ExecuteWorkflowInput
+		apiRespBody           []byte
+		apiRespStatusCode     int
+		endpoint              string          // Used to create new request error.
+		mockHTTPClient        *mockHTTPClient // Only used when needed.
+		writeBadContentLength bool            // Used to create response body error.
+		want                  ExecuteWorkflowOutput
+		wantAPIReqBody        []byte
+		wantErr               error
+	}{
+		{
+			name:              "good",
+			input:             executeWorkflowValidInput,
+			apiRespBody:       readFile(t, "execute_workflow_response_good.json"),
+			apiRespStatusCode: http.StatusOK,
+			want: ExecuteWorkflowOutput{
+				WorkflowName: "workflow1",
+			},
+			wantAPIReqBody: readFile(t, "execute_workflow_good.json"),
+		},
+		{
+			name:              "error non-200 response",
+			input:             executeWorkflowValidInput,
+			apiRespBody:       []byte("boom"),
+			apiRespStatusCode: http.StatusInternalServerError,
+			wantAPIReqBody:    readFile(t, "execute_workflow_good.json"),
+			wantErr:           fmt.Errorf("received unexpected status code: 500, body: boom"),
+		},
+		{
+			name:              "error non-json response",
+			input:             executeWorkflowValidInput,
+			apiRespBody:       []byte("boom"),
+			apiRespStatusCode: 200,
+			wantAPIReqBody:    readFile(t, "execute_workflow_good.json"),
+			wantErr:           fmt.Errorf("unable to parse response: invalid character 'b' looking for beginning of value"),
+		},
+		{
+			name:     "error creating http request",
+			input:    executeWorkflowValidInput,
+			endpoint: string('\f'),
+			// TODO use backticks
+			wantErr: fmt.Errorf("unable to create api request: parse \"\\f/workflows\": net/url: invalid control character in URL"),
+		},
+		{
+			name:           "error making http request",
+			input:          executeWorkflowValidInput,
+			mockHTTPClient: &mockHTTPClient{errDo: fmt.Errorf("boom")},
+			wantErr:        fmt.Errorf("unable to make api call: boom"),
+		},
+		{
+			name:                  "error reading body",
+			input:                 executeWorkflowValidInput,
+			apiRespBody:           nil,
+			apiRespStatusCode:     http.StatusOK,
+			writeBadContentLength: true,
+			wantAPIReqBody:        readFile(t, "execute_workflow_good.json"),
+			wantErr:               fmt.Errorf("error reading response body. status code: %d, error: unexpected EOF", http.StatusOK),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			authToken := "secret1234"
+			wantURL := "/workflows"
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != wantURL {
+					http.NotFound(w, r)
+				}
+
+				if r.Method != http.MethodPost {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+
+				if tt.writeBadContentLength {
+					w.Header().Set("Content-Length", "1")
+				}
+
+				// Make sure the request we received is what we want
+				body, err := io.ReadAll(r.Body)
+				r.Body.Close()
+
+				assert.Nil(t, err, "unable to read request body")
+
+				assert.JSONEq(t, string(body), string(tt.wantAPIReqBody))
+				assert.Equal(t, r.Header.Get("Authorization"), authToken)
+
+				w.WriteHeader(tt.apiRespStatusCode)
+				fmt.Fprint(w, string(tt.apiRespBody))
+			}))
+			defer server.Close()
+
+			client := Client{
+				authToken:  authToken,
+				endpoint:   server.URL,
+				httpClient: &http.Client{},
+			}
+
+			if tt.endpoint != "" {
+				client.endpoint = tt.endpoint
+			}
+
+			if tt.mockHTTPClient != nil {
+				client.httpClient = tt.mockHTTPClient
+			}
+
+			output, err := client.ExecuteWorkflow(context.Background(), tt.input)
+
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, output, tt.want)
 			}
 		})
 	}
@@ -343,3 +468,24 @@ func readFile(t *testing.T, fileName string) []byte {
 	}
 	return data
 }
+
+var (
+	executeWorkflowValidInput = ExecuteWorkflowInput{
+		Arguments: map[string][]string{
+			"execute": {"--no-color", "--require-approval never"},
+		},
+		EnvironmentVariables: map[string]string{
+			"AWS_REGION": "us-west-2",
+			"CODE_URI":   "s3://argo-cloudops-cet-dev/cdk-example.zip",
+			"VAULT_ADDR": "http://docker.for.mac.localhost:8200",
+		},
+		Framework: "cdk",
+		Parameters: map[string]string{
+			"execute_container_image_uri": "a80addc4/argo-cloudops-cdk:0.14.5",
+		},
+		ProjectName:          "project1",
+		TargetName:           "target1",
+		Type:                 "sync",
+		WorkflowTemplateName: "argo-cloudops-single-step-vault-aws",
+	}
+)
