@@ -104,24 +104,9 @@ type SyncOutput targetOperationOutput
 func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflowStatusOutput, error) {
 	url := fmt.Sprintf("%s/workflows/%s", c.endpoint, name)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	body, err := c.getRequest(ctx, url)
 	if err != nil {
-		return GetWorkflowStatusOutput{}, fmt.Errorf("unable to create api request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return GetWorkflowStatusOutput{}, fmt.Errorf("unable to make api call: %w", err)
-	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return GetWorkflowStatusOutput{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return GetWorkflowStatusOutput{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		return GetWorkflowStatusOutput{}, err
 	}
 
 	var output GetWorkflowStatusOutput
@@ -136,24 +121,9 @@ func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflo
 func (c *Client) GetWorkflows(ctx context.Context, project, target string) (GetWorkflowsOutput, error) {
 	url := fmt.Sprintf("%s/projects/%s/targets/%s/workflows", c.endpoint, project, target)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	body, err := c.getRequest(ctx, url)
 	if err != nil {
-		return GetWorkflowsOutput{}, fmt.Errorf("unable to create api request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return GetWorkflowsOutput{}, fmt.Errorf("unable to make api call: %w", err)
-	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return GetWorkflowsOutput{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return GetWorkflowsOutput{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		return GetWorkflowsOutput{}, err
 	}
 
 	var output GetWorkflowsOutput
@@ -241,6 +211,30 @@ func (c *Client) Sync(ctx context.Context, project, target, sha, path string) (S
 	}
 
 	return SyncOutput(output), nil
+}
+
+func (c *Client) getRequest(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create api request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("unable to make api call: %w", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	return body, nil
 }
 
 func (c *Client) targetOperation(ctx context.Context, input targetOperationInput) (targetOperationOutput, error) {
