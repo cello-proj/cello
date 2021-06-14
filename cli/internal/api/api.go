@@ -45,37 +45,31 @@ func NewClient(endpoint, authToken string) Client {
 	}
 }
 
-// TODO rename
-// GetWorkflowStatusResponse represents the status of a workflow.
-type GetWorkflowStatusResponse struct {
+// GetWorkflowStatusOutput represents the output of GetWorkflowStatus.
+type GetWorkflowStatusOutput struct {
 	Name     string `json:"name"`
 	Status   string `json:"status"`
 	Created  string `json:"created"`
 	Finished string `json:"finished"`
 }
 
-// TODO rename
-// GetWorkflowsResponse represents a collection of workflows.
-type GetWorkflowsResponse []string
+// GetWorkflowsOutput represents the output of GetWorkflowsOutput.
+type GetWorkflowsOutput []string
 
-// TODO rename
-// targetOperation represents the request for either a 'diff' or 'sync' against
-// a project target.
+// targetOperationRequest represents the request for a target operation.
 type targetOperationRequest struct {
 	Path string `json:"path"`
 	SHA  string `json:"sha"`
 	Type string `json:"type"`
 }
 
-// TODO rename
-// targetOperationResponse represents a response to a target operation.
-type targetOperationResponse struct {
+// targetOperationOutput represents the output to a target operation.
+type targetOperationOutput struct {
 	WorkflowName string `json:"workflow_name"`
 }
 
-// TODO rename
-// DiffResponse represents a diff response.
-type DiffResponse targetOperationResponse
+// DiffOutput represents the output for Diff.
+type DiffOutput targetOperationOutput
 
 // ExecuteWorkflowInput represents the input for ExecuteWorkflow.
 type ExecuteWorkflowInput struct {
@@ -94,78 +88,76 @@ type ExecuteWorkflowOutput struct {
 	WorkflowName string `json:"workflow_name"`
 }
 
-// TODO rename
-// SyncResponse represents a sync response.
-type SyncResponse targetOperationResponse
+// SyncOutput represents the output for Sync.
+type SyncOutput targetOperationOutput
 
 // GetWorkflowStatus gets the status of a workflow.
-func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflowStatusResponse, error) {
+func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflowStatusOutput, error) {
 	url := fmt.Sprintf("%s/workflows/%s", c.endpoint, name)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return GetWorkflowStatusResponse{}, fmt.Errorf("unable to create api request: %w", err)
+		return GetWorkflowStatusOutput{}, fmt.Errorf("unable to create api request: %w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return GetWorkflowStatusResponse{}, fmt.Errorf("unable to make api call: %w", err)
+		return GetWorkflowStatusOutput{}, fmt.Errorf("unable to make api call: %w", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return GetWorkflowStatusResponse{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
+		return GetWorkflowStatusOutput{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return GetWorkflowStatusResponse{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		return GetWorkflowStatusOutput{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	// TODO rename
-	var wfResp GetWorkflowStatusResponse
-	if err := json.Unmarshal(body, &wfResp); err != nil {
-		return GetWorkflowStatusResponse{}, fmt.Errorf("unable to parse response: %w", err)
+	var output GetWorkflowStatusOutput
+	if err := json.Unmarshal(body, &output); err != nil {
+		return GetWorkflowStatusOutput{}, fmt.Errorf("unable to parse response: %w", err)
 	}
 
-	return wfResp, nil
+	return output, nil
 }
 
 // GetWorkflows gets the list of workflows for a project and target.
-func (c *Client) GetWorkflows(ctx context.Context, project, target string) (GetWorkflowsResponse, error) {
+func (c *Client) GetWorkflows(ctx context.Context, project, target string) (GetWorkflowsOutput, error) {
 	url := fmt.Sprintf("%s/projects/%s/targets/%s/workflows", c.endpoint, project, target)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return GetWorkflowsResponse{}, fmt.Errorf("unable to create api request: %w", err)
+		return GetWorkflowsOutput{}, fmt.Errorf("unable to create api request: %w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return GetWorkflowsResponse{}, fmt.Errorf("unable to make api call: %w", err)
+		return GetWorkflowsOutput{}, fmt.Errorf("unable to make api call: %w", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return GetWorkflowsResponse{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
+		return GetWorkflowsOutput{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return GetWorkflowsResponse{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		return GetWorkflowsOutput{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	// TODO rename
-	var wfResp GetWorkflowsResponse
-	if err := json.Unmarshal(body, &wfResp); err != nil {
-		return GetWorkflowsResponse{}, fmt.Errorf("unable to parse response: %w", err)
+	var output GetWorkflowsOutput
+	if err := json.Unmarshal(body, &output); err != nil {
+		return GetWorkflowsOutput{}, fmt.Errorf("unable to parse response: %w", err)
 	}
 
-	return wfResp, nil
+	return output, nil
 }
 
+// TODO use 'input' struct?
 // Diff submits a "diff" for the provided project target.
-func (c *Client) Diff(ctx context.Context, project, target, sha, path string) (DiffResponse, error) {
+func (c *Client) Diff(ctx context.Context, project, target, sha, path string) (DiffOutput, error) {
 	url := fmt.Sprintf("%s/projects/%s/targets/%s/operations", c.endpoint, project, target)
 
 	targetReq := targetOperationRequest{
@@ -176,38 +168,37 @@ func (c *Client) Diff(ctx context.Context, project, target, sha, path string) (D
 
 	reqBody, err := json.Marshal(targetReq)
 	if err != nil {
-		return DiffResponse{}, fmt.Errorf("unable to create api request body, error: %w", err)
+		return DiffOutput{}, fmt.Errorf("unable to create api request body, error: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return DiffResponse{}, fmt.Errorf("unable to create api request: %w", err)
+		return DiffOutput{}, fmt.Errorf("unable to create api request: %w", err)
 	}
 
 	req.Header.Add("Authorization", c.authToken)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return DiffResponse{}, fmt.Errorf("unable to make api call: %w", err)
+		return DiffOutput{}, fmt.Errorf("unable to make api call: %w", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return DiffResponse{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
+		return DiffOutput{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
 
 	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
-		return DiffResponse{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+		return DiffOutput{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	// TOOD rename
-	var diffResp DiffResponse
-	if err := json.Unmarshal(body, &diffResp); err != nil {
-		return DiffResponse{}, fmt.Errorf("unable to parse response: %w", err)
+	var output DiffOutput
+	if err := json.Unmarshal(body, &output); err != nil {
+		return DiffOutput{}, fmt.Errorf("unable to parse response: %w", err)
 	}
 
-	return diffResp, nil
+	return output, nil
 }
 
 // ExecuteWorkflow submits a workflow execution request.

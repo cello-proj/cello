@@ -21,14 +21,14 @@ func TestGetWorkflowStatus(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  GetWorkflowStatusResponse
+		want                  GetWorkflowStatusOutput
 		wantErr               error
 	}{
 		{
 			name:              "good",
 			apiRespBody:       readFile(t, "get_workflow_status_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want: GetWorkflowStatusResponse{
+			want: GetWorkflowStatusOutput{
 				Name:     "foo-name",
 				Status:   "succeeded",
 				Created:  "1257891000",
@@ -50,7 +50,7 @@ func TestGetWorkflowStatus(t *testing.T) {
 		{
 			name:     "error creating http request",
 			endpoint: string('\f'),
-			wantErr:  fmt.Errorf("unable to create api request: parse \"\\f/workflows/project1\": net/url: invalid control character in URL"),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/workflows/project1": net/url: invalid control character in URL`),
 		},
 		{
 			name:           "error making http request",
@@ -101,14 +101,13 @@ func TestGetWorkflowStatus(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
-			// TODO rename var
-			status, err := client.GetWorkflowStatus(context.Background(), "project1")
+			output, err := client.GetWorkflowStatus(context.Background(), "project1")
 
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, status, tt.want)
+				assert.Equal(t, output, tt.want)
 			}
 		})
 	}
@@ -122,14 +121,14 @@ func TestGetWorkflows(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  GetWorkflowsResponse
+		want                  GetWorkflowsOutput
 		wantErr               error
 	}{
 		{
 			name:              "good",
 			apiRespBody:       readFile(t, "get_workflows_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want:              GetWorkflowsResponse{"foo", "bar", "baz"},
+			want:              GetWorkflowsOutput{"foo", "bar", "baz"},
 		},
 		{
 			name:              "error non-200 response",
@@ -146,7 +145,7 @@ func TestGetWorkflows(t *testing.T) {
 		{
 			name:     "error creating http request",
 			endpoint: string('\f'),
-			wantErr:  fmt.Errorf("unable to create api request: parse \"\\f/projects/project1/targets/target1/workflows\": net/url: invalid control character in URL"),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/projects/project1/targets/target1/workflows": net/url: invalid control character in URL`),
 		},
 		{
 			name:           "error making http request",
@@ -197,14 +196,13 @@ func TestGetWorkflows(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
-			// TODO rename var
-			workflows, err := client.GetWorkflows(context.Background(), "project1", "target1")
+			got, err := client.GetWorkflows(context.Background(), "project1", "target1")
 
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, workflows, tt.want)
+				assert.Equal(t, got, tt.want)
 			}
 		})
 	}
@@ -218,7 +216,7 @@ func TestDiff(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  DiffResponse
+		want                  DiffOutput
 		wantAPIReqBody        []byte
 		wantErr               error
 	}{
@@ -226,7 +224,7 @@ func TestDiff(t *testing.T) {
 			name:              "good",
 			apiRespBody:       readFile(t, "diff_response_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want: DiffResponse{
+			want: DiffOutput{
 				WorkflowName: "workflow1",
 			},
 			wantAPIReqBody: readFile(t, "diff_request_good.json"),
@@ -248,7 +246,7 @@ func TestDiff(t *testing.T) {
 		{
 			name:     "error creating http request",
 			endpoint: string('\f'),
-			wantErr:  fmt.Errorf("unable to create api request: parse \"\\f/projects/project1/targets/target1/operations\": net/url: invalid control character in URL"),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/projects/project1/targets/target1/operations": net/url: invalid control character in URL`),
 		},
 		{
 			name:           "error making http request",
@@ -312,8 +310,7 @@ func TestDiff(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
-			// TODO rename var
-			diff, err := client.Diff(
+			got, err := client.Diff(
 				context.Background(),
 				"project1",
 				"target1",
@@ -325,7 +322,7 @@ func TestDiff(t *testing.T) {
 				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, diff, tt.want)
+				assert.Equal(t, got, tt.want)
 			}
 		})
 	}
@@ -374,8 +371,7 @@ func TestExecuteWorkflow(t *testing.T) {
 			name:     "error creating http request",
 			input:    executeWorkflowValidInput,
 			endpoint: string('\f'),
-			// TODO use backticks
-			wantErr: fmt.Errorf("unable to create api request: parse \"\\f/workflows\": net/url: invalid control character in URL"),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/workflows": net/url: invalid control character in URL`),
 		},
 		{
 			name:           "error making http request",
