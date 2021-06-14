@@ -241,3 +241,49 @@ func (c *Client) ExecuteWorkflow(ctx context.Context, input ExecuteWorkflowInput
 
 	return output, nil
 }
+
+// TODO use 'input' struct?
+// Diff submits a "diff" for the provided project target.
+func (c *Client) Sync(ctx context.Context, project, target, sha, path string) (SyncOutput, error) {
+	url := fmt.Sprintf("%s/projects/%s/targets/%s/operations", c.endpoint, project, target)
+
+	targetReq := targetOperationRequest{
+		Path: path,
+		SHA:  sha,
+		Type: sync,
+	}
+
+	reqBody, err := json.Marshal(targetReq)
+	if err != nil {
+		return SyncOutput{}, fmt.Errorf("unable to create api request body, error: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return SyncOutput{}, fmt.Errorf("unable to create api request: %w", err)
+	}
+
+	req.Header.Add("Authorization", c.authToken)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return SyncOutput{}, fmt.Errorf("unable to make api call: %w", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return SyncOutput{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
+	}
+
+	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
+		return SyncOutput{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var output SyncOutput
+	if err := json.Unmarshal(body, &output); err != nil {
+		return SyncOutput{}, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return output, nil
+}
