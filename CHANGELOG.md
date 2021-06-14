@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.3 (2021-06-14)
+### Changed
+* Using X-B3-TraceId as trace HTTP header
+
 ## v0.1.2 (2021-06-14)
 ### Changed
 * Adding HTTP headers to Vault client for logging (e.g. transaction ID)
