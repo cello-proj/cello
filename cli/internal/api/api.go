@@ -70,7 +70,7 @@ type targetOperationOutput struct {
 	WorkflowName string `json:"workflow_name"`
 }
 
-// targetOperationReques represents a target operation request.
+// targetOperationRequest represents a target operation request.
 type targetOperationRequest struct {
 	Path string `json:"path"`
 	SHA  string `json:"sha"`
