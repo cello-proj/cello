@@ -149,7 +149,6 @@ func (c *Client) Diff(ctx context.Context, project, target, sha, path string) (D
 		Type: diff,
 	}
 
-	// TODO test?
 	reqBody, err := json.Marshal(targetReq)
 	if err != nil {
 		return DiffResponse{}, fmt.Errorf("unable to create api request body, error: %w", err)

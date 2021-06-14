@@ -75,7 +75,10 @@ func TestGetWorkflowStatus(t *testing.T) {
 					http.NotFound(w, r)
 				}
 
-				// TODO handle verb. Better way to wire up a handler?
+				if r.Method != http.MethodGet {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
 
 				if tt.writeBadContentLength {
 					w.Header().Set("Content-Length", "1")
@@ -167,7 +170,10 @@ func TestGetWorkflows(t *testing.T) {
 					http.NotFound(w, r)
 				}
 
-				// TODO handle verb. Better way to wire up a handler?
+				if r.Method != http.MethodGet {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
 
 				if tt.writeBadContentLength {
 					w.Header().Set("Content-Length", "1")
@@ -190,14 +196,13 @@ func TestGetWorkflows(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
-			// TODO update var
-			status, err := client.GetWorkflows(context.Background(), "project1", "target1")
+			workflows, err := client.GetWorkflows(context.Background(), "project1", "target1")
 
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, status, tt.want)
+				assert.Equal(t, workflows, tt.want)
 			}
 		})
 	}
@@ -212,7 +217,7 @@ func TestDiff(t *testing.T) {
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
 		want                  DiffResponse
-		wantAPIReqBody        []byte // TODO use string?
+		wantAPIReqBody        []byte
 		wantErr               error
 	}{
 		{
@@ -256,7 +261,6 @@ func TestDiff(t *testing.T) {
 			wantAPIReqBody:        readFile(t, "diff_request_good.json"),
 			wantErr:               fmt.Errorf("error reading response body. status code: %d, error: unexpected EOF", http.StatusOK),
 		},
-		// TODO any others? generate our request?
 	}
 
 	for _, tt := range tests {
