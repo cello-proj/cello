@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.0 (2021-06-14)
+### Fixed
+* Move env to internal service package
+
 ## v0.1.1 (2021-06-09)
 ### Fixed
 * Add additional valid status codes for Vault health check
