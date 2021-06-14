@@ -15,14 +15,10 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List workflow executions for a given project and target",
 	Long:  "List workflow executions for a given project and target",
-	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		project := args[0]
-		target := args[1]
-
 		apiCl := api.NewClient(argoCloudOpsServiceAddr())
 
-		resp, err := apiCl.GetWorkflows(context.Background(), project, target)
+		resp, err := apiCl.GetWorkflows(context.Background(), projectName, targetName)
 		if err != nil {
 			return err
 		}
