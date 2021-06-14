@@ -15,7 +15,12 @@ var rootCmd = &cobra.Command{
 }
 
 var (
+	// Flags
+	gitPath     string
+	gitSHA      string
 	projectName string
+	repository  string
+	sha         string
 	targetName  string
 
 	// TODO populate during build/release

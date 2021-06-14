@@ -17,13 +17,14 @@ var getCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
-		apiCl := api.NewClient(argoCloudOpsServiceAddr())
+		apiCl := api.NewClient(argoCloudOpsServiceAddr(), "")
 
 		status, err := apiCl.GetWorkflowStatus(context.Background(), name)
 		if err != nil {
 			return err
 		}
 
+		// Our current "contract" is to output json.
 		output, err := json.Marshal(status)
 		if err != nil {
 			return fmt.Errorf("unable to generate output, error: %w", err)

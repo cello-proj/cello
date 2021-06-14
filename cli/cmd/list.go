@@ -16,7 +16,7 @@ var listCmd = &cobra.Command{
 	Short: "List workflow executions for a given project and target",
 	Long:  "List workflow executions for a given project and target",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		apiCl := api.NewClient(argoCloudOpsServiceAddr())
+		apiCl := api.NewClient(argoCloudOpsServiceAddr(), "")
 
 		resp, err := apiCl.GetWorkflows(context.Background(), projectName, targetName)
 		if err != nil {
