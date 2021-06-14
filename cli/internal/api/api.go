@@ -40,6 +40,17 @@ func NewClient(endpoint string) Client {
 	}
 }
 
+// GetWorkflowStatusResponse represents the status of a workflow.
+type GetWorkflowStatusResponse struct {
+	Name     string `json:"name"`
+	Status   string `json:"status"`
+	Created  string `json:"created"`
+	Finished string `json:"finished"`
+}
+
+// GetWorkflowsResponse represents a collection of workflows.
+type GetWorkflowsResponse []string
+
 // GetWorkflowStatus gets the status of a workflow.
 func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflowStatusResponse, error) {
 	url := fmt.Sprintf("%s/workflows/%s", c.endpoint, name)
@@ -72,9 +83,34 @@ func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflo
 	return wfResp, nil
 }
 
-type GetWorkflowStatusResponse struct {
-	Name     string `json:"name"`
-	Status   string `json:"status"`
-	Created  string `json:"created"`
-	Finished string `json:"finished"`
+// GetWorkflows gets the list of workflows for a project and target.
+func (c *Client) GetWorkflows(ctx context.Context, project, target string) (GetWorkflowsResponse, error) {
+	url := fmt.Sprintf("%s/projects/%s/targets/%s/workflows", c.endpoint, project, target)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return GetWorkflowsResponse{}, fmt.Errorf("unable to create api request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return GetWorkflowsResponse{}, fmt.Errorf("unable to make api call: %w", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return GetWorkflowsResponse{}, fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return GetWorkflowsResponse{}, fmt.Errorf("received unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var wfResp GetWorkflowsResponse
+	if err := json.Unmarshal(body, &wfResp); err != nil {
+		return wfResp, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return wfResp, nil
 }
