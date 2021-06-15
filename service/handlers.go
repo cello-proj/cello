@@ -14,6 +14,7 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+
 	vault "github.com/hashicorp/vault/api"
 
 	"github.com/aws/aws-sdk-go/aws/arn"

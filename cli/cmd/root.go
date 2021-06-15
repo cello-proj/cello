@@ -37,7 +37,7 @@ var (
 // to the rootCmd.
 func Execute(versionInfo string) {
 	version = versionInfo
-	rootCmd.Execute()
+	cobra.CheckErr(rootCmd.Execute())
 }
 
 // For root level flags
