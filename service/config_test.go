@@ -55,13 +55,13 @@ func TestGetCommandDefinition(t *testing.T) {
 
 	// unknown framework
 	_, err = config.getCommandDefinition("not-so-cool-new-framework", "sync")
-	if err.Error() != "Unknown framework 'not-so-cool-new-framework'" {
+	if err.Error() != "unknown framework 'not-so-cool-new-framework'" {
 		t.Errorf("expected error for unknown framework")
 	}
 
 	// unknown type
 	_, err = config.getCommandDefinition("cool-new-framework", "razzle-dazzle")
-	if err.Error() != "Unknown command type 'razzle-dazzle'" {
+	if err.Error() != "unknown command type 'razzle-dazzle'" {
 		t.Errorf("expected error for unknown type")
 	}
 }
