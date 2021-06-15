@@ -37,6 +37,7 @@ var syncCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(syncCmd)
 
+	// TODO these should be '-' separated.
 	syncCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
 	syncCmd.Flags().StringVarP(&gitSHA, "sha", "s", "", "Commit sha to use when creating workflow through git")
 	syncCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
