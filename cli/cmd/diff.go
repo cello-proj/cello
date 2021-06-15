@@ -39,10 +39,9 @@ func init() {
 	diffCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
 	diffCmd.Flags().StringVarP(&gitSHA, "sha", "s", "", "Commit sha to use when creating workflow through git")
 	diffCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
-	// TODO is this correct (inconsistent)?
+	// TODO inconsistent
 	diffCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
 
-	diffCmd.MarkFlagRequired("repository")
 	diffCmd.MarkFlagRequired("path")
 	diffCmd.MarkFlagRequired("sha")
 	diffCmd.MarkFlagRequired("project_name")

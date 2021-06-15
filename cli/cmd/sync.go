@@ -40,7 +40,7 @@ func init() {
 	syncCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
 	syncCmd.Flags().StringVarP(&gitSHA, "sha", "s", "", "Commit sha to use when creating workflow through git")
 	syncCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
-	// TODO is this correct (inconsistent)?
+	// TODO inconsistent
 	syncCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
 
 	syncCmd.MarkFlagRequired("path")
