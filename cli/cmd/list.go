@@ -32,11 +32,12 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(listCmd)
+
 	// TODO this is our current contract. These should really be `-` separated.
 	listCmd.Flags().StringVarP(&projectName, "project_name", "n", "", "Name of project")
 	listCmd.Flags().StringVarP(&targetName, "target_name", "t", "", "Name of target")
+
 	listCmd.MarkFlagRequired("project_name")
 	listCmd.MarkFlagRequired("target_name")
-
-	rootCmd.AddCommand(listCmd)
 }
