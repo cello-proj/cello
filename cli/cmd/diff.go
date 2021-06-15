@@ -35,6 +35,8 @@ var diffCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(diffCmd)
+
 	// TODO these should be '-' separated.
 	diffCmd.Flags().StringVarP(&gitPath, "path", "p", "", "Path to manifest within git repository")
 	diffCmd.Flags().StringVarP(&gitSHA, "sha", "s", "", "Commit sha to use when creating workflow through git")
