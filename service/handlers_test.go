@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	// #nosec
 	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
@@ -561,6 +562,7 @@ func runTests(t *testing.T, tests []test) {
 
 			if tt.body != "" {
 				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				defer resp.Body.Close()
 				if err != nil {
 					t.Errorf("Error loading body")
 				}

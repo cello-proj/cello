@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -107,7 +108,7 @@ func (a ArgoWorkflow) Logs(ctx context.Context, workflowName string) (*Logs, err
 	var argoWorkflowLogs Logs
 	for {
 		event, err := stream.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 
@@ -142,7 +143,7 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 			return nil
 		default:
 			event, err := stream.Recv()
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return nil
 			}
 
@@ -194,7 +195,7 @@ func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[st
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("failed to submit workflow: %v", err)
+		return "", fmt.Errorf("failed to submit workflow: %w", err)
 	}
 
 	return strings.ToLower(created.Name), nil

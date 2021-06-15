@@ -89,12 +89,12 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 		return errors.New("parameters must include execute_container_image_uri")
 	}
 
-	if !h.isValidImageUri(parameters["execute_container_image_uri"]) {
+	if !h.isValidImageURI(parameters["execute_container_image_uri"]) {
 		return errors.New("execute_container_image_uri must be a valid container uri")
 	}
 
 	if _, ok := parameters["pre_container_image_uri"]; ok {
-		if !h.isValidImageUri(parameters["pre_container_image_uri"]) {
+		if !h.isValidImageURI(parameters["pre_container_image_uri"]) {
 			return errors.New("pre_container_image_uri must be a valid container uri")
 		}
 	}
@@ -106,13 +106,28 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	level.Debug(h.logger).Log("message", "executing health check")
 	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", os.Getenv("VAULT_ADDR"))
+
+	// #nosec
 	response, err := http.Get(vaultEndpoint)
 	if err != nil {
 		level.Error(h.logger).Log("message", fmt.Sprintf("received error connecting to vault endpoint %s", vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable, err)
-	} else if response.StatusCode != 200 && response.StatusCode != 429 {
+		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
+		return
+	}
+
+	// We don't care about the body but need to read it all and close it
+	// regardless.
+	// https://golang.org/pkg/net/http/#Client.Do
+	defer response.Body.Close()
+	_, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		level.Error(h.logger).Log("message", "unable to read body; continuing", "error", err)
+		// Continue on and handle the actual response code from Vault accordingly.
+	}
+
+	if response.StatusCode != 200 && response.StatusCode != 429 {
 		level.Error(h.logger).Log("message", fmt.Sprintf("received code %d which is not 200 (initialized, unsealed, and active) or 429 (unsealed and standby) when connecting to vault endpoint %s", response.StatusCode, vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable, err)
+		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
 	} else {
 		fmt.Fprintln(w, "Health check succeeded")
 	}
@@ -132,7 +147,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	workflowIDs, err := h.argo.List(h.argoCtx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
-		h.errorResponse(w, "error listing workflows", http.StatusBadRequest, err)
+		h.errorResponse(w, "error listing workflows", http.StatusBadRequest)
 		return
 	}
 
@@ -144,7 +159,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 			workflow, err := h.argo.Status(h.argoCtx, workflowID)
 			if err != nil {
 				level.Error(l).Log("message", "error retrieving workflows", "error", err)
-				h.errorResponse(w, "error retrieving workflows", http.StatusBadRequest, err)
+				h.errorResponse(w, "error retrieving workflows", http.StatusBadRequest)
 				return
 			}
 			workflows = append(workflows, *workflow)
@@ -154,7 +169,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(workflows)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow IDs", "error", err)
-		h.errorResponse(w, "error serializing workflow IDs", http.StatusBadRequest, err)
+		h.errorResponse(w, "error serializing workflow IDs", http.StatusBadRequest)
 		return
 	}
 
@@ -183,7 +198,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading authorization data", "error", err)
-		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError)
 		return
 	}
 
@@ -191,21 +206,21 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(reqBody, &cgwr)
 	if err != nil {
 		level.Error(l).Log("message", "error deserializing request body", "error", err)
-		h.errorResponse(w, "error deserializing request body", http.StatusBadRequest, err)
+		h.errorResponse(w, "error deserializing request body", http.StatusBadRequest)
 		return
 	}
 
 	ah := r.Header.Get("Authorization")
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing", http.StatusUnauthorized)
 		return
 	}
 
 	cwr, err := h.loadCreateWorkflowRequestFromGit(cgwr.Repository, cgwr.CommitHash, cgwr.Path)
 	if err != nil {
 		level.Error(l).Log("message", "error loading workflow data from git", "error", err)
-		h.errorResponse(w, "error loading workflow data from git", http.StatusBadRequest, err)
+		h.errorResponse(w, "error loading workflow data from git", http.StatusBadRequest)
 		return
 	}
 
@@ -226,7 +241,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading authorization data", "error", err)
-		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError)
 		return
 	}
 
@@ -234,7 +249,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(reqBody, &cwr)
 	if err != nil {
 		level.Error(l).Log("message", "error deserializing workflow data", "error", err)
-		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest, err)
+		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest)
 		return
 	}
 
@@ -243,7 +258,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing", http.StatusUnauthorized)
 		return
 	}
 
@@ -252,37 +267,34 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 }
 
 // Creates a workflow
-func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr createWorkflowRequest, l log.Logger) {
+// Context is not currently used as Argo has its own and Vault doesn't
+// currently support it.
+func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr createWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		level.Error(l).Log("message", "error in parameters", "error", err)
-		h.errorResponse(w, "error in parameters", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error in parameters", http.StatusInternalServerError)
 		return
 	}
 
-	frameworks, err := h.config.listFrameworks()
-	if err != nil {
-		level.Error(l).Log("message", "error reading frameworks from config", "error", err)
-		h.errorResponse(w, "error reading frameworks from config", http.StatusBadRequest, err)
-		return
-	}
+	frameworks := h.config.listFrameworks()
 
 	if !stringInSlice(frameworks, cwr.Framework) {
 		level.Error(l).Log("error", "unknown framework")
-		h.errorResponse(w, "unknown framework", http.StatusBadRequest, err)
+		h.errorResponse(w, "unknown framework", http.StatusBadRequest)
 		return
 	}
 
 	types, err := h.config.listTypes(cwr.Framework)
 	if err != nil {
 		level.Error(l).Log("message", "error reading types from config", "error", err)
-		h.errorResponse(w, "error reading types from config", http.StatusBadRequest, err)
+		h.errorResponse(w, "error reading types from config", http.StatusBadRequest)
 		return
 	}
 
 	if !stringInSlice(types, cwr.Type) {
 		level.Error(l).Log("error", "unknown type")
-		h.errorResponse(w, "unknown type", http.StatusBadRequest, err)
+		h.errorResponse(w, "unknown type", http.StatusBadRequest)
 		return
 	}
 
@@ -292,7 +304,7 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	for k := range cwr.Arguments {
 		if k != "init" && k != "execute" {
 			level.Error(l).Log("message", "arguments must be init or execute", "error", err)
-			h.errorResponse(w, "arguments must be init or execute", http.StatusBadRequest, err)
+			h.errorResponse(w, "arguments must be init or execute", http.StatusBadRequest)
 			return
 		}
 	}
@@ -310,7 +322,7 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	}
 
 	// TODO: Fix type must be specified valication and add test
-	//	h.errorResponse(w, "type must be specified", http.StatusBadRequest, err)
+	//	h.errorResponse(w, "type must be specified", http.StatusBadRequest)
 	//	return
 	//}
 
@@ -322,20 +334,20 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	commandDefinition, err := h.config.getCommandDefinition(cwr.Framework, cwr.Type)
 	if err != nil {
 		level.Error(l).Log("message", "unable to get command definition", "error", err)
-		h.errorResponse(w, "unable to get command definition", http.StatusBadRequest, err)
+		h.errorResponse(w, "unable to get command definition", http.StatusBadRequest)
 		return
 	}
 	executeCommand, err := generateExecuteCommand(commandDefinition, environmentVariablesString, cwr.Arguments)
 	if err != nil {
 		level.Error(l).Log("message", "unable to generate command", "error", err)
-		h.errorResponse(w, "unable to generate command", http.StatusBadRequest, err)
+		h.errorResponse(w, "unable to generate command", http.StatusBadRequest)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -343,7 +355,7 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "bad or unknown credentials provider", "error", err)
-		h.errorResponse(w, "bad or unknown credentials provider", http.StatusInternalServerError, err)
+		h.errorResponse(w, "bad or unknown credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -351,27 +363,27 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	credentialsToken, err := cp.GetToken()
 	if err != nil {
 		level.Error(l).Log("message", "error getting credentials provider token", "error", err)
-		h.errorResponse(w, "error getting credentials provider token", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error getting credentials provider token", http.StatusInternalServerError)
 		return
 	}
 
 	projectExists, err := cp.ProjectExists(cwr.ProjectName)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
-		h.errorResponse(w, "error checking project", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
 		return
 	}
 
 	if !projectExists {
 		level.Error(l).Log("message", "project does not exist", "error", err)
-		h.errorResponse(w, "project does not exist", http.StatusBadRequest, err)
+		h.errorResponse(w, "project does not exist", http.StatusBadRequest)
 		return
 	}
 
 	// TODO: handle error when implemented
 	//targetExists, _ := cp.targetExists(cwr.TargetName)
 	//if !targetExists {
-	//	h.errorResponse(w, "target must already exist", http.StatusBadRequest, err)
+	//	h.errorResponse(w, "target must already exist", http.StatusBadRequest)
 	//	return
 	//}
 	level.Debug(l).Log("message", "creating workflow parameters")
@@ -381,7 +393,7 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters)
 	if err != nil {
 		level.Error(l).Log("message", "error creating workflow", "error", err)
-		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError)
 		return
 	}
 
@@ -395,7 +407,7 @@ func (h handler) createWorkflowFromRequest(ctx context.Context, w http.ResponseW
 	jsonData, err := json.Marshal(cwresp)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow response", "error", err)
-		h.errorResponse(w, "error serializing workflow response", http.StatusBadRequest, err)
+		h.errorResponse(w, "error serializing workflow response", http.StatusBadRequest)
 		return
 	}
 	fmt.Fprintln(w, string(jsonData))
@@ -416,7 +428,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	status, err := h.argo.Status(h.argoCtx, workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow", "error", err)
-		h.errorResponse(w, "error getting workflow", http.StatusBadRequest, err)
+		h.errorResponse(w, "error getting workflow", http.StatusBadRequest)
 		return
 	}
 
@@ -424,7 +436,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(status) // TODO handle error in http resp
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow", "error", err)
-		h.errorResponse(w, "error serializing workflow", http.StatusBadRequest, err)
+		h.errorResponse(w, "error serializing workflow", http.StatusBadRequest)
 		return
 	}
 
@@ -444,21 +456,21 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
 		return
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.AuthorizedAdmin(h.env.AdminSecret) {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -466,7 +478,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
 		return
 	}
 
@@ -474,14 +486,14 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	targetInfo, err := cp.GetTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving target information", "error", err)
-		h.errorResponse(w, "error retrieving target information", http.StatusBadRequest, err)
+		h.errorResponse(w, "error retrieving target information", http.StatusBadRequest)
 		return
 	}
 
 	jsonResult, err := json.Marshal(targetInfo)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing json target data", "error", err)
-		h.errorResponse(w, "error serializing json target data", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error serializing json target data", http.StatusInternalServerError)
 		return
 	}
 
@@ -503,14 +515,14 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	argoWorkflowLogs, err := h.argo.Logs(h.argoCtx, workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logs", "error", err)
-		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest, err)
+		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest)
 		return
 	}
 
 	jsonData, err := json.Marshal(argoWorkflowLogs)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow logs", "error", err)
-		h.errorResponse(w, "error serializing workflow logs", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error serializing workflow logs", http.StatusInternalServerError)
 		return
 	}
 	fmt.Fprintln(w, string(jsonData))
@@ -532,7 +544,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	err := h.argo.LogStream(h.argoCtx, workflowName, w)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logstream", "error", err)
-		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest, err)
+		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest)
 		return
 	}
 }
@@ -551,7 +563,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request body", "error", err)
-		h.errorResponse(w, "error reading request body", http.StatusInternalServerError, nil)
+		h.errorResponse(w, "error reading request body", http.StatusInternalServerError)
 		return
 	}
 
@@ -559,7 +571,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(reqBody, &capp)
 	if err != nil {
 		level.Error(l).Log("message", "error parsing json", "error", err)
-		h.errorResponse(w, "error parsing json", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error parsing json", http.StatusInternalServerError)
 		return
 	}
 
@@ -570,21 +582,21 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
 		return
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.AuthorizedAdmin(h.env.AdminSecret) {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -592,7 +604,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
 		return
 	}
 
@@ -605,13 +617,13 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	projectExists, err := cp.ProjectExists(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
-		h.errorResponse(w, "error checking project", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
 		return
 	}
 
 	if projectExists {
 		level.Error(l).Log("error", "project already exists")
-		h.errorResponse(w, "project already exists", http.StatusBadRequest, nil)
+		h.errorResponse(w, "project already exists", http.StatusBadRequest)
 		return
 	}
 
@@ -619,7 +631,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	role, secret, err := cp.CreateProject(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error creating project", "error", err)
-		h.errorResponse(w, "error creating project", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
 		return
 	}
 
@@ -628,7 +640,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	jsonResult, err := json.Marshal(t)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing token", "error", err)
-		h.errorResponse(w, "error serializing token", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error serializing token", http.StatusInternalServerError)
 		return
 	}
 	fmt.Fprint(w, string(jsonResult))
@@ -646,21 +658,21 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization token", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
 		return
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.AuthorizedAdmin(h.env.AdminSecret) {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -668,7 +680,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
 		return
 	}
 
@@ -676,7 +688,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	jsonResult, err := cp.GetProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project", "error", err)
-		h.errorResponse(w, "error retrieving project", http.StatusNotFound, err)
+		h.errorResponse(w, "error retrieving project", http.StatusNotFound)
 		return
 	}
 	fmt.Fprint(w, jsonResult)
@@ -694,21 +706,21 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
 		return
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
 	if !a.AuthorizedAdmin(h.env.AdminSecret) {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -716,7 +728,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
 		return
 	}
 
@@ -724,7 +736,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	projectExists, err := cp.ProjectExists(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
-		h.errorResponse(w, "error checking project", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
 		return
 	}
 
@@ -737,13 +749,13 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	targets, err := cp.ListTargets(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting all targets", "error", err)
-		h.errorResponse(w, "error getting all targets", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error getting all targets", http.StatusInternalServerError)
 		return
 	}
 
 	if len(targets) > 0 {
 		level.Error(l).Log("error", "project has existing targets, not deleting")
-		h.errorResponse(w, "project has existing targets, not deleting", http.StatusBadRequest, nil)
+		h.errorResponse(w, "project has existing targets, not deleting", http.StatusBadRequest)
 		return
 	}
 
@@ -751,7 +763,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	err = cp.DeleteProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error deleting project", "error", err)
-		h.errorResponse(w, "error deleting project", http.StatusBadRequest, err)
+		h.errorResponse(w, "error deleting project", http.StatusBadRequest)
 		return
 	}
 }
@@ -768,7 +780,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request body", "error", err)
-		h.errorResponse(w, "error reading request body", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error reading request body", http.StatusInternalServerError)
 		return
 	}
 
@@ -776,7 +788,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(reqBody, &ctr)
 	if err != nil {
 		level.Error(l).Log("message", "error parsing request body to target data", "error", err)
-		h.errorResponse(w, "error parsing request body to target data", http.StatusBadRequest, err)
+		h.errorResponse(w, "error parsing request body to target data", http.StatusBadRequest)
 		return
 	}
 
@@ -786,7 +798,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -794,14 +806,14 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 
 	if !a.AuthorizedAdmin(h.env.AdminSecret) {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -809,7 +821,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -822,27 +834,27 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 
 	if ctr.Type != "aws_account" {
 		level.Error(l).Log("error", "type must be aws_account")
-		h.errorResponse(w, "type must be aws_account", http.StatusBadRequest, nil)
+		h.errorResponse(w, "type must be aws_account", http.StatusBadRequest)
 		return
 	}
 
 	if len(ctr.Properties.PolicyArns) > 5 {
 		level.Error(l).Log("error", "policy arns list length cannot be greater than 5")
-		h.errorResponse(w, "policy arns list length cannot be greater than 5", http.StatusBadRequest, nil)
+		h.errorResponse(w, "policy arns list length cannot be greater than 5", http.StatusBadRequest)
 		return
 	}
 
 	for _, policyArn := range ctr.Properties.PolicyArns {
 		if !arn.IsARN(policyArn) {
 			level.Error(l).Log("message", fmt.Sprintf("policy arn %s must be a valid arn", policyArn))
-			h.errorResponse(w, fmt.Sprintf("policy arn %s must be a valid arn", policyArn), http.StatusBadRequest, nil)
+			h.errorResponse(w, fmt.Sprintf("policy arn %s must be a valid arn", policyArn), http.StatusBadRequest)
 			return
 		}
 	}
 
 	if !arn.IsARN(ctr.Properties.RoleArn) {
 		level.Error(l).Log("message", fmt.Sprintf("role arn %s must be a valid arn", ctr.Properties.RoleArn))
-		h.errorResponse(w, fmt.Sprintf("role arn %s must be a valid arn", ctr.Properties.RoleArn), http.StatusBadRequest, nil)
+		h.errorResponse(w, fmt.Sprintf("role arn %s must be a valid arn", ctr.Properties.RoleArn), http.StatusBadRequest)
 		return
 	}
 
@@ -850,7 +862,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	// TODO: handle error when implemented
 	if targetExists {
 		level.Error(l).Log("message", "target name must not already exist")
-		h.errorResponse(w, "target name must not already exist", http.StatusBadRequest, nil)
+		h.errorResponse(w, "target name must not already exist", http.StatusBadRequest)
 		return
 	}
 
@@ -858,7 +870,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	err = cp.CreateTarget(projectName, ctr)
 	if err != nil {
 		level.Error(l).Log("message", "error creating target", "error", err)
-		h.errorResponse(w, "error creating target", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error creating target", http.StatusInternalServerError)
 		return
 	}
 
@@ -878,7 +890,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	a, err := credentials.NewAuthorization(ah) // todo add validation
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -886,14 +898,14 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 
 	if !a.AuthorizedAdmin(h.env.AdminSecret) {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, nil)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -901,7 +913,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
 		return
 	}
 
@@ -909,7 +921,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	err = cp.DeleteTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error deleting target", "error", err)
-		h.errorResponse(w, "error deleting target", http.StatusBadRequest, err)
+		h.errorResponse(w, "error deleting target", http.StatusBadRequest)
 		return
 	}
 }
@@ -926,7 +938,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized, err)
+		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -934,14 +946,14 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 
 	if !a.AuthorizedAdmin(h.env.AdminSecret) {
 		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized, err)
+		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
 		return
 	}
 
 	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest, err)
+		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
 		return
 	}
 
@@ -949,14 +961,14 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	cp, err := h.newCredentialsProvider(*a, cpSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
 
 	targets, err := cp.ListTargets(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error listing targets", "error", err)
-		h.errorResponse(w, "error listing targets", http.StatusInternalServerError, err)
+		h.errorResponse(w, "error listing targets", http.StatusInternalServerError)
 		return
 	}
 
@@ -969,7 +981,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 }
 
 // Convenience method that writes a failure response in a standard manner
-func (h handler) errorResponse(w http.ResponseWriter, message string, httpStatus int, err error) {
+func (h handler) errorResponse(w http.ResponseWriter, message string, httpStatus int) {
 	r := generateErrorResponseJSON(message)
 	w.WriteHeader(httpStatus)
 	fmt.Fprint(w, r)
@@ -978,17 +990,17 @@ func (h handler) errorResponse(w http.ResponseWriter, message string, httpStatus
 // Validates a project name
 func (h handler) validateProjectName(projectName string, w http.ResponseWriter) (bool, error) {
 	if len(projectName) < 4 {
-		h.errorResponse(w, "project name must be greater than 3 characters", http.StatusBadRequest, nil)
+		h.errorResponse(w, "project name must be greater than 3 characters", http.StatusBadRequest)
 		return false, errors.New("project name must be greater than 3 characters")
 	}
 
 	if len(projectName) > 32 {
-		h.errorResponse(w, "project name must be less than 32 characters", http.StatusBadRequest, nil)
+		h.errorResponse(w, "project name must be less than 32 characters", http.StatusBadRequest)
 		return false, errors.New("project name must be less than 32 characters")
 	}
 
 	if !isStringAlphaNumeric(projectName) {
-		h.errorResponse(w, "project name must be alpha-numeric", http.StatusBadRequest, nil)
+		h.errorResponse(w, "project name must be alpha-numeric", http.StatusBadRequest)
 		return false, errors.New("project name must be alpha-numeric")
 	}
 
@@ -998,17 +1010,17 @@ func (h handler) validateProjectName(projectName string, w http.ResponseWriter) 
 // Validates a target name
 func (h handler) validateTargetName(targetName string, w http.ResponseWriter) (bool, error) {
 	if len(targetName) < 4 {
-		h.errorResponse(w, "target name must be greater than 3 characters", http.StatusBadRequest, nil)
+		h.errorResponse(w, "target name must be greater than 3 characters", http.StatusBadRequest)
 		return false, errors.New("target name must be greater than 3 characters")
 	}
 
 	if len(targetName) > 32 {
-		h.errorResponse(w, "target name must be less than 32 characters", http.StatusBadRequest, nil)
+		h.errorResponse(w, "target name must be less than 32 characters", http.StatusBadRequest)
 		return false, errors.New("target name must be less than 32 characters")
 	}
 
 	if !isStringAlphaNumericUnderscore(targetName) {
-		h.errorResponse(w, "target name must be alpha-numeric with underscores", http.StatusBadRequest, nil)
+		h.errorResponse(w, "target name must be alpha-numeric with underscores", http.StatusBadRequest)
 		return false, errors.New("target name must be alpha-numeric with underscores")
 	}
 
@@ -1016,8 +1028,8 @@ func (h handler) validateTargetName(targetName string, w http.ResponseWriter) (b
 }
 
 // Returns true, if the image uri is a valid container image uri
-func (h handler) isValidImageUri(imageUri string) bool {
-	_, err := reference.ParseAnyReference(imageUri)
+func (h handler) isValidImageURI(imageURI string) bool {
+	_, err := reference.ParseAnyReference(imageURI)
 	return err == nil
 }
 

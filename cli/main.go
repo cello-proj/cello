@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -99,7 +100,7 @@ func parseEqualsSeparatedCSVToMap(s string) (map[string]string, error) {
 	for _, e := range l {
 		v := strings.Split(e, "=")
 		if len(v) != 2 {
-			return r, fmt.Errorf("Could not parse equals separated value %s", e)
+			return r, fmt.Errorf("could not parse equals separated value %s", e)
 		}
 		key := v[0]
 		value := v[1]
@@ -174,7 +175,7 @@ func generateParameters(parametersCSV string) (map[string]string, error) {
 	if parametersCSV != "" {
 		parameters, err := parseEqualsSeparatedCSVToMap(parametersCSV)
 		if err != nil {
-			return make(map[string]string), nil
+			return make(map[string]string), err
 		}
 		return parameters, nil
 	}
@@ -229,7 +230,7 @@ func printLogStreamOutput(body io.ReadCloser) {
 	p := make([]byte, 256)
 	for {
 		n, err := body.Read(p)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		fmt.Print(string(p[:n]))

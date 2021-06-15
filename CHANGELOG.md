@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+* Add more linting.
+* Fix issues reported by linter.
+
 ## v0.2.0 (2021-06-15)
 ### Changed
 * Move env to internal service package

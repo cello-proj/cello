@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// #nosec
 const testSecret = "tha5hei2Hee5le8n"
 
 var allEnvVars = []string{
