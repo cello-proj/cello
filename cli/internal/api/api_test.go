@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -124,6 +125,99 @@ func TestGetLogs(t *testing.T) {
 		})
 	}
 }
+
+func TestStreamLogs(t *testing.T) {
+	tests := []struct {
+		name                  string
+		apiRespBody           []byte
+		apiRespStatusCode     int
+		endpoint              string          // Used to create new request error.
+		mockHTTPClient        *mockHTTPClient // Only used when needed.
+		writeBadContentLength bool            // Used to create response body error.
+		want                  []byte
+		wantErr               error
+	}{
+		{
+			name:              "good",
+			apiRespBody:       readFile(t, "stream_logs_good.txt"),
+			apiRespStatusCode: http.StatusOK,
+			want:              readFile(t, "stream_logs_good.txt"),
+		},
+		{
+			name:              "error non-200 response",
+			apiRespBody:       []byte("boom"),
+			apiRespStatusCode: http.StatusInternalServerError,
+			wantErr:           fmt.Errorf("received unexpected status code: 500"),
+		},
+		{
+			name:     "error creating http request",
+			endpoint: string('\f'),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/workflows/workflow1/logstream": net/url: invalid control character in URL`),
+		},
+		{
+			name:           "error making http request",
+			mockHTTPClient: &mockHTTPClient{errDo: fmt.Errorf("boom")},
+			wantErr:        fmt.Errorf("unable to make api call: boom"),
+		},
+		{
+			name:                  "error reading body",
+			apiRespBody:           nil,
+			apiRespStatusCode:     http.StatusOK,
+			writeBadContentLength: true,
+			wantErr:               fmt.Errorf("error reading response body. status code: %d, error: unexpected EOF", http.StatusOK),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantURL := "/workflows/workflow1/logstream"
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != wantURL {
+					http.NotFound(w, r)
+				}
+
+				if r.Method != http.MethodGet {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+
+				if tt.writeBadContentLength {
+					w.Header().Set("Content-Length", "1")
+				}
+				w.WriteHeader(tt.apiRespStatusCode)
+				fmt.Fprint(w, string(tt.apiRespBody))
+			}))
+			defer server.Close()
+
+			client := Client{
+				endpoint:   server.URL,
+				httpClient: &http.Client{},
+			}
+
+			if tt.endpoint != "" {
+				client.endpoint = tt.endpoint
+			}
+
+			if tt.mockHTTPClient != nil {
+				client.httpClient = tt.mockHTTPClient
+			}
+
+			var b bytes.Buffer
+			err := client.StreamLogs(context.Background(), &b, "workflow1")
+
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
+			} else {
+				assert.Nil(t, err)
+				got, err := io.ReadAll(&b)
+				assert.Nil(t, err)
+				assert.Equal(t, string(got), string(tt.want))
+			}
+		})
+	}
+}
+
 func TestGetWorkflowStatus(t *testing.T) {
 	tests := []struct {
 		name                  string

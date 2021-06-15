@@ -124,9 +124,9 @@ func (c *Client) GetLogs(ctx context.Context, workflowName string) (GetLogsOutpu
 }
 
 // StreamLogs streams the logs of a workflow.
-// TODO how to handle the stream? Channel? maybe take a io.Writer/Closer?
 func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName string) error {
 	url := fmt.Sprintf("%s/workflows/%s/logstream", c.endpoint, workflowName)
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("unable to create api request: %w", err)
@@ -144,7 +144,7 @@ func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName strin
 
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
