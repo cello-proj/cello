@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -63,10 +63,8 @@ func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map
 	return "success", nil
 }
 
-func newMockProvider(svc *vault.Client) func(a credentials.Authorization) (credentials.Provider, error) {
-	return func(a credentials.Authorization) (credentials.Provider, error) {
-		return &mockCredentialsProvider{}, nil
-	}
+func newMockProvider(a credentials.Authorization, svc *vault.Client) (credentials.Provider, error) {
+	return &mockCredentialsProvider{}, nil
 }
 
 type mockCredentialsProvider struct{}
@@ -131,6 +129,10 @@ func (m mockCredentialsProvider) TargetExists(name string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func mockCredsProvSvc(c credentials.VaultConfig, h http.Header) (*vault.Client, error) {
+	return &vault.Client{}, nil
 }
 
 type test struct {
@@ -581,13 +583,15 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 
 	h := handler{
 		logger:                 log.NewNopLogger(),
-		newCredentialsProvider: newMockProvider(nil),
+		newCredentialsProvider: newMockProvider,
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
-		env: env.EnvVars{
+		newCredsProviderSvc:    mockCredsProvSvc,
+		env: env.Vars{
 			AdminSecret: testPassword},
 	}
+
 	var router = setupRouter(h)
 	req, _ := http.NewRequest(method, url, body)
 	authorizationHeader := "vault:user:" + testPassword

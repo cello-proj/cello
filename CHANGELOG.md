@@ -1,9 +1,20 @@
 # Changelog
 
-
 ## Unreleased
 * Add more linting.
 * Fix issues reported by linter.
+
+## v0.2.0 (2021-06-15)
+### Changed
+* Move env to internal service package
+
+## v0.1.3 (2021-06-14)
+### Changed
+* Using X-B3-TraceId as trace HTTP header
+
+## v0.1.2 (2021-06-14)
+### Changed
+* Adding HTTP headers to Vault client for logging (e.g. transaction ID)
 
 ## v0.1.1 (2021-06-09)
 ### Fixed

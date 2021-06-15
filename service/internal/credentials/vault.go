@@ -3,6 +3,7 @@ package credentials
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	vault "github.com/hashicorp/vault/api"
@@ -55,15 +56,51 @@ type VaultProvider struct {
 }
 
 // Returns a new vaultCredentialsProvider
-func NewVaultProvider(svc *vault.Client) func(a Authorization) (Provider, error) {
-	return func(a Authorization) (Provider, error) {
-		return &VaultProvider{
-			vaultLogicalSvc: vaultLogical(svc.Logical()),
-			vaultSysSvc:     vaultSys(svc.Sys()),
-			roleID:          a.Key,
-			secretID:        a.Secret,
-		}, nil
+func NewVaultProvider(a Authorization, svc *vault.Client) (Provider, error) {
+	return &VaultProvider{
+		vaultLogicalSvc: vaultLogical(svc.Logical()),
+		vaultSysSvc:     vaultSys(svc.Sys()),
+		roleID:          a.Key,
+		secretID:        a.Secret,
+	}, nil
+}
+
+type VaultConfig struct {
+	config *vault.Config
+	role   string
+	secret string
+}
+
+// NewVaultConfig returns a new VaultConfig.
+func NewVaultConfig(config *vault.Config, role, secret string) *VaultConfig {
+	return &VaultConfig{
+		config: config,
+		role:   role,
+		secret: secret,
 	}
+}
+
+// TODO before open sourcing we should provide the token instead of generating it
+func NewVaultSvc(c VaultConfig, h http.Header) (*vault.Client, error) {
+	vaultSvc, err := vault.NewClient(c.config)
+	if err != nil {
+		return nil, err
+	}
+
+	vaultSvc.SetHeaders(h)
+
+	options := map[string]interface{}{
+		"role_id":   c.role,
+		"secret_id": c.secret,
+	}
+
+	sec, err := vaultSvc.Logical().Write("auth/approle/login", options)
+	if err != nil {
+		return nil, err
+	}
+
+	vaultSvc.SetToken(sec.Auth.ClientToken)
+	return vaultSvc, nil
 }
 
 // Authorization represents a user's authorization token.

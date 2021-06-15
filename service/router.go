@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	txIDHeader = "X-TransactionID"
+	txIDHeader = "X-B3-TraceId"
 )
 
 func setupRouter(h handler) *mux.Router {

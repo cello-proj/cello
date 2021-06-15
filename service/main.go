@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
@@ -36,12 +36,6 @@ func main() {
 	}
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", env.ConfigFilePath))
 
-	vaultSvc, err := newVaultSvc(env.VaultAddress, env.VaultRole, env.VaultSecret)
-	if err != nil {
-		level.Error(logger).Log("message", "error creating vault service client", "error", err)
-		panic("error creating vault service client")
-	}
-
 	gitClient, err := newBasicGitClient(env.SSHPEMFile)
 	if err != nil {
 		level.Error(logger).Log("message", "error creating git client", "error", err)
@@ -56,12 +50,18 @@ func main() {
 	// setupRouter and applying it to the request will wipe out Mux vars (or any other data Mux sets in its context).
 	h := handler{
 		logger:                 logger,
-		newCredentialsProvider: credentials.NewVaultProvider(vaultSvc),
+		newCredentialsProvider: credentials.NewVaultProvider,
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
 		argoCtx:                argoCtx,
 		config:                 config,
 		gitClient:              gitClient,
 		env:                    env,
+		// Function that the handler will use to create a Vault svc using the vaultConfig below.
+		// Vault svc needs to be created within the handler methods because Vault uses headers
+		// to add metadata (e.g. transaction ID) to its logs.
+		newCredsProviderSvc: credentials.NewVaultSvc,
+		// A Vault config is needed to be able to create a Vault service from within the handlers.
+		vaultConfig: *credentials.NewVaultConfig(&vault.Config{Address: env.VaultAddress}, env.VaultRole, env.VaultSecret),
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
@@ -81,30 +81,4 @@ func setLogLevel(logger *log.Logger, logLevel string) {
 	default:
 		*logger = level.NewFilter(*logger, level.AllowInfo())
 	}
-}
-
-// TODO before open sourcing we should provide the token instead of generating it
-func newVaultSvc(vaultAddr, role, secret string) (*vault.Client, error) {
-	config := &vault.Config{
-		Address: vaultAddr,
-	}
-
-	vaultSvc, err := vault.NewClient(config)
-	if err != nil {
-		return nil, err
-
-	}
-
-	options := map[string]interface{}{
-		"role_id":   role,
-		"secret_id": secret,
-	}
-
-	sec, err := vaultSvc.Logical().Write("auth/approle/login", options)
-	if err != nil {
-		return nil, err
-	}
-
-	vaultSvc.SetToken(sec.Auth.ClientToken)
-	return vaultSvc, nil
 }
