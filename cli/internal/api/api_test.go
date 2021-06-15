@@ -157,7 +157,7 @@ func TestGetWorkflowStatus(t *testing.T) {
 		{
 			name:     "error creating http request",
 			endpoint: string('\f'),
-			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/workflows/project1": net/url: invalid control character in URL`),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/workflows/workflow1": net/url: invalid control character in URL`),
 		},
 		{
 			name:           "error making http request",

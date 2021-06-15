@@ -124,21 +124,40 @@ func (c *Client) GetLogs(ctx context.Context, workflowName string) (GetLogsOutpu
 
 // StreamLogs streams the logs of a workflow.
 // TODO how to handle the stream? Channel? maybe take a io.Writer/Closer?
-func (c *Client) StreamLogs(ctx context.Context, workflowName string) (GetLogsOutput, error) {
-	// TODO
+func (c *Client) StreamLogs(ctx context.Context, w io.WriteCloser, workflowName string) error {
 	url := fmt.Sprintf("%s/workflows/%s/logstream", c.endpoint, workflowName)
+	// TODO does this kill our reader properly in case of early error?
+	defer w.Close()
 
-	body, err := c.getRequest(ctx, url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return GetLogsOutput{}, err
+		return fmt.Errorf("unable to create api request: %w", err)
 	}
 
-	var output GetLogsOutput
-	if err := json.Unmarshal(body, &output); err != nil {
-		return GetLogsOutput{}, fmt.Errorf("unable to parse response: %w", err)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("unable to make api call: %w", err)
 	}
 
-	return output, nil
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// TODO review
+	for {
+		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			return err
+		}
+		break
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // GetWorkflowStatus gets the status of a workflow.

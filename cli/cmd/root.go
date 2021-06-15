@@ -39,6 +39,7 @@ var (
 // to the rootCmd.
 func Execute(versionInfo string) {
 	version = versionInfo
+	// TODO does this error as we like? When does/doesn't usage fire?
 	cobra.CheckErr(rootCmd.Execute())
 }
 
