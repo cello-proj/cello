@@ -15,23 +15,21 @@ var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Syncs a project target using a manifest in git",
 	Long:  "Syncs a project target using a manifest in git",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		token, err := argoCloudOpsUserToken()
 		if err != nil {
-			return err
+			cobra.CheckErr(err)
 		}
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), token)
 
 		resp, err := apiCl.Sync(context.Background(), projectName, targetName, gitSHA, gitPath)
 		if err != nil {
-			return err
+			cobra.CheckErr(err)
 		}
 
 		// Our current contract is to output only the name.
 		fmt.Print(resp.WorkflowName)
-
-		return nil
 	},
 }
 

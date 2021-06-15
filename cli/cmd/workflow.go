@@ -17,28 +17,28 @@ var workflowCmd = &cobra.Command{
 	Use:   "workflow",
 	Short: "Creates a workflow execution with provided arguments",
 	Long:  "Creates a workflow execution with provided arguments",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		token, err := argoCloudOpsUserToken()
 		if err != nil {
-			return err
+			cobra.CheckErr(err)
 		}
 
 		// TODO this should be removed in favor of supporting multiple flags.
 		arguments, err := helpers.GenerateArguments(argumentsCSV)
 		if err != nil {
-			return fmt.Errorf("unable to generate arguments, error: %w", err)
+			cobra.CheckErr(fmt.Errorf("unable to generate arguments, error: %w", err))
 		}
 
 		// TODO this should be removed in favor of supporting multiple flags.
 		envVars, err := helpers.ParseEqualsSeparatedCSVToMap(environmentVariablesCSV)
 		if err != nil {
-			return fmt.Errorf("unable to generate parameters, error: %w", err)
+			cobra.CheckErr(fmt.Errorf("unable to generate parameters, error: %w", err))
 		}
 
 		// TOOD this should be removed in favor of supporting multiple flags.
 		parameters, err := helpers.GenerateParameters(parametersCSV)
 		if err != nil {
-			return fmt.Errorf("unable to generate parameters, error: %w", err)
+			cobra.CheckErr(fmt.Errorf("unable to generate parameters, error: %w", err))
 		}
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), token)
@@ -56,13 +56,11 @@ var workflowCmd = &cobra.Command{
 
 		resp, err := apiCl.ExecuteWorkflow(context.Background(), input)
 		if err != nil {
-			return err
+			cobra.CheckErr(err)
 		}
 
 		// Our current contract is to output only the name.
 		fmt.Print(resp.WorkflowName)
-
-		return nil
 	},
 }
 

@@ -16,24 +16,22 @@ var logsCmd = &cobra.Command{
 	Short: "Gets logs from a workflow",
 	Long:  "Gets logs from a workflow",
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		workflowName := args[0]
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), "")
 
 		if streamLogs {
 			// This is a _very_ simple approach to streaming.
-			return apiCl.StreamLogs(context.Background(), os.Stdout, workflowName)
+			cobra.CheckErr(apiCl.StreamLogs(context.Background(), os.Stdout, workflowName))
 		}
 
 		resp, err := apiCl.GetLogs(context.Background(), workflowName)
 		if err != nil {
-			return err
+			cobra.CheckErr(err)
 		}
 
 		fmt.Println(strings.Join(resp.Logs, "\n"))
-
-		return nil
 	},
 }
 
