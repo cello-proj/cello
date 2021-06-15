@@ -13,6 +13,113 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetLogs(t *testing.T) {
+	tests := []struct {
+		name                  string
+		apiRespBody           []byte
+		apiRespStatusCode     int
+		endpoint              string          // Used to create new request error.
+		mockHTTPClient        *mockHTTPClient // Only used when needed.
+		writeBadContentLength bool            // Used to create response body error.
+		want                  GetLogsOutput
+		wantErr               error
+	}{
+		{
+			name:              "good",
+			apiRespBody:       readFile(t, "get_logs_good.json"),
+			apiRespStatusCode: http.StatusOK,
+			want: GetLogsOutput{
+				Logs: []string{
+					"line 1",
+					"line 2",
+					"line 3",
+					"line 4",
+					"line 5",
+					"line 6",
+					"line 7",
+					"line 8",
+					"line 9",
+					"line 10",
+				},
+			},
+		},
+		{
+			name:              "error non-200 response",
+			apiRespBody:       []byte("boom"),
+			apiRespStatusCode: http.StatusInternalServerError,
+			wantErr:           fmt.Errorf("received unexpected status code: 500, body: boom"),
+		},
+		{
+			name:              "error non-json response",
+			apiRespBody:       []byte("boom"),
+			apiRespStatusCode: 200,
+			wantErr:           fmt.Errorf("unable to parse response: invalid character 'b' looking for beginning of value"),
+		},
+		{
+			name:     "error creating http request",
+			endpoint: string('\f'),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/workflows/workflow1/logs": net/url: invalid control character in URL`),
+		},
+		{
+			name:           "error making http request",
+			mockHTTPClient: &mockHTTPClient{errDo: fmt.Errorf("boom")},
+			wantErr:        fmt.Errorf("unable to make api call: boom"),
+		},
+		{
+			name:                  "error reading body",
+			apiRespBody:           nil,
+			apiRespStatusCode:     http.StatusOK,
+			writeBadContentLength: true,
+			wantErr:               fmt.Errorf("error reading response body. status code: %d, error: unexpected EOF", http.StatusOK),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantURL := "/workflows/workflow1/logs"
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != wantURL {
+					http.NotFound(w, r)
+				}
+
+				if r.Method != http.MethodGet {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+
+				if tt.writeBadContentLength {
+					w.Header().Set("Content-Length", "1")
+				}
+				w.WriteHeader(tt.apiRespStatusCode)
+				fmt.Fprint(w, string(tt.apiRespBody))
+			}))
+			defer server.Close()
+
+			client := Client{
+				endpoint:   server.URL,
+				httpClient: &http.Client{},
+			}
+
+			if tt.endpoint != "" {
+				client.endpoint = tt.endpoint
+			}
+
+			if tt.mockHTTPClient != nil {
+				client.httpClient = tt.mockHTTPClient
+			}
+
+			output, err := client.GetLogs(context.Background(), "workflow1")
+
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, output, tt.want)
+			}
+		})
+	}
+}
 func TestGetWorkflowStatus(t *testing.T) {
 	tests := []struct {
 		name                  string

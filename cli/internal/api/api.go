@@ -80,6 +80,11 @@ type targetOperationRequest struct {
 // DiffOutput represents the output for Diff.
 type DiffOutput targetOperationOutput
 
+// GetLogsOutput respresents the output for GetLogs.
+type GetLogsOutput struct {
+	Logs []string `json:"logs"`
+}
+
 // ExecuteWorkflowInput represents the input for ExecuteWorkflow.
 type ExecuteWorkflowInput struct {
 	Arguments            map[string][]string `json:"arguments"`
@@ -100,7 +105,44 @@ type ExecuteWorkflowOutput struct {
 // SyncOutput represents the output for Sync.
 type SyncOutput targetOperationOutput
 
+// GetLogs gets the logs of a workflow.
+func (c *Client) GetLogs(ctx context.Context, workflowName string) (GetLogsOutput, error) {
+	url := fmt.Sprintf("%s/workflows/%s/logs", c.endpoint, workflowName)
+
+	body, err := c.getRequest(ctx, url)
+	if err != nil {
+		return GetLogsOutput{}, err
+	}
+
+	var output GetLogsOutput
+	if err := json.Unmarshal(body, &output); err != nil {
+		return GetLogsOutput{}, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return output, nil
+}
+
+// StreamLogs streams the logs of a workflow.
+// TODO how to handle the stream? Channel? maybe take a io.Writer/Closer?
+func (c *Client) StreamLogs(ctx context.Context, workflowName string) (GetLogsOutput, error) {
+	// TODO
+	url := fmt.Sprintf("%s/workflows/%s/logstream", c.endpoint, workflowName)
+
+	body, err := c.getRequest(ctx, url)
+	if err != nil {
+		return GetLogsOutput{}, err
+	}
+
+	var output GetLogsOutput
+	if err := json.Unmarshal(body, &output); err != nil {
+		return GetLogsOutput{}, fmt.Errorf("unable to parse response: %w", err)
+	}
+
+	return output, nil
+}
+
 // GetWorkflowStatus gets the status of a workflow.
+// TODO rename param
 func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflowStatusOutput, error) {
 	url := fmt.Sprintf("%s/workflows/%s", c.endpoint, name)
 

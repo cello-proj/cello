@@ -25,6 +25,7 @@ var (
 	projectName             string
 	repository              string
 	sha                     string
+	streamLogs              bool
 	targetName              string
 	workflowTemplateName    string
 	workflowType            string
