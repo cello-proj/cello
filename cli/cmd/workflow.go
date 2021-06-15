@@ -18,7 +18,6 @@ var workflowCmd = &cobra.Command{
 	Short: "Creates a workflow execution with provided arguments",
 	Long:  "Creates a workflow execution with provided arguments",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		token, err := argoCloudOpsUserToken()
 		if err != nil {
 			return err

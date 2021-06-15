@@ -16,7 +16,6 @@ var diffCmd = &cobra.Command{
 	Short: "Diff a project target using a manifest in git",
 	Long:  "Diff a project target using a manifest in git",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		token, err := argoCloudOpsUserToken()
 		if err != nil {
 			return err

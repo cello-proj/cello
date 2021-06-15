@@ -16,7 +16,6 @@ var syncCmd = &cobra.Command{
 	Short: "Syncs a project target using a manifest in git",
 	Long:  "Syncs a project target using a manifest in git",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		token, err := argoCloudOpsUserToken()
 		if err != nil {
 			return err
