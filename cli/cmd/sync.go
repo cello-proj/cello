@@ -45,7 +45,6 @@ func init() {
 	// TODO is this correct (inconsistent)?
 	syncCmd.Flags().StringVarP(&targetName, "target", "t", "", "Name of target")
 
-	syncCmd.MarkFlagRequired("repository")
 	syncCmd.MarkFlagRequired("path")
 	syncCmd.MarkFlagRequired("sha")
 	syncCmd.MarkFlagRequired("project_name")

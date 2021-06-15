@@ -23,8 +23,6 @@ var (
 	gitSHA                  string
 	parametersCSV           string
 	projectName             string
-	repository              string
-	sha                     string
 	streamLogs              bool
 	targetName              string
 	workflowTemplateName    string

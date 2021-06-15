@@ -14,7 +14,7 @@ func GenerateParameters(parametersCSV string) (map[string]string, error) {
 	if parametersCSV != "" {
 		parameters, err := ParseEqualsSeparatedCSVToMap(parametersCSV)
 		if err != nil {
-			return make(map[string]string), nil
+			return make(map[string]string), err
 		}
 		return parameters, nil
 	}
@@ -49,7 +49,7 @@ func ParseEqualsSeparatedCSVToMap(s string) (map[string]string, error) {
 	for _, e := range l {
 		v := strings.Split(e, "=")
 		if len(v) != 2 {
-			return r, fmt.Errorf("Could not parse equals separated value %s", e)
+			return r, fmt.Errorf("could not parse equals separated value %s", e)
 		}
 		key := v[0]
 		value := v[1]

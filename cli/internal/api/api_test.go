@@ -13,6 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	authToken = "secret1234"
+)
+
 func TestGetLogs(t *testing.T) {
 	tests := []struct {
 		name                  string
@@ -372,7 +376,7 @@ func TestDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			authToken := "secret1234"
+
 			wantURL := "/projects/project1/targets/target1/operations"
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -499,7 +503,6 @@ func TestExecuteWorkflow(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			authToken := "secret1234"
 			wantURL := "/workflows"
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -613,7 +616,6 @@ func TestSync(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			authToken := "secret1234"
 			wantURL := "/projects/project1/targets/target1/operations"
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
