@@ -142,9 +142,8 @@ func (c *Client) StreamLogs(ctx context.Context, workflowName string) (GetLogsOu
 }
 
 // GetWorkflowStatus gets the status of a workflow.
-// TODO rename param
-func (c *Client) GetWorkflowStatus(ctx context.Context, name string) (GetWorkflowStatusOutput, error) {
-	url := fmt.Sprintf("%s/workflows/%s", c.endpoint, name)
+func (c *Client) GetWorkflowStatus(ctx context.Context, workflowName string) (GetWorkflowStatusOutput, error) {
+	url := fmt.Sprintf("%s/workflows/%s", c.endpoint, workflowName)
 
 	body, err := c.getRequest(ctx, url)
 	if err != nil {

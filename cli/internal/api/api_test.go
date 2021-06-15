@@ -175,7 +175,7 @@ func TestGetWorkflowStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wantURL := "/workflows/project1"
+			wantURL := "/workflows/workflow1"
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != wantURL {
@@ -208,7 +208,7 @@ func TestGetWorkflowStatus(t *testing.T) {
 				client.httpClient = tt.mockHTTPClient
 			}
 
-			output, err := client.GetWorkflowStatus(context.Background(), "project1")
+			output, err := client.GetWorkflowStatus(context.Background(), "workflow1")
 
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
