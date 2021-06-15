@@ -795,7 +795,7 @@ var (
 		},
 		EnvironmentVariables: map[string]string{
 			"AWS_REGION": "us-west-2",
-			"CODE_URI":   "s3://argo-cloudops-cet-dev/cdk-example.zip",
+			"CODE_URI":   "s3://aco-cli-refactor/cdk-example.zip",
 			"VAULT_ADDR": "http://docker.for.mac.localhost:8200",
 		},
 		Framework: "cdk",
