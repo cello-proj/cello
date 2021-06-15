@@ -1,16 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
-
 	"github.com/argoproj-labs/argo-cloudops/cli/cmd"
 )
 
@@ -19,223 +9,223 @@ const (
 	version = "0.1.1"
 )
 
-func getenv(key, fallback string) string {
-	value := os.Getenv(key)
-	if len(value) == 0 {
-		return fallback
-	}
-	return value
-}
+// func getenv(key, fallback string) string {
+// 	value := os.Getenv(key)
+// 	if len(value) == 0 {
+// 		return fallback
+// 	}
+// 	return value
+// }
 
-func argoCloudOpsServiceAddr() string {
-	return getenv("ARGO_CLOUDOPS_SERVICE_ADDR", "https://localhost:8443")
-}
+// func argoCloudOpsServiceAddr() string {
+// 	return getenv("ARGO_CLOUDOPS_SERVICE_ADDR", "https://localhost:8443")
+// }
 
-func argoCloudOpsUserToken() (string, error) {
-	key := "ARGO_CLOUDOPS_USER_TOKEN"
-	result := os.Getenv(key)
-	if len(result) == 0 {
-		return "", fmt.Errorf("%s not found", key)
-	}
-	return result, nil
-}
+// func argoCloudOpsUserToken() (string, error) {
+// 	key := "ARGO_CLOUDOPS_USER_TOKEN"
+// 	result := os.Getenv(key)
+// 	if len(result) == 0 {
+// 		return "", fmt.Errorf("%s not found", key)
+// 	}
+// 	return result, nil
+// }
 
-type createWorkflowRequest struct {
-	Arguments            map[string][]string `json:"arguments"`
-	EnvironmentVariables map[string]string   `json:"environment_variables"`
-	Framework            string              `json:"framework"`
-	Parameters           map[string]string   `json:"parameters"`
-	ProjectName          string              `json:"project_name"`
-	TargetName           string              `json:"target_name"`
-	Type                 string              `json:"type"`
-	WorkflowTemplateName string              `json:"workflow_template_name"`
-}
+// type createWorkflowRequest struct {
+// 	Arguments            map[string][]string `json:"arguments"`
+// 	EnvironmentVariables map[string]string   `json:"environment_variables"`
+// 	Framework            string              `json:"framework"`
+// 	Parameters           map[string]string   `json:"parameters"`
+// 	ProjectName          string              `json:"project_name"`
+// 	TargetName           string              `json:"target_name"`
+// 	Type                 string              `json:"type"`
+// 	WorkflowTemplateName string              `json:"workflow_template_name"`
+// }
 
-func newCreateWorkflowRequest(arguments map[string][]string, parameters map[string]string, framework, executeType, environmentVariablesCSV, projectName, targetName, workflowTemplateName string) (*createWorkflowRequest, error) {
-	environmentVariables, err := parseEqualsSeparatedCSVToMap(environmentVariablesCSV)
-	if err != nil {
-		return nil, err
-	}
+// func newCreateWorkflowRequest(arguments map[string][]string, parameters map[string]string, framework, executeType, environmentVariablesCSV, projectName, targetName, workflowTemplateName string) (*createWorkflowRequest, error) {
+// 	environmentVariables, err := parseEqualsSeparatedCSVToMap(environmentVariablesCSV)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	cr := &createWorkflowRequest{
-		Arguments:            arguments,
-		EnvironmentVariables: environmentVariables,
-		Framework:            framework,
-		Parameters:           parameters,
-		ProjectName:          projectName,
-		TargetName:           targetName,
-		Type:                 executeType,
-		WorkflowTemplateName: workflowTemplateName,
-	}
+// 	cr := &createWorkflowRequest{
+// 		Arguments:            arguments,
+// 		EnvironmentVariables: environmentVariables,
+// 		Framework:            framework,
+// 		Parameters:           parameters,
+// 		ProjectName:          projectName,
+// 		TargetName:           targetName,
+// 		Type:                 executeType,
+// 		WorkflowTemplateName: workflowTemplateName,
+// 	}
 
-	return cr, nil
-}
+// 	return cr, nil
+// }
 
-type createGitWorkflowRequest struct {
-	Repository string `json:"repository"`
-	CommitHash string `json:"sha"`
-	Path       string `json:"path"`
-	Type       string `json:"type"`
-}
+// type createGitWorkflowRequest struct {
+// 	Repository string `json:"repository"`
+// 	CommitHash string `json:"sha"`
+// 	Path       string `json:"path"`
+// 	Type       string `json:"type"`
+// }
 
-func newCreateGitWorkflowRequest(repository, path, sha string) *createGitWorkflowRequest {
-	return &createGitWorkflowRequest{
-		Repository: repository,
-		CommitHash: sha,
-		Path:       path,
-	}
-}
+// func newCreateGitWorkflowRequest(repository, path, sha string) *createGitWorkflowRequest {
+// 	return &createGitWorkflowRequest{
+// 		Repository: repository,
+// 		CommitHash: sha,
+// 		Path:       path,
+// 	}
+// }
 
-type workflowResponse struct {
-	WorkflowName string `json:"workflow_name"`
-}
+// type workflowResponse struct {
+// 	WorkflowName string `json:"workflow_name"`
+// }
 
-type logsResponse struct {
-	Logs []string `json:"logs"`
-}
+// type logsResponse struct {
+// 	Logs []string `json:"logs"`
+// }
 
-func parseEqualsSeparatedCSVToMap(s string) (map[string]string, error) {
-	r := make(map[string]string)
-	l := strings.Split(s, ",")
-	for _, e := range l {
-		v := strings.Split(e, "=")
-		if len(v) != 2 {
-			return r, fmt.Errorf("could not parse equals separated value %s", e)
-		}
-		key := v[0]
-		value := v[1]
-		r[key] = value
-	}
-	return r, nil
-}
+// func parseEqualsSeparatedCSVToMap(s string) (map[string]string, error) {
+// 	r := make(map[string]string)
+// 	l := strings.Split(s, ",")
+// 	for _, e := range l {
+// 		v := strings.Split(e, "=")
+// 		if len(v) != 2 {
+// 			return r, fmt.Errorf("could not parse equals separated value %s", e)
+// 		}
+// 		key := v[0]
+// 		value := v[1]
+// 		r[key] = value
+// 	}
+// 	return r, nil
+// }
 
-func executeWorkflow(cwr *createWorkflowRequest) (string, error) {
-	client := &http.Client{}
+// func executeWorkflow(cwr *createWorkflowRequest) (string, error) {
+// 	client := &http.Client{}
 
-	requestJSON, err := json.Marshal(cwr)
-	if err != nil {
-		return "", err
-	}
+// 	requestJSON, err := json.Marshal(cwr)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	endpoint := fmt.Sprintf("%s/workflows", argoCloudOpsServiceAddr())
-	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(requestJSON))
-	if err != nil {
-		return "", err
-	}
+// 	endpoint := fmt.Sprintf("%s/workflows", argoCloudOpsServiceAddr())
+// 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(requestJSON))
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	argoCloudOpsUserTkn, err := argoCloudOpsUserToken()
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("Authorization", argoCloudOpsUserTkn)
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("execute workflow request failed with status code %d, message %s", resp.StatusCode, resp.Status)
-	}
+// 	argoCloudOpsUserTkn, err := argoCloudOpsUserToken()
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	req.Header.Add("Authorization", argoCloudOpsUserTkn)
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	if resp.StatusCode != 200 {
+// 		return "", fmt.Errorf("execute workflow request failed with status code %d, message %s", resp.StatusCode, resp.Status)
+// 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+// 	defer resp.Body.Close()
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	var wr workflowResponse
+// 	var wr workflowResponse
 
-	err = json.Unmarshal(body, &wr)
-	if err != nil {
-		return "", err
-	}
+// 	err = json.Unmarshal(body, &wr)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return wr.WorkflowName, nil
-}
+// 	return wr.WorkflowName, nil
+// }
 
-func generateArguments(argumentsCSV string) (map[string][]string, error) {
-	arguments := make(map[string][]string)
+// func generateArguments(argumentsCSV string) (map[string][]string, error) {
+// 	arguments := make(map[string][]string)
 
-	if argumentsCSV == "" {
-		return arguments, nil
-	}
+// 	if argumentsCSV == "" {
+// 		return arguments, nil
+// 	}
 
-	a, err := parseEqualsSeparatedCSVToMap(argumentsCSV)
-	if err != nil {
-		return arguments, err
-	}
+// 	a, err := parseEqualsSeparatedCSVToMap(argumentsCSV)
+// 	if err != nil {
+// 		return arguments, err
+// 	}
 
-	for k, v := range a {
-		arguments[k] = strings.Split(v, " ")
-	}
+// 	for k, v := range a {
+// 		arguments[k] = strings.Split(v, " ")
+// 	}
 
-	return arguments, nil
-}
+// 	return arguments, nil
+// }
 
-func generateParameters(parametersCSV string) (map[string]string, error) {
-	if parametersCSV != "" {
-		parameters, err := parseEqualsSeparatedCSVToMap(parametersCSV)
-		if err != nil {
-			return make(map[string]string), err
-		}
-		return parameters, nil
-	}
+// func generateParameters(parametersCSV string) (map[string]string, error) {
+// 	if parametersCSV != "" {
+// 		parameters, err := parseEqualsSeparatedCSVToMap(parametersCSV)
+// 		if err != nil {
+// 			return make(map[string]string), err
+// 		}
+// 		return parameters, nil
+// 	}
 
-	return make(map[string]string), nil
-}
+// 	return make(map[string]string), nil
+// }
 
-func executeGitWorkflow(cgwr *createGitWorkflowRequest, project, target string) (string, error) {
-	client := &http.Client{}
+// func executeGitWorkflow(cgwr *createGitWorkflowRequest, project, target string) (string, error) {
+// 	client := &http.Client{}
 
-	requestJSON, err := json.Marshal(cgwr)
-	if err != nil {
-		return "", err
-	}
+// 	requestJSON, err := json.Marshal(cgwr)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	endpoint := fmt.Sprintf("%s/projects/%s/targets/%s/operations", argoCloudOpsServiceAddr(), project, target)
-	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(requestJSON))
-	if err != nil {
-		return "", err
-	}
+// 	endpoint := fmt.Sprintf("%s/projects/%s/targets/%s/operations", argoCloudOpsServiceAddr(), project, target)
+// 	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(requestJSON))
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	argoCloudOpsUserTkn, err := argoCloudOpsUserToken()
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("Authorization", argoCloudOpsUserTkn)
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	// TODO: status should probably be changed to 201?
-	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
-		return "", fmt.Errorf("execute workflow request failed with status code %d, message %s", resp.StatusCode, resp.Status)
-	}
+// 	argoCloudOpsUserTkn, err := argoCloudOpsUserToken()
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	req.Header.Add("Authorization", argoCloudOpsUserTkn)
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	// TODO: status should probably be changed to 201?
+// 	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
+// 		return "", fmt.Errorf("execute workflow request failed with status code %d, message %s", resp.StatusCode, resp.Status)
+// 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
+// 	defer resp.Body.Close()
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	var wr workflowResponse
+// 	var wr workflowResponse
 
-	if err = json.Unmarshal(body, &wr); err != nil {
-		return "", err
-	}
+// 	if err = json.Unmarshal(body, &wr); err != nil {
+// 		return "", err
+// 	}
 
-	return wr.WorkflowName, nil
-}
+// 	return wr.WorkflowName, nil
+// }
 
-func printLogStreamOutput(body io.ReadCloser) {
-	p := make([]byte, 256)
-	for {
-		n, err := body.Read(p)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		fmt.Print(string(p[:n]))
-	}
-}
+// func printLogStreamOutput(body io.ReadCloser) {
+// 	p := make([]byte, 256)
+// 	for {
+// 		n, err := body.Read(p)
+// 		if errors.Is(err, io.EOF) {
+// 			break
+// 		}
+// 		fmt.Print(string(p[:n]))
+// 	}
+// }
 
 func main() {
 	cmd.Execute(version)
