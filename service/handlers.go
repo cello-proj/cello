@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 	vault "github.com/hashicorp/vault/api"
 
@@ -78,7 +78,7 @@ type handler struct {
 	argoCtx                context.Context
 	config                 *Config
 	gitClient              gitClient
-	env                    env.EnvVars
+	env                    env.Vars
 	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
 	vaultConfig            credentials.VaultConfig
 }

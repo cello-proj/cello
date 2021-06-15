@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.0 (2021-06-15)
+### Changed
+* Move env to internal service package
+
 ## v0.1.3 (2021-06-14)
 ### Changed
 * Using X-B3-TraceId as trace HTTP header

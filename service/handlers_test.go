@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -586,7 +586,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		config:                 config,
 		gitClient:              newMockGitClient(),
 		newCredsProviderSvc:    mockCredsProvSvc,
-		env: env.EnvVars{
+		env: env.Vars{
 			AdminSecret: testPassword},
 	}
 

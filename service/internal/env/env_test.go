@@ -27,7 +27,7 @@ func setup() {
 	for _, envVar := range allEnvVars {
 		os.Unsetenv(envVar)
 	}
-	instance = EnvVars{}
+	instance = Vars{}
 	once = sync.Once{}
 }
 
