@@ -29,7 +29,7 @@ var (
 	workflowType            string
 
 	// TODO populate during build/release
-	version = "0.1.1"
+	version = "0.2.0"
 )
 
 // Execute adds all child commands to the root command and sets flags
@@ -45,6 +45,7 @@ func Execute(versionInfo string) {
 func init() {
 }
 
+// TODO refactor
 func argoCloudOpsServiceAddr() string {
 	addr := os.Getenv("ARGO_CLOUDOPS_SERVICE_ADDR")
 	if addr == "" {
@@ -53,6 +54,7 @@ func argoCloudOpsServiceAddr() string {
 	return addr
 }
 
+// TODO refactor
 func argoCloudOpsUserToken() (string, error) {
 	key := "ARGO_CLOUDOPS_USER_TOKEN"
 	result := os.Getenv(key)
