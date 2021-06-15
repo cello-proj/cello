@@ -9,7 +9,7 @@ import (
 
 const appPrefix = "ARGO_CLOUDOPS"
 
-type EnvVars struct {
+type Vars struct {
 	AdminSecret    string `split_words:"true" required:"true"`
 	VaultRole      string `envconfig:"VAULT_ROLE" required:"true"`
 	VaultSecret    string `envconfig:"VAULT_SECRET" required:"true"`
@@ -23,12 +23,12 @@ type EnvVars struct {
 }
 
 var (
-	instance EnvVars
+	instance Vars
 	once     sync.Once
 	err      error
 )
 
-func GetEnv() (EnvVars, error) {
+func GetEnv() (Vars, error) {
 	once.Do(func() {
 		err = envconfig.Process(appPrefix, &instance)
 		if err != nil {
@@ -39,7 +39,7 @@ func GetEnv() (EnvVars, error) {
 	return instance, err
 }
 
-func (values EnvVars) validate() error {
+func (values Vars) validate() error {
 	if len(values.AdminSecret) < 16 {
 		return errors.New("admin secret must be at least 16 characers long")
 	}
