@@ -48,7 +48,7 @@ func TestVaultCreateProject(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var role = "testRole"
-			if tt.admin == true {
+			if tt.admin {
 				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
@@ -109,7 +109,7 @@ func TestVaultCreateTarget(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var role = "testRole"
-			if tt.admin == true {
+			if tt.admin {
 				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
@@ -166,7 +166,7 @@ func TestVaultDeleteProject(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var role = "testRole"
-			if tt.admin == true {
+			if tt.admin {
 				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
@@ -217,7 +217,7 @@ func TestVaultDeleteTarget(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var role = "testRole"
-			if tt.admin == true {
+			if tt.admin {
 				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
@@ -268,7 +268,7 @@ func TestVaultGetTarget(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var role = "testRole"
-			if tt.admin == true {
+			if tt.admin {
 				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
@@ -322,7 +322,7 @@ func TestVaultGetToken(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var role = "testRole"
-			if tt.admin == true {
+			if tt.admin {
 				role = authorizationKeyAdmin
 			}
 			v := VaultProvider{
@@ -378,7 +378,7 @@ func TestVaultListTargets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			var role = "testRole"
-			if tt.admin == true {
+			if tt.admin {
 				role = authorizationKeyAdmin
 			}
 			var testTargets []interface{}

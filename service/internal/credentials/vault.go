@@ -13,6 +13,7 @@ const (
 	authorizationKeyAdmin = "admin"
 )
 
+// Provider defines the interface required by providers.
 type Provider interface {
 	CreateProject(string) (string, string, error)
 	CreateTarget(string, CreateTargetRequest) error
@@ -45,6 +46,7 @@ const (
 )
 
 var (
+	// ErrNotFound conveys that the item was not found.
 	ErrNotFound = errors.New("item not found")
 )
 
@@ -55,7 +57,7 @@ type VaultProvider struct {
 	vaultSysSvc     vaultSys
 }
 
-// Returns a new vaultCredentialsProvider
+// NewVaultProvider returns a new VaultProvider
 func NewVaultProvider(a Authorization, svc *vault.Client) (Provider, error) {
 	return &VaultProvider{
 		vaultLogicalSvc: vaultLogical(svc.Logical()),
@@ -80,7 +82,9 @@ func NewVaultConfig(config *vault.Config, role, secret string) *VaultConfig {
 	}
 }
 
+// NewVaultSvc returns a new vault.Client.
 // TODO before open sourcing we should provide the token instead of generating it
+// TODO rename to client?
 func NewVaultSvc(c VaultConfig, h http.Header) (*vault.Client, error) {
 	vaultSvc, err := vault.NewClient(c.config)
 	if err != nil {
@@ -110,7 +114,7 @@ type Authorization struct {
 	Secret   string
 }
 
-// Authorization function for token requests.
+// NewAuthorization provides an Authorization from a header.
 // This is separate from admin functions which use the admin env var
 func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 	var a Authorization
@@ -129,13 +133,13 @@ func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 	return &a, nil
 }
 
-// Returns true, if the user is an admin.
+// IsAdmin determines if the Authorization is an admin.
 // TODO See if this can be removed when refactoring auth.
 func (a Authorization) IsAdmin() bool {
 	return a.Key == authorizationKeyAdmin
 }
 
-// Returns true, if the user is an authorized admin
+// AuthorizedAdmin determines if the Authorization is valid and an Admin.
 func (a Authorization) AuthorizedAdmin(adminSecret string) bool {
 	return a.IsAdmin() && a.Secret == adminSecret
 }
@@ -192,8 +196,9 @@ func (v VaultProvider) CreateProject(name string) (string, string, error) {
 	return roleID, secretID, nil
 }
 
+// CreateTarget creates a target for the project.
 // TODO validate policy and other information is correct in target
-// Validate role exists (if possible, etc)
+// TODO Validate role exists (if possible, etc)
 func (v VaultProvider) CreateTarget(projectName string, ctr CreateTargetRequest) error {
 	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to create target")
