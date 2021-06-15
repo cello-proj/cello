@@ -28,8 +28,8 @@ var (
 	workflowTemplateName    string
 	workflowType            string
 
-	// TODO populate during build/release
-	version = "0.2.0"
+	// This is set here so we can access it in this package.
+	version string
 )
 
 // Execute adds all child commands to the root command and sets flags

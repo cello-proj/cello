@@ -21,7 +21,7 @@ var listCmd = &cobra.Command{
 
 		resp, err := apiCl.GetWorkflows(context.Background(), projectName, targetName)
 		if err != nil {
-			return cobra.CheckErr(err)
+			cobra.CheckErr(err)
 		}
 
 		for _, w := range resp {
