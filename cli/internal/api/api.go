@@ -33,6 +33,7 @@ func NewClient(endpoint, authToken string) Client {
 	// TODO handle this better.
 	tr := &http.Transport{}
 	if endpoint == defaultLocalSecureURI {
+		// #nosec
 		tr.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: true,
 		}
@@ -124,11 +125,8 @@ func (c *Client) GetLogs(ctx context.Context, workflowName string) (GetLogsOutpu
 
 // StreamLogs streams the logs of a workflow.
 // TODO how to handle the stream? Channel? maybe take a io.Writer/Closer?
-func (c *Client) StreamLogs(ctx context.Context, w io.WriteCloser, workflowName string) error {
+func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName string) error {
 	url := fmt.Sprintf("%s/workflows/%s/logstream", c.endpoint, workflowName)
-	// TODO does this kill our reader properly in case of early error?
-	defer w.Close()
-
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("unable to create api request: %w", err)
@@ -138,19 +136,15 @@ func (c *Client) StreamLogs(ctx context.Context, w io.WriteCloser, workflowName 
 	if err != nil {
 		return fmt.Errorf("unable to make api call: %w", err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
-	// TODO review
-	for {
-		_, err = io.Copy(w, resp.Body)
-		if err != nil {
-			return err
-		}
-		break
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		return err
 	}
 
 	if resp.StatusCode != http.StatusOK {

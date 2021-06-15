@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
+	"os"
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/cli/internal/api"
@@ -22,26 +22,8 @@ var logsCmd = &cobra.Command{
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), "")
 
 		if streamLogs {
-			r, w := io.Pipe()
-
-			// TODO review this code
-			// Spawn a reader ahead of time.
-			go func() {
-				b := make([]byte, 256)
-				for {
-					n, err := r.Read(b)
-					if err == io.EOF {
-						break
-					}
-					fmt.Print(string(b[:n]))
-				}
-			}()
-
-			if err := apiCl.StreamLogs(context.Background(), w, workflowName); err != nil {
-				return err
-			}
-
-			return nil
+			// This is a _very_ simple approach to streaming.
+			return apiCl.StreamLogs(context.Background(), os.Stdout, workflowName)
 		}
 
 		resp, err := apiCl.GetLogs(context.Background(), workflowName)
