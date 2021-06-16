@@ -16,10 +16,10 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
