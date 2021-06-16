@@ -1,0 +1,73 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+#
+project_name: argo-cloudops
+before:
+  hooks:
+    # Run this first to avoid possible issues with concurrent builds.
+    - go mod tidy
+builds:
+  - id: service
+    binary: service
+    main: ./service/
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+    ldflags:
+      # Don't use the default to avoid passing in 'BuildBy'.
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+  - id: cli
+    binary: argo-cloudops
+    main: ./cli/
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+    ldflags:
+      # Don't use the default to avoid passing in 'BuildBy'.
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+archives:
+  - id: service
+    builds:
+      - service
+    # So it doesn't try to add the default 'extra' files (README, CHANGELOG, etc.)
+    files:
+      - none*
+    format: gz
+    # Don't use the default so we can pass in the 'Binary' to support cli and
+    # server.
+    name_template: "{{ .ProjectName }}_{{.Binary}}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    replacements:
+      386: i386
+      amd64: x86_64
+  - id: cli
+    builds:
+      - cli
+    # Don't use the default so we can pass in the 'Binary' to support cli and
+    # server.
+    name_template: "{{ .ProjectName }}_{{.Binary}}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    # So it doesn't try to add the default 'extra' files (README, CHANGELOG, etc.)
+    files:
+      - none*
+    format: gz
+    replacements:
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+release:
+  # Mark non-final version tags (e.g. -dev, -alpha, -beta, etc.) as draft
+  # releases.
+  prerelease: auto
+changelog:
