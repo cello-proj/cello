@@ -31,7 +31,7 @@ const (
 
 type mockDB struct{}
 
-func newMockDb() db.Client {
+func newMockDB() db.Client {
 	return mockDB{}
 }
 
@@ -735,7 +735,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		env: env.Vars{
 			AdminSecret: testPassword,
 		},
-		dbClient: newMockDb(),
+		dbClient: newMockDB(),
 	}
 
 	var router = setupRouter(h)
