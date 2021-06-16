@@ -1,8 +1,19 @@
 # Changelog
 
 ## Unreleased
-* Add more linting.
-* Fix issues reported by linter.
+### Added
+* Health check tests.
+* More linting.
+
+### Fixed
+* Issues reported by linter.
+
+### Changed
+* Health check uses newer env var pattern.
+* Health check uses newer logging pattern.
+* Health check now responds with the same for success/failure (was json for
+  failures).
+
 
 ## v0.2.0 (2021-06-15)
 ### Changed
