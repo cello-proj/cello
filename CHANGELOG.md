@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+### Added
+* Release automation using GoReleaser.
 
 ## v0.3.0 (2021-06-16)
 ### Added
