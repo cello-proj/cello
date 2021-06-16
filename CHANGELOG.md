@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## v0.3.0 (2021-06-16)
 ### Added
 * Health check tests.
 * More linting.
@@ -15,7 +17,7 @@
   failures).
 
 ## v0.2.1 (2021-06-16)
-### Add
+### Added
 * CLI tests.
 * More linting.
 
@@ -24,7 +26,6 @@
 
 ### Fixed
 * Issues reported by linter.
->>>>>>> main
 
 ## v0.2.0 (2021-06-15)
 ### Changed
