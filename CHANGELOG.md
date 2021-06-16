@@ -14,6 +14,17 @@
 * Health check now responds with the same for success/failure (was json for
   failures).
 
+## v0.2.1 (2021-06-16)
+### Add
+* CLI tests.
+* More linting.
+
+### Changed
+* Break up CLI commands into separate files.
+
+### Fixed
+* Issues reported by linter.
+>>>>>>> main
 
 ## v0.2.0 (2021-06-15)
 ### Changed
