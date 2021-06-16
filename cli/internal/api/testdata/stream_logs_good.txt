@@ -1,0 +1,23 @@
+project1-target1-zqmrk-3321232741: Starting setup.
+project1-target1-zqmrk-3321232741: CODE_URI: s3://aco-cli-refactor/cdk-typescript-example.tar.gz
+project1-target1-zqmrk-3321232741: PROJECT_NAME: project1
+project1-target1-zqmrk-3321232741: TARGET_NAME: target1
+project1-target1-zqmrk-3321232741: VAULT_ADDR: http://docker.for.mac.localhost:8200
+project1-target1-zqmrk-3321232741: Exchanging token 's.mF699y...' via 'http://docker.for.mac.localhost:8200' for target 'aws/sts/argo-cloudops-projects-project1-target-target1'
+project1-target1-zqmrk-3321232741: Exchanging token succesful.
+project1-target1-zqmrk-3321232741: Writing credentials to '/root/.aws/credentials'.
+project1-target1-zqmrk-3321232741: Arn of role assumed 'arn:aws:sts::123456789012:assumed-role/foo-bar-role/vault-approle-argo-cloudops-projects-project1-ta1623791165-4980'.
+project1-target1-zqmrk-3321232741: Downloading s3://aco-cli-refactor/cdk-typescript-example.tar.gz from S3.
+download: s3://aco-cli-refactor/cdk-typescript-example.tar.gz to ./code.tar.gzwith 1 file(s) remaining
+project1-target1-zqmrk-3321232741: Download complete.
+project1-target1-zqmrk-3321232741: Decompressing
+project1-target1-zqmrk-3321232741: Decompressing complete.
+project1-target1-zqmrk-3321232741: Setup complete.
+project1-target1-zqmrk-3321232741:  ⏳  Bootstrapping environment aws://123456789012/us-west-2...
+project1-target1-zqmrk-3321232741:  ✅  Environment aws://123456789012/us-west-2 bootstrapped (no changes).
+project1-target1-zqmrk-3321232741: AppCdkTypescriptStack: deploying...
+project1-target1-zqmrk-3321232741:
+project1-target1-zqmrk-3321232741:  ✅  AppCdkTypescriptStack (no changes)
+project1-target1-zqmrk-3321232741:
+project1-target1-zqmrk-3321232741: Stack ARN:
+project1-target1-zqmrk-3321232741: arn:aws:cloudformation:us-west-2:123456789012:stack/AppCdkTypescriptStack/3729a940-cd5a-11eb-b799-0afc55dd4155
