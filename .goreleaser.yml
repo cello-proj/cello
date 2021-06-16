@@ -44,7 +44,6 @@ archives:
     # So it doesn't try to add the default 'extra' files (README, CHANGELOG, etc.)
     files:
       - none*
-    # format: gz
     # Don't use the default so we can pass 'service' to in the archive file
     # name.
     name_template: "{{ .ProjectName }}_service_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
@@ -59,7 +58,6 @@ archives:
     # So it doesn't try to add the default 'extra' files (README, CHANGELOG, etc.)
     files:
       - none*
-    # format: gz
     replacements:
       386: i386
       amd64: x86_64
