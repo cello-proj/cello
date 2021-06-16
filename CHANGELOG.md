@@ -2,8 +2,22 @@
 
 ## Unreleased
 
+## v0.3.0 (2021-06-16)
+### Added
+* Health check tests.
+* More linting.
+
+### Fixed
+* Issues reported by linter.
+
+### Changed
+* Health check uses newer env var pattern.
+* Health check uses newer logging pattern.
+* Health check now responds with the same for success/failure (was json for
+  failures).
+
 ## v0.2.1 (2021-06-16)
-### Add
+### Added
 * CLI tests.
 * More linting.
 

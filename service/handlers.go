@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 
@@ -103,15 +102,18 @@ func (h handler) validateWorkflowParameters(parameters map[string]string) error 
 }
 
 // Service HealthCheck
-func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
-	level.Debug(h.logger).Log("message", "executing health check")
-	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", os.Getenv("VAULT_ADDR"))
+func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
+	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", h.env.VaultAddress)
+
+	l := h.requestLogger(r, "op", "health-check", "vault-endpoint", vaultEndpoint)
+	level.Debug(l).Log("message", "executing")
 
 	// #nosec
 	response, err := http.Get(vaultEndpoint)
 	if err != nil {
-		level.Error(h.logger).Log("message", fmt.Sprintf("received error connecting to vault endpoint %s", vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
+		level.Error(h.logger).Log("message", "received error connecting to vault", "error", err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(w, "Health check failed")
 		return
 	}
 
@@ -121,16 +123,18 @@ func (h handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	defer response.Body.Close()
 	_, err = ioutil.ReadAll(response.Body)
 	if err != nil {
-		level.Error(h.logger).Log("message", "unable to read body; continuing", "error", err)
+		level.Warn(h.logger).Log("message", "unable to read vault body; continuing", "error", err)
 		// Continue on and handle the actual response code from Vault accordingly.
 	}
 
 	if response.StatusCode != 200 && response.StatusCode != 429 {
-		level.Error(h.logger).Log("message", fmt.Sprintf("received code %d which is not 200 (initialized, unsealed, and active) or 429 (unsealed and standby) when connecting to vault endpoint %s", response.StatusCode, vaultEndpoint))
-		h.errorResponse(w, "Health check failed", http.StatusServiceUnavailable)
-	} else {
-		fmt.Fprintln(w, "Health check succeeded")
+		level.Error(h.logger).Log("message", fmt.Sprintf("received code %d which is not 200 (initialized, unsealed, and active) or 429 (unsealed and standby) when connecting to vault", response.StatusCode))
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(w, "Health check failed")
+		return
 	}
+
+	fmt.Fprintln(w, "Health check succeeded")
 }
 
 // Lists workflows

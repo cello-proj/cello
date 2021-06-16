@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -543,6 +545,105 @@ func TestListWorkflows(t *testing.T) {
 		},
 	}
 	runTests(t, tests)
+}
+
+func TestHealthCheck(t *testing.T) {
+	tests := []struct {
+		name                  string
+		endpoint              string // Used to cause a connection error.
+		vaultStatusCode       int
+		writeBadContentLength bool // Used to create response body error.
+		wantResponseBody      string
+		wantStatusCode        int
+	}{
+		{
+			name:             "good_vault_200",
+			vaultStatusCode:  http.StatusOK,
+			wantResponseBody: "Health check succeeded\n",
+			wantStatusCode:   http.StatusOK,
+		},
+		{
+			name:             "good_vault_429",
+			vaultStatusCode:  http.StatusTooManyRequests,
+			wantResponseBody: "Health check succeeded\n",
+			wantStatusCode:   http.StatusOK,
+		},
+		{
+			// We want successful health check in this vault error scenario.
+			name:                  "error_vault_read_response",
+			vaultStatusCode:       http.StatusOK,
+			writeBadContentLength: true,
+			wantResponseBody:      "Health check succeeded\n",
+			wantStatusCode:        http.StatusOK,
+		},
+		{
+			name:             "error_vault_connection",
+			endpoint:         string('\f'),
+			wantResponseBody: "Health check failed\n",
+			wantStatusCode:   http.StatusServiceUnavailable,
+		},
+		{
+			name:             "error_vault_unhealthy_status_code",
+			vaultStatusCode:  http.StatusInternalServerError,
+			wantResponseBody: "Health check failed\n",
+			wantStatusCode:   http.StatusServiceUnavailable,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantURL := "/v1/sys/health"
+
+			vaultSvc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != wantURL {
+					http.NotFound(w, r)
+				}
+
+				if r.Method != http.MethodGet {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+
+				if tt.writeBadContentLength {
+					w.Header().Set("Content-Length", "1")
+				}
+
+				w.WriteHeader(tt.vaultStatusCode)
+			}))
+			defer vaultSvc.Close()
+
+			vaultEndpoint := vaultSvc.URL
+			if tt.endpoint != "" {
+				vaultEndpoint = tt.endpoint
+			}
+
+			h := handler{
+				logger: log.NewNopLogger(),
+				env: env.Vars{
+					VaultAddress: vaultEndpoint,
+				},
+			}
+
+			// Dummy request.
+			req, err := http.NewRequest("", "", nil)
+			if err != nil {
+				assert.Nil(t, err)
+			}
+
+			resp := httptest.NewRecorder()
+
+			h.healthCheck(resp, req)
+
+			respResult := resp.Result()
+			defer respResult.Body.Close()
+
+			body, err := io.ReadAll(respResult.Body)
+			assert.Nil(t, err)
+
+			assert.Equal(t, tt.wantStatusCode, respResult.StatusCode)
+			assert.Equal(t, tt.wantResponseBody, string(body))
+		})
+	}
 }
 
 // Serialize a type to JSON-encoded byte buffer.
