@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
@@ -23,26 +24,6 @@ import (
 	"github.com/gorilla/mux"
 	"gopkg.in/yaml.v2"
 )
-
-// Create workflow request.
-type createWorkflowRequest struct {
-	Arguments            map[string][]string `yaml:"arguments" json:"arguments"`
-	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
-	Framework            string              `yaml:"framework" json:"framework"`
-	Parameters           map[string]string   `yaml:"parameters" json:"parameters"`
-	ProjectName          string              `yaml:"project_name" json:"project_name"`
-	TargetName           string              `yaml:"target_name" json:"target_name"`
-	Type                 string              `yaml:"type" json:"type"`
-	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
-}
-
-// Create workflow from git manifest request
-type createGitWorkflowRequest struct {
-	Repository string `json:"repository"`
-	CommitHash string `json:"sha"`
-	Path       string `json:"path"`
-	Type       string `json:"type"`
-}
 
 // Represents a JWT token.
 type token struct {
@@ -177,14 +158,14 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 }
 
 // Creates workflow init params by pulling manifest from given git repo, commit sha, and code path
-func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (createWorkflowRequest, error) {
+func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (requests.CreateWorkflowRequest, error) {
 	level.Debug(h.logger).Log("message", fmt.Sprintf("retrieving manifest from repository %s at sha %s with path %s", repository, commitHash, path))
 	fileContents, err := h.gitClient.CheckoutFileFromRepository(repository, commitHash, path)
 	if err != nil {
-		return createWorkflowRequest{}, err
+		return requests.CreateWorkflowRequest{}, err
 	}
 
-	var cwr createWorkflowRequest
+	var cwr requests.CreateWorkflowRequest
 	err = yaml.Unmarshal(fileContents, &cwr)
 	return cwr, err
 }
@@ -202,7 +183,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var cgwr createGitWorkflowRequest
+	var cgwr requests.CreateGitWorkflowRequest
 	err = json.Unmarshal(reqBody, &cgwr)
 	if err != nil {
 		level.Error(l).Log("message", "error deserializing request body", "error", err)
@@ -245,7 +226,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var cwr createWorkflowRequest
+	var cwr requests.CreateWorkflowRequest
 	err = json.Unmarshal(reqBody, &cwr)
 	if err != nil {
 		level.Error(l).Log("message", "error deserializing workflow data", "error", err)
@@ -269,7 +250,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 // Creates a workflow
 // Context is not currently used as Argo has its own and Vault doesn't
 // currently support it.
-func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr createWorkflowRequest, l log.Logger) {
+func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 	if err := h.validateWorkflowParameters(cwr.Parameters); err != nil {
 		level.Error(l).Log("message", "error in parameters", "error", err)
@@ -567,7 +548,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var capp credentials.CreateProjectRequest
+	var capp requests.CreateProjectRequest
 	err = json.Unmarshal(reqBody, &capp)
 	if err != nil {
 		level.Error(l).Log("message", "error parsing json", "error", err)
@@ -685,13 +666,21 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "getting project")
-	jsonResult, err := cp.GetProject(projectName)
+	resp, err := cp.GetProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project", "error", err)
 		h.errorResponse(w, "error retrieving project", http.StatusNotFound)
 		return
 	}
-	fmt.Fprint(w, jsonResult)
+
+	data, err := json.Marshal(resp)
+	if err != nil {
+		level.Error(l).Log("message", "error creating response", "error", err)
+		h.errorResponse(w, "error creating response object", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, data)
 }
 
 // Delete a project
@@ -784,7 +773,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ctr credentials.CreateTargetRequest
+	var ctr requests.CreateTargetRequest
 	err = json.Unmarshal(reqBody, &ctr)
 	if err != nil {
 		level.Error(l).Log("message", "error parsing request body to target data", "error", err)
@@ -858,8 +847,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetExists, _ := cp.TargetExists(ctr.Name)
-	// TODO: handle error when implemented
+	targetExists, _ := cp.TargetExists(projectName, ctr.Name)
 	if targetExists {
 		level.Error(l).Log("message", "target name must not already exist")
 		h.errorResponse(w, "target name must not already exist", http.StatusBadRequest)

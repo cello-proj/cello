@@ -2,6 +2,7 @@ package credentials
 
 import (
 	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -117,7 +118,7 @@ func TestVaultCreateTarget(t *testing.T) {
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
-			err := v.CreateTarget("test", CreateTargetRequest{})
+			err := v.CreateTarget("test", requests.CreateTargetRequest{})
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)
@@ -243,7 +244,7 @@ func TestVaultGetTarget(t *testing.T) {
 	tests := []struct {
 		name               string
 		admin              bool
-		expectedProperties TargetProperties
+		expectedProperties requests.TargetProperties
 		vaultErr           error
 		errResult          bool
 	}{

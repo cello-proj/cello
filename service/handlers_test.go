@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -88,12 +89,12 @@ func (m mockCredentialsProvider) GetProject(string) (string, error) {
 	return `{"name":"project1"}`, nil
 }
 
-func (m mockCredentialsProvider) CreateTarget(name string, req credentials.CreateTargetRequest) error {
+func (m mockCredentialsProvider) CreateTarget(name string, req requests.CreateTargetRequest) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetTarget(string, string) (credentials.TargetProperties, error) {
-	return credentials.TargetProperties{}, nil
+func (m mockCredentialsProvider) GetTarget(string, string) (requests.TargetProperties, error) {
+	return requests.TargetProperties{}, nil
 }
 
 func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
@@ -462,7 +463,7 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 	tests := []test{
 		{
 			name: "can create workflows",
-			req: createGitWorkflowRequest{
+			req: requests.CreateGitWorkflowRequest{
 				Repository: "repository1",
 				CommitHash: "sha123",
 				Path:       "path/to/manifest.yaml",
@@ -636,19 +637,19 @@ func loadJSON(t *testing.T, filename string, output interface{}) {
 }
 
 // Load a createTargetRequest from the testdata directory.
-func loadCreateTargetRequest(t *testing.T, filename string) (r *credentials.CreateTargetRequest) {
+func loadCreateTargetRequest(t *testing.T, filename string) (r *requests.CreateTargetRequest) {
 	loadJSON(t, filename, &r)
 	return
 }
 
 // Load a createProjectRequest from the testdata directory.
-func loadCreateProjectRequest(t *testing.T, filename string) (r *credentials.CreateProjectRequest) {
+func loadCreateProjectRequest(t *testing.T, filename string) (r *requests.CreateProjectRequest) {
 	loadJSON(t, filename, &r)
 	return
 }
 
 // Load a createWorkflowRequest from the testdata directory.
-func loadCreateWorkflowRequest(t *testing.T, filename string) (r *createWorkflowRequest) {
+func loadCreateWorkflowRequest(t *testing.T, filename string) (r *requests.CreateWorkflowRequest) {
 	loadJSON(t, filename, &r)
 	return
 }
