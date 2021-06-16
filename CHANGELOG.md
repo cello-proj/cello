@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Release automation using GoReleaser.
 
 ### Changed
+* Updated CHANGELOG to 'Keep a Changelog' format.
 
 ## [v0.3.0] - 2021-06-16
 ### Added
