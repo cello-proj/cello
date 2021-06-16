@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## v0.2.1 (TODO)
+## v0.2.1 (2021-06-16)
 ### Add
 * CLI tests.
 * More linting.
