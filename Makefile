@@ -1,7 +1,7 @@
 # RFC3339 (to match GoReleaser)
 DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT := $(shell git rev-parse HEAD)
-GO_LDFLAGS := -ldflags="-s -w -X 'main.version=$(GIT_COMMIT)' -X 'main.commit=$(GIT_COMMIT)' -X 'main.date=$(DATE)' "
+GO_LDFLAGS := -ldflags="-s -w -X 'main.version=$(GIT_COMMIT)' -X 'main.commit=$(GIT_COMMIT)' -X 'main.date=$(DATE)'"
 
 all: test build_service build_cli
 
