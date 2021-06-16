@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
 ### Added
 * Release automation using GoReleaser.
 
