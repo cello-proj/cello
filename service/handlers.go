@@ -77,11 +77,11 @@ type handler struct {
 	argo                   workflow.Workflow
 	argoCtx                context.Context
 	config                 *Config
-	gitClient              git.GitClient
+	gitClient              git.Client
 	env                    env.Vars
 	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
 	vaultConfig            credentials.VaultConfig
-	dbClient               db.DbClient
+	dbClient               db.Client
 }
 
 // Validates workflow parameters
@@ -645,7 +645,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "inserting into db")
 	err = h.dbClient.CreateProjectEntry(ctx, db.ProjectEntry{
-		ProjectId:  capp.Name,
+		ProjectID:  capp.Name,
 		Repository: capp.Repository,
 	})
 	if err != nil {

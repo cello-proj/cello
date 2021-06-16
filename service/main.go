@@ -46,7 +46,7 @@ func main() {
 	}
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", env.ConfigFilePath))
 
-	gitClient, err := git.NewBasicGitClient(env.SSHPEMFile)
+	gitClient, err := git.NewBasicClient(env.SSHPEMFile)
 	if err != nil {
 		level.Error(logger).Log("message", "error creating git client", "error", err)
 		panic("error creating git client")
@@ -55,7 +55,7 @@ func main() {
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
 
-	dbClient, err := db.NewSqlDbClient(env.DbHost, env.DbName, env.DbUser, env.DbPassword)
+	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword)
 	if err != nil {
 		level.Error(logger).Log("message", "error creating db client", "error", err)
 		panic("error creating db client")

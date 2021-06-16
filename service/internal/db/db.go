@@ -8,19 +8,19 @@ import (
 )
 
 type ProjectEntry struct {
-	ProjectId  string `db:"project"`
+	ProjectID  string `db:"project"`
 	Repository string `db:"repository"`
 }
 
-// DbClient allows for db crud operations
-type DbClient interface {
+// Client allows for db crud operations
+type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	DeleteProjectEntry(ctx context.Context, project string) error
 }
 
-// SqlDbClient allows for db crud operations using postgres db
-type SqlDbClient struct {
+// SQLClient allows for db crud operations using postgres db
+type SQLClient struct {
 	host     string
 	database string
 	user     string
@@ -29,8 +29,8 @@ type SqlDbClient struct {
 
 const ProjectEntryDB = "projects"
 
-func NewSqlDbClient(host, database, user, password string) (SqlDbClient, error) {
-	return SqlDbClient{
+func NewSQLClient(host, database, user, password string) (SQLClient, error) {
+	return SQLClient{
 		host:     host,
 		database: database,
 		user:     user,
@@ -38,7 +38,7 @@ func NewSqlDbClient(host, database, user, password string) (SqlDbClient, error) 
 	}, nil
 }
 
-func (d SqlDbClient) createSession() (db.Session, error) {
+func (d SQLClient) createSession() (db.Session, error) {
 	settings := postgresql.ConnectionURL{
 		Host:     d.host,
 		Database: d.database,
@@ -49,7 +49,7 @@ func (d SqlDbClient) createSession() (db.Session, error) {
 	return postgresql.Open(settings)
 }
 
-func (d SqlDbClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) error {
+func (d SQLClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) error {
 	sess, err := d.createSession()
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (d SqlDbClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) er
 	defer sess.Close()
 
 	return sess.WithContext(ctx).Tx(func(sess db.Session) error {
-		if err := sess.Collection(ProjectEntryDB).Find("project", pe.ProjectId).Delete(); err != nil {
+		if err := sess.Collection(ProjectEntryDB).Find("project", pe.ProjectID).Delete(); err != nil {
 			return err
 		}
 
@@ -69,7 +69,7 @@ func (d SqlDbClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) er
 	})
 }
 
-func (d SqlDbClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
+func (d SQLClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
 	res := ProjectEntry{}
 
 	sess, err := d.createSession()
@@ -82,7 +82,7 @@ func (d SqlDbClient) ReadProjectEntry(ctx context.Context, project string) (Proj
 	return res, err
 }
 
-func (d SqlDbClient) DeleteProjectEntry(ctx context.Context, project string) error {
+func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error {
 	sess, err := d.createSession()
 	if err != nil {
 		return err

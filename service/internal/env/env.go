@@ -20,10 +20,10 @@ type Vars struct {
 	SSHPEMFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
 	LogLevel       string `split_words:"true"`
 	Port           int    `default:"8443"`
-	DbHost         string `split_words:"true" required:"true"`
-	DbUser         string `split_words:"true" required:"true"`
-	DbPassword     string `split_words:"true" required:"true"`
-	DbName         string `split_words:"true" required:"true"`
+	DBHost         string `split_words:"true" required:"true"`
+	DBUser         string `split_words:"true" required:"true"`
+	DBPassword     string `split_words:"true" required:"true"`
+	DBName         string `split_words:"true" required:"true"`
 }
 
 var (

@@ -1,6 +1,7 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,31 +12,31 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 )
 
-// GitClient allows for retrieving data from git repo
-type GitClient interface {
+// Client allows for retrieving data from git repo
+type Client interface {
 	GetManifestFile(repository, commitHash, path string) ([]byte, error)
 }
 
-// BasicGitClient connects to git using ssh
-type BasicGitClient struct {
+// BasicClient connects to git using ssh
+type BasicClient struct {
 	auth *ssh.PublicKeys
 	mu   *sync.Mutex
 }
 
-// NewBasicGitClient creates a new ssh based git client
-func NewBasicGitClient(sshPemFile string) (BasicGitClient, error) {
+// NewBasicClient creates a new ssh based git client
+func NewBasicClient(sshPemFile string) (BasicClient, error) {
 	auth, err := ssh.NewPublicKeysFromFile("git", sshPemFile, "")
 	if err != nil {
-		return BasicGitClient{}, err
+		return BasicClient{}, err
 	}
 
-	return BasicGitClient{
+	return BasicClient{
 		auth: auth,
 		mu:   &sync.Mutex{},
 	}, nil
 }
 
-func (g BasicGitClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
+func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
 	filePath := filepath.Join(os.TempDir(), repository)
 
 	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
@@ -60,7 +61,7 @@ func (g BasicGitClient) GetManifestFile(repository, commitHash, path string) ([]
 			return []byte{}, err
 		}
 		err = repo.Fetch(&git.FetchOptions{})
-		if err != nil && err != git.NoErrAlreadyUpToDate {
+		if err != nil && errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return []byte{}, err
 		}
 	}

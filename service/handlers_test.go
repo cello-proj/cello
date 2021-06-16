@@ -29,25 +29,25 @@ const (
 	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
-type mockDb struct{}
+type mockDB struct{}
 
-func newMockDb() db.DbClient {
-	return mockDb{}
+func newMockDb() db.Client {
+	return mockDB{}
 }
 
-func (d mockDb) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) error {
-	if pe.ProjectId == "somedberror" {
+func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) error {
+	if pe.ProjectID == "somedberror" {
 		return fmt.Errorf("some db error")
 	}
 
 	return nil
 }
 
-func (d mockDb) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
+func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
 	return db.ProjectEntry{}, nil
 }
 
-func (d mockDb) DeleteProjectEntry(ctx context.Context, project string) error {
+func (d mockDB) DeleteProjectEntry(ctx context.Context, project string) error {
 	if project == "somedeletedberror" {
 		return fmt.Errorf("some db error")
 	}
@@ -57,7 +57,7 @@ func (d mockDb) DeleteProjectEntry(ctx context.Context, project string) error {
 
 type mockGitClient struct{}
 
-func newMockGitClient() git.GitClient {
+func newMockGitClient() git.Client {
 	return mockGitClient{}
 }
 
