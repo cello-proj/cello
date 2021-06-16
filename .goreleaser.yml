@@ -45,9 +45,9 @@ archives:
     files:
       - none*
     # format: gz
-    # Don't use the default so we can pass 'server' to in the archive file
+    # Don't use the default so we can pass 'service' to in the archive file
     # name.
-    name_template: "{{ .ProjectName }}_server_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    name_template: "{{ .ProjectName }}_service_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     replacements:
       386: i386
       amd64: x86_64
