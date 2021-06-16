@@ -22,9 +22,6 @@ test:
 tidy:
 	go mod tidy
 
-vet: ## Runs go vet
-	go vet $(VETARGS) ./...
-
 cover: ## Generates coverage report
 	@$(MAKE) test TESTARGS="-tags test -coverprofile=coverage.out"
 	@go tool cover -html=coverage.out
@@ -39,4 +36,4 @@ clean_cli:
 up: ## Starts a local vault and api locally
 	bash scripts/start_local.sh
 
-.PHONY: build_service build_cli lint test tidy vet cover clean_cli clean_service up
+.PHONY: build_service build_cli lint test tidy cover clean_cli clean_service up
