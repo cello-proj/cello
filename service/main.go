@@ -18,11 +18,11 @@ import (
 )
 
 var (
-	// Populated during build/release
-	// TODO expose these.
-	commit  string
-	date    string
-	version string
+// Populated during build/release
+// TODO expose these.
+// commit  string
+// date    string
+// version string
 )
 
 func main() {
