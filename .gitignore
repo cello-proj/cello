@@ -23,3 +23,5 @@ examples/app-terraform/.terraform.lock.hcl
 ssl
 build
 vendor
+dist
+tmp

@@ -17,6 +17,14 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
+var (
+// Populated during build/release
+// TODO expose these.
+// commit  string
+// date    string
+// version string
+)
+
 func main() {
 	var (
 		logger = log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
