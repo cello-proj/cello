@@ -6,14 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.3.1] - 2021-06-17
+## [0.3.2] - 2021-06-17
+### Fixed
+* Updated CHANGELOG to 'Keep a Changelog' format.
+
+## [0.3.1] - 2021-06-17
 ### Added
 * Release automation using GoReleaser.
 
 ### Changed
 * Updated CHANGELOG to 'Keep a Changelog' format.
 
-## [v0.3.0] - 2021-06-16
+## [0.3.0] - 2021-06-16
 ### Added
 * Health check tests.
 * More linting.
@@ -27,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Issues reported by linter.
 
-## [v0.2.1] - 2021-06-16
+## [0.2.1] - 2021-06-16
 ### Added
 * CLI tests.
 * More linting.
@@ -38,23 +42,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Issues reported by linter.
 
-## [v0.2.0] - 2021-06-15
+## [0.2.0] - 2021-06-15
 ### Changed
 * Move env to internal service package
 
-## [v0.1.3] - 2021-06-14
+## [0.1.3] - 2021-06-14
 ### Changed
 * Using X-B3-TraceId as trace HTTP header
 
-## [v0.1.2] - 2021-06-14
+## [0.1.2] - 2021-06-14
 ### Changed
 * Adding HTTP headers to Vault client for logging (e.g. transaction ID
 
-## [v0.1.1] - 2021-06-09
+## [0.1.1] - 2021-06-09
 ### Fixed
 * Add additional valid status codes for Vault health check
 
-## [v0.1.0] - 2021-06-08
+## [0.1.0] - 2021-06-08
 ### Added
 * Tests for vault credential provider
 * Vault service health check
@@ -63,11 +67,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Update credentials provider to be internal package
 * Environmental variable handling
 
-## [v0.0.4] - 2021-06-03
+## [0.0.4] - 2021-06-03
 ### Fixed
 * Passing Argo context to Argo Workflow calls
 
-## [v0.0.3] - 2021-05-27
+## [0.0.3] - 2021-05-27
 ### Changed
 * Update environmental variable name to specify workflow execution namespace
 
@@ -82,10 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add build caching.
 * Remove vendoring.
 
-## [v0.0.2] - 2021-05-06
+## [0.0.2] - 2021-05-06
 ### Changed
 * Set service port via environment variable, default 8443
 
-## [v0.0.1] - 2021-05-06
+## [0.0.1] - 2021-05-06
 ### Added
 * Initial release
