@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -13,12 +13,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/responses"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
 	vault "github.com/hashicorp/vault/api"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -85,16 +88,16 @@ func (m mockCredentialsProvider) DeleteProject(name string) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetProject(string) (string, error) {
-	return `{"name":"project1"}`, nil
+func (m mockCredentialsProvider) GetProject(string) (*responses.GetProject, error) {
+	return &responses.GetProject{Name: "project1"}, nil
 }
 
 func (m mockCredentialsProvider) CreateTarget(name string, req requests.CreateTargetRequest) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetTarget(string, string) (requests.TargetProperties, error) {
-	return requests.TargetProperties{}, nil
+func (m mockCredentialsProvider) GetTarget(string, string) (*requests.TargetProperties, error) {
+	return &requests.TargetProperties{}, nil
 }
 
 func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
@@ -125,8 +128,8 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 	return false, nil
 }
 
-func (m mockCredentialsProvider) TargetExists(name string) (bool, error) {
-	if name == "TARGET_ALREADY_EXISTS" {
+func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (bool, error) {
+	if targetName == "TARGET_ALREADY_EXISTS" {
 		return true, nil
 	}
 	return false, nil
@@ -369,7 +372,7 @@ func TestCreateWorkflow(t *testing.T) {
 		{
 			name:    "execute_container_image_uri must be present",
 			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/execute_container_image_uri_must_be_present.json"),
-			want:    http.StatusInternalServerError,
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -377,7 +380,7 @@ func TestCreateWorkflow(t *testing.T) {
 		{
 			name:    "execute_container_image_uri must be valid",
 			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/execute_container_image_uri_must_be_valid.json"),
-			want:    http.StatusInternalServerError,
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -401,7 +404,7 @@ func TestCreateWorkflow(t *testing.T) {
 		{
 			name:    "parameters must be present",
 			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/parameters_must_be_present.json"),
-			want:    http.StatusInternalServerError,
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -544,6 +547,105 @@ func TestListWorkflows(t *testing.T) {
 		},
 	}
 	runTests(t, tests)
+}
+
+func TestHealthCheck(t *testing.T) {
+	tests := []struct {
+		name                  string
+		endpoint              string // Used to cause a connection error.
+		vaultStatusCode       int
+		writeBadContentLength bool // Used to create response body error.
+		wantResponseBody      string
+		wantStatusCode        int
+	}{
+		{
+			name:             "good_vault_200",
+			vaultStatusCode:  http.StatusOK,
+			wantResponseBody: "Health check succeeded\n",
+			wantStatusCode:   http.StatusOK,
+		},
+		{
+			name:             "good_vault_429",
+			vaultStatusCode:  http.StatusTooManyRequests,
+			wantResponseBody: "Health check succeeded\n",
+			wantStatusCode:   http.StatusOK,
+		},
+		{
+			// We want successful health check in this vault error scenario.
+			name:                  "error_vault_read_response",
+			vaultStatusCode:       http.StatusOK,
+			writeBadContentLength: true,
+			wantResponseBody:      "Health check succeeded\n",
+			wantStatusCode:        http.StatusOK,
+		},
+		{
+			name:             "error_vault_connection",
+			endpoint:         string('\f'),
+			wantResponseBody: "Health check failed\n",
+			wantStatusCode:   http.StatusServiceUnavailable,
+		},
+		{
+			name:             "error_vault_unhealthy_status_code",
+			vaultStatusCode:  http.StatusInternalServerError,
+			wantResponseBody: "Health check failed\n",
+			wantStatusCode:   http.StatusServiceUnavailable,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantURL := "/v1/sys/health"
+
+			vaultSvc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != wantURL {
+					http.NotFound(w, r)
+				}
+
+				if r.Method != http.MethodGet {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+
+				if tt.writeBadContentLength {
+					w.Header().Set("Content-Length", "1")
+				}
+
+				w.WriteHeader(tt.vaultStatusCode)
+			}))
+			defer vaultSvc.Close()
+
+			vaultEndpoint := vaultSvc.URL
+			if tt.endpoint != "" {
+				vaultEndpoint = tt.endpoint
+			}
+
+			h := handler{
+				logger: log.NewNopLogger(),
+				env: env.Vars{
+					VaultAddress: vaultEndpoint,
+				},
+			}
+
+			// Dummy request.
+			req, err := http.NewRequest("", "", nil)
+			if err != nil {
+				assert.Nil(t, err)
+			}
+
+			resp := httptest.NewRecorder()
+
+			h.healthCheck(resp, req)
+
+			respResult := resp.Result()
+			defer respResult.Body.Close()
+
+			body, err := io.ReadAll(respResult.Body)
+			assert.Nil(t, err)
+
+			assert.Equal(t, tt.wantStatusCode, respResult.StatusCode)
+			assert.Equal(t, tt.wantResponseBody, string(body))
+		})
+	}
 }
 
 // Serialize a type to JSON-encoded byte buffer.
