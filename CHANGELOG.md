@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+* Git information is now stored in a postgreSQL database on project creation
+
+### Changed
+* Git information is now retrieved from db and used for workflow operations
+* Project create API now takes in repository
+* Operations API no longer takes in repository
 
 ## [0.3.2] - 2021-06-17
 ### Fixed
