@@ -37,7 +37,7 @@ func ValidExecuteContainerImage(fl validator.FieldLevel) bool {
 		if key.String() == "execute_container_image_uri" {
 			found = true
 			if !isValidImageURI(fl.Field().MapIndex(key).String()) {
-				return true //should be false
+				return false // TODO should be false, true passes, other validations catching?
 			}
 		}
 	}
