@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -40,7 +41,6 @@ func generateErrorResponseJSON(message string) string {
 	return string(jsonData)
 }
 
-
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
@@ -53,7 +53,6 @@ type handler struct {
 	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
 	vaultConfig            credentials.VaultConfig
 }
-
 
 // Service HealthCheck
 func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
@@ -155,8 +154,8 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "reading request body")
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		level.Error(l).Log("message", "error reading authorization data", "error", err)
-		h.errorResponse(w, "error reading authorization data", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error reading request data", "error", err)
+		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
 		return
 	}
 
@@ -169,6 +168,16 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ah := r.Header.Get("Authorization")
+
+	//if err := validations.RunValidations(cgwr,
+	//	validations.ValidateCreateWorkflowProjectName,
+	//	validations.ValidateCreateWorkflowTargetName,
+	//	validations.ValidateWorkflowParameters); err != nil {
+	//	level.Error(l).Log("message", "error validating request", "error", err)
+	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
+	//	return
+	//}
+
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		h.errorResponse(w, "error authorizing", http.StatusUnauthorized)
@@ -197,18 +206,35 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "reading request body")
 	var cwr requests.CreateWorkflowRequest
-	if err := cwr.Decode(r); err != nil{
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		level.Error(l).Log("message", "error reading workflow request data", "error", err)
+		h.errorResponse(w, "error reading workflow request data", http.StatusBadRequest)
+		return
+	}
+
+	if err := json.Unmarshal(reqBody, &cwr); err != nil {
 		level.Error(l).Log("message", "error deserializing workflow data", "error", err)
 		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest)
 		return
 	}
-	if err := cwr.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", err)
+
+	//if err := validations.RunValidations(cwr,
+	//	validations.ValidateCreateWorkflowProjectName,
+	//	validations.ValidateCreateWorkflowTargetName,
+	//	validations.ValidateWorkflowParameters); err != nil {
+	//	level.Error(l).Log("message", "error validating request", "error", err)
+	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
+	//	return
+	//}
+
+	if err := validations.InitValidator().Struct(cwr); err != nil {
+		fmt.Println(validations.ValidationErrors(err))
+		level.Error(l).Log("message", "error validating request", "error", validations.ValidationErrors(err))
 		h.errorResponse(w, "error validating request", http.StatusBadRequest)
 		return
 	}
-
-	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
+		log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	ah := r.Header.Get("Authorization")
 	a, err := credentials.NewAuthorization(ah)
@@ -226,12 +252,6 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 // currently support it.
 func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
-
-	if err := cwr.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating workflow request", "error", err)
-		h.errorResponse(w, "error in parameters", http.StatusInternalServerError)
-		return
-	}
 
 	frameworks := h.config.listFrameworks()
 
@@ -505,16 +525,30 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-project")
 
 	var capp requests.CreateProjectRequest
-	if err := capp.Decode(r); err != nil {
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
 		level.Error(l).Log("message", "error parsing request", "error", err)
 		h.errorResponse(w, "error parsing request", http.StatusBadRequest)
 		return
 	}
-	if err := capp.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", err)
+	if err := json.Unmarshal(reqBody, &capp); err != nil{
+		level.Error(l).Log("message", "error decoding request", "error", err)
+		h.errorResponse(w, "error decoding request", http.StatusBadRequest)
+		return
+	}
+	if err := validations.InitValidator().Struct(capp); err != nil {
+		level.Error(l).Log("message", "error validating request", "error", validations.ValidationErrors(err))
 		h.errorResponse(w, "error validating request", http.StatusBadRequest)
 		return
 	}
+	//
+	//if err := validations.RunValidations(capp,
+	//	validations.ValidateCreateProjectName);
+	//	err != nil {
+	//	level.Error(l).Log("message", "error validating request", "error", err)
+	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
+	//	return
+	//}
 
 	l = log.With(l, "project", capp.Name)
 
@@ -722,12 +756,35 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "reading request body")
 
 	var ctr requests.CreateTargetRequest
-	if err := ctr.Decode(r); err != nil{
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		level.Error(l).Log("message", "error reading request data", "error", err)
+		h.errorResponse(w, "error reading request data", http.StatusBadRequest)
+	}
+
+	if err := json.Unmarshal(reqBody, &ctr); err != nil {
 		level.Error(l).Log("message", "error processing request", "error", err)
 		h.errorResponse(w, "error processing request", http.StatusBadRequest)
 		return
 	}
-	if err := ctr.Validate(); err != nil {
+
+	//if err := validations.RunValidations(ctr,
+	//	validations.ValidateCreateTargetName,
+	//	validations.ValidateCreateTargetProperties);
+	//	err != nil {
+	//	level.Error(l).Log("message", "error validating request", "error", err)
+	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
+	//	return
+	//}
+
+	if err := validations.InitValidator().Struct(ctr); err != nil {
+		fmt.Println(validations.ValidationErrors(err))
+		level.Error(l).Log("message", "error validating request", "error", validations.ValidationErrors(err))
+		h.errorResponse(w, "error validating request", http.StatusBadRequest)
+		return
+	}
+	if err := validations.InitValidator().Struct(ctr.Properties); err != nil {
+		fmt.Println(validations.ValidationErrors(err))
 		level.Error(l).Log("message", "error validating request", "error", err)
 		h.errorResponse(w, "error validating request", http.StatusBadRequest)
 		return

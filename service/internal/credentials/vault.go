@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"net/http"
 	"strings"
 
@@ -21,8 +22,8 @@ type Provider interface {
 	CreateTarget(string, requests.CreateTargetRequest) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
-	GetProject(string) (*responses.GetProject, error)
-	GetTarget(string, string) (*requests.TargetProperties, error)
+	GetProject(string) (responses.GetProject, error)
+	GetTarget(string, string) (requests.TargetProperties, error)
 	GetToken() (string, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
@@ -123,15 +124,10 @@ type Authorization struct {
 // This is separate from admin functions which use the admin env var
 func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 	var a Authorization
+	if err := validations.ValidateAuthHeader(authorizationHeader); err != nil {
+		return nil, err
+	}
 	auth := strings.SplitN(authorizationHeader, ":", 3)
-	for _, i := range auth {
-		if i == "" {
-			return nil, fmt.Errorf("invalid authorization header provided")
-		}
-	}
-	if len(auth) < 3 {
-		return nil, fmt.Errorf("invalid authorization header provided")
-	}
 	a.Provider = auth[0]
 	a.Key = auth[1]
 	a.Secret = auth[2]
@@ -254,32 +250,32 @@ const (
 	vaultTokenNumUses = 3
 )
 
-func (v VaultProvider) GetProject(projectName string) (*responses.GetProject, error) {
+func (v VaultProvider) GetProject(projectName string) (responses.GetProject, error) {
 	sec, err := v.vaultLogicalSvc.Read(genProjectAppRole(projectName))
 	if err != nil {
-		return nil, fmt.Errorf("vault get project error: %w", err)
+		return responses.GetProject{}, fmt.Errorf("vault get project error: %w", err)
 	}
 	if sec == nil {
-		return nil, ErrNotFound
+		return responses.GetProject{}, ErrNotFound
 	}
 
 
-	return &responses.GetProject{Name:projectName}, nil
+	return responses.GetProject{Name:projectName}, nil
 }
 
 
-func (v VaultProvider) GetTarget(projectName, targetName string) (*requests.TargetProperties, error) {
+func (v VaultProvider) GetTarget(projectName, targetName string) (requests.TargetProperties, error) {
 	if !v.isAdmin() {
-		return nil, errors.New("admin credentials must be used to get target information")
+		return requests.TargetProperties{}, errors.New("admin credentials must be used to get target information")
 	}
 
 	sec, err := v.vaultLogicalSvc.Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
 	if err != nil {
-		return nil, fmt.Errorf("vault get target error: %w", err)
+		return requests.TargetProperties{}, fmt.Errorf("vault get target error: %w", err)
 	}
 
 	if sec == nil {
-		return nil, ErrTargetNotFound
+		return requests.TargetProperties{}, ErrTargetNotFound
 	}
 
 	roleArn := sec.Data["role_arns"].([]interface{})[0].(string)
@@ -291,7 +287,7 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (*requests.Targ
 		policies = append(policies, v.(string))
 	}
 
-	return &requests.TargetProperties{CredentialType: credentialType, RoleArn: roleArn, PolicyArns: policies}, nil
+	return requests.TargetProperties{CredentialType: credentialType, RoleArn: roleArn, PolicyArns: policies}, nil
 }
 
 func (v VaultProvider) GetToken() (string, error) {
@@ -353,7 +349,7 @@ func (v VaultProvider) ProjectExists(name string) (bool, error) {
 		return false, err
 	}
 
-	return p != nil, nil
+	return p.Name != "" , nil
 }
 
 func (v VaultProvider) readRoleID(appRoleName string) (string, error) {

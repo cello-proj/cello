@@ -1,40 +1,15 @@
 package requests
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-)
-
 // Create workflow request.
 type CreateWorkflowRequest struct {
 	Arguments            map[string][]string `yaml:"arguments" json:"arguments"`
 	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
 	Framework            string              `yaml:"framework" json:"framework"`
-	Parameters           map[string]string   `yaml:"parameters" json:"parameters"`
-	ProjectName          string              `yaml:"project_name" json:"project_name"`
-	TargetName           string              `yaml:"target_name" json:"target_name"`
+	Parameters           map[string]string   `validate:"valid_execute_container_image,valid_pre-container_image" yaml:"parameters" json:"parameters"`
+	ProjectName          string              `validate:"min=4,max=32,alphanum" yaml:"project_name" json:"project_name"`
+	TargetName           string              `validate:"min=4,max=32,alphanumunderscore" yaml:"target_name" json:"target_name"`
 	Type                 string              `yaml:"type" json:"type"`
 	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
-}
-
-func (cwr *CreateWorkflowRequest) Decode(req *http.Request) error {
-	reqBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(reqBody, cwr)
-}
-
-func (cwr CreateWorkflowRequest) Validate() error {
-	if err := RunValidations(cwr,
-		ValidateCreateWorkflowProjectName,
-		ValidateCreateWorkflowTargetName,
-		ValidateWorkflowParameters);
-		err != nil {
-		return err
-	}
-	return nil
 }
 
 // Create workflow from git manifest request
@@ -46,52 +21,17 @@ type CreateGitWorkflowRequest struct {
 }
 
 type CreateTargetRequest struct {
-	Name       string           `json:"name"`
+	Name       string           `validate:"min=4,max=32,alphanumunderscore" json:"name"`
 	Properties TargetProperties `json:"properties"`
-	Type       string           `json:"type"`
-}
-
-func (ctr *CreateTargetRequest) Decode(req *http.Request) error {
-	reqBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(reqBody, ctr)
-}
-
-func (ctr CreateTargetRequest) Validate() error {
-	if err := RunValidations(ctr,
-		ValidateCreateTargetName,
-		ValidateCreateTargetProperties);
-		err != nil {
-		return err
-	}
-	return nil
+	Type       string           `validate:"valid_target_type" json:"type"`
 }
 
 type CreateProjectRequest struct {
-	Name string `json:"name"`
-}
-
-func (cpr *CreateProjectRequest) Decode(req *http.Request) error {
-	reqBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(reqBody, cpr)
-}
-
-func (cpr CreateProjectRequest) Validate() error {
-	if err := RunValidations(cpr,
-		ValidateCreateProjectName);
-		err != nil {
-		return err
-	}
-	return nil
+	Name string `validate:"min=4,max=32,alphanum" json:"name"`
 }
 
 type TargetProperties struct {
 	CredentialType string   `json:"credential_type"`
-	PolicyArns     []string `json:"policy_arns"`
-	RoleArn        string   `json:"role_arn"`
+	PolicyArns     []string `validate:"max=5,dive,is_arn" json:"policy_arns"`
+	RoleArn        string   `validate:"is_arn" json:"role_arn"`
 }

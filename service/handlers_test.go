@@ -88,16 +88,16 @@ func (m mockCredentialsProvider) DeleteProject(name string) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetProject(string) (*responses.GetProject, error) {
-	return &responses.GetProject{Name: "project1"}, nil
+func (m mockCredentialsProvider) GetProject(string) (responses.GetProject, error) {
+	return responses.GetProject{Name: "project1"}, nil
 }
 
 func (m mockCredentialsProvider) CreateTarget(name string, req requests.CreateTargetRequest) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetTarget(string, string) (*requests.TargetProperties, error) {
-	return &requests.TargetProperties{}, nil
+func (m mockCredentialsProvider) GetTarget(string, string) (requests.TargetProperties, error) {
+	return requests.TargetProperties{}, nil
 }
 
 func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
