@@ -126,7 +126,7 @@ type Authorization struct {
 func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 	var a Authorization
 	if err := validations.InitValidator().Var(authorizationHeader, "valid_auth_header"); err != nil {
-		return nil, fmt.Errorf("invalid authorization header")
+		return nil, fmt.Errorf("invalid authorization header format")
 	}
 	auth := strings.SplitN(authorizationHeader, ":", 3)
 	a.Provider = auth[0]
