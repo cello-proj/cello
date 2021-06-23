@@ -8,7 +8,7 @@ import (
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/validations"
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 
 	vault "github.com/hashicorp/vault/api"
 )

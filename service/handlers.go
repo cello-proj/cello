@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/validations"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -170,7 +170,8 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 	ah := r.Header.Get("Authorization")
 
-	if err := validations.InitValidator().Struct(cgwr); err != nil {
+
+	if err := cgwr.Validate(); err != nil {
 		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
 		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
 		return
@@ -217,10 +218,10 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validations.InitValidator().Struct(cwr); err != nil {
+	if err := cwr.Validate(); err != nil {
 
 		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
-		h.errorResponse(w, "error validating request", http.StatusBadRequest)
+		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
 		return
 	}
 	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
@@ -501,9 +502,9 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error decoding request", http.StatusBadRequest)
 		return
 	}
-	if err := validations.InitValidator().Struct(capp); err != nil {
+	if err := capp.Validate(); err != nil {
 		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
-		h.errorResponse(w, "error validating request", http.StatusBadRequest)
+		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
 		return
 	}
 
@@ -725,10 +726,9 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validations.InitValidator().Struct(ctr); err != nil {
-		fmt.Println(validations.StructValidationErrors(err))
+	if err := ctr.Validate(); err != nil {
 		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
-		h.errorResponse(w, "error validating request", http.StatusBadRequest)
+		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
 		return
 	}
 
