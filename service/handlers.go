@@ -244,6 +244,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	level.Debug(l).Log("message", "validating workflow parameters")
 
 	validate := validations.InitValidator()
+	// validate that cwr.Framework matches one of the string values in config frameworks
 	if err := validate.Var(cwr.Framework, fmt.Sprintf("oneof=%s", strings.Join(h.config.listFrameworks(), " "))); err != nil {
 		level.Error(l).Log("error", validations.VarValidationErrors("framework", err))
 		h.errorResponse(w, validations.VarValidationErrors("framework", err).Error(), http.StatusBadRequest)
@@ -257,6 +258,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		return
 	}
 
+	// validate that cwr.Type matches one of the string values in config types
 	if err = validate.Var(cwr.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " "))); err != nil {
 		level.Error(l).Log("error", validations.VarValidationErrors("type", err))
 		h.errorResponse(w, validations.VarValidationErrors("type", err).Error(), http.StatusBadRequest)
