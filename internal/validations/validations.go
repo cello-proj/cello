@@ -14,20 +14,25 @@ func InitValidator() *validator.Validate {
 	validate := validator.New()
 
 	//add custom validations
-	validate.RegisterValidation("alphanumunderscore", ValidateIsAlphaNumbericUnderscore)
-	validate.RegisterValidation("is_arn", ValidARN)
-	validate.RegisterValidation("valid_target_type", ValidTargetType)
-	validate.RegisterValidation("valid_execute_container_image", ValidExecuteContainerImage)
-	validate.RegisterValidation("valid_pre-container_image", ValidPreContainerImage)
-	validate.RegisterValidation("valid_argument", ValidArgument)
-	validate.RegisterValidation("valid_auth_header", ValidateAuthHeader)
+	customValidations := map[string]func(fl validator.FieldLevel) bool{
+		"alphanumunderscore":            ValidateIsAlphaNumbericUnderscore,
+		"is_arn":                        ValidARN,
+		"valid_target_type":             ValidTargetType,
+		"valid_execute_container_image": ValidExecuteContainerImage,
+		"valid_pre-container_image":     ValidPreContainerImage,
+		"valid_argument":                ValidArgument,
+		"valid_auth_header":             ValidateAuthHeader,
+	}
+
+	for jsonTag, fnName := range customValidations {
+		validate.RegisterValidation(jsonTag, fnName)
+	}
+
 	return validate
 }
 
 // Vault does not allow for dashes
 var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
-// Vault does not allow for dashes
-var isStringAlphaNumericDashes = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9-]*$`).MatchString
 
 // ValidateValuer implements validator.CustomTypeFunc
 func ValidateIsAlphaNumbericUnderscore(fl validator.FieldLevel) bool {
