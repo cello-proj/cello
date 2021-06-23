@@ -6,13 +6,11 @@ require (
 	github.com/argoproj/argo-workflows/v3 v3.0.0-rc3
 	github.com/aws/aws-sdk-go v1.33.16
 	github.com/distribution/distribution v2.7.1+incompatible
-	github.com/fatih/structs v1.1.0
 	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/go-git/go-git/v5 v5.3.0
 	github.com/go-kit/kit v0.10.0
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/go-playground/validator/v10 v10.6.1 // indirect
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/google/go-cmp v0.5.2
 	github.com/google/uuid v1.2.0
