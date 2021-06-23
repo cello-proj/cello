@@ -20,16 +20,19 @@ type CreateGitWorkflowRequest struct {
 	Type       string `validate:"required" json:"type"`
 }
 
+// Create target request.
 type CreateTargetRequest struct {
 	Name       string           `validate:"min=4,max=32,alphanumunderscore" json:"name"`
 	Properties TargetProperties `json:"properties"`
 	Type       string           `validate:"valid_target_type" json:"type"`
 }
 
+// Create project request.
 type CreateProjectRequest struct {
 	Name string `validate:"min=4,max=32,alphanum" json:"name"`
 }
 
+// Target properties for target requests.
 type TargetProperties struct {
 	CredentialType string   `json:"credential_type"`
 	PolicyArns     []string `validate:"max=5,dive,is_arn" json:"policy_arns"`

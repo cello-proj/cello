@@ -175,14 +175,6 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
 		return
 	}
-	//if err := validations.RunValidations(cgwr,
-	//	validations.ValidateCreateWorkflowProjectName,
-	//	validations.ValidateCreateWorkflowTargetName,
-	//	validations.ValidateWorkflowParameters); err != nil {
-	//	level.Error(l).Log("message", "error validating request", "error", err)
-	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
-	//	return
-	//}
 
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
@@ -224,15 +216,6 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error deserializing workflow data", http.StatusBadRequest)
 		return
 	}
-
-	//if err := validations.RunValidations(cwr,
-	//	validations.ValidateCreateWorkflowProjectName,
-	//	validations.ValidateCreateWorkflowTargetName,
-	//	validations.ValidateWorkflowParameters); err != nil {
-	//	level.Error(l).Log("message", "error validating request", "error", err)
-	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
-	//	return
-	//}
 
 	if err := validations.InitValidator().Struct(cwr); err != nil {
 
