@@ -219,7 +219,6 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := cwr.Validate(); err != nil {
-
 		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
 		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
 		return

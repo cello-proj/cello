@@ -41,26 +41,34 @@ func ValidateIsAlphaNumbericUnderscore(fl validator.FieldLevel) bool {
 
 func ValidExecuteContainerImage(fl validator.FieldLevel) bool {
 	// found validates a key of "execute_container_image_uri" exists in map
-	found := false
-	for _, key := range fl.Field().MapKeys() {
-		if key.String() == "execute_container_image_uri" {
-			found = true
-			if !isValidImageURI(fl.Field().MapIndex(key).String()) {
-				return false // TODO should be false, true passes, other validations catching?
+	mapRange := fl.Field().MapRange()
+	for mapRange.Next() {
+		if mapRange.Key().String() == "execute_container_image_uri" {
+			if isValidImageURI(mapRange.Value().String()) {
+				fmt.Println(mapRange.Key().String(), mapRange.Value().String())
+				return true
 			}
+			// not a valid image uri
+			return false
 		}
 	}
-	return found
+	// execute_container_image_uri key missing
+	return false
 }
 
 func ValidPreContainerImage(fl validator.FieldLevel) bool {
-	for _, key := range fl.Field().MapKeys() {
-		if key.String() == "pre_container_image_uri" {
-			if !isValidImageURI(fl.Field().MapIndex(key).String()) {
-				return false
+	mapRange := fl.Field().MapRange()
+	for mapRange.Next(){
+		if mapRange.Key().String() == "pre_container_image_uri" {
+			if isValidImageURI(mapRange.Value().String()) {
+				fmt.Println(mapRange.Key().String(), mapRange.Value().String())
+				return true
 			}
+			// not a valid image uri
+			return false
 		}
 	}
+	// pre_container_image_uri is not required
 	return true
 }
 
@@ -91,7 +99,7 @@ func ValidArgument(fl validator.FieldLevel) bool {
 }
 
 func ValidARN(fl validator.FieldLevel) bool {
-	return arn.IsARN(fl.Field().String()) //fmt.Errorf("role arn %s must be a valid arn", roleArn)
+	return arn.IsARN(fl.Field().String())
 }
 
 // Returns true, if the image uri is a valid container image uri
