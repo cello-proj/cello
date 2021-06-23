@@ -3,11 +3,12 @@ package credentials
 import (
 	"errors"
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
-	"github.com/argoproj-labs/argo-cloudops/internal/responses"
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"net/http"
 	"strings"
+
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/validations"
 
 	vault "github.com/hashicorp/vault/api"
 )
@@ -50,9 +51,9 @@ const (
 
 var (
 
-// ErrNotFound conveys that the item was not found.
+	// ErrNotFound conveys that the item was not found.
 	ErrNotFound = errors.New("item not found")
-// ErrTargetNotFound conveys that the target was not round.
+	// ErrTargetNotFound conveys that the target was not round.
 	ErrTargetNotFound = errors.New("target not found")
 )
 
@@ -124,8 +125,8 @@ type Authorization struct {
 // This is separate from admin functions which use the admin env var
 func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 	var a Authorization
-	if err := validations.ValidateAuthHeader(authorizationHeader); err != nil {
-		return nil, err
+	if err := validations.InitValidator().Var(authorizationHeader, "valid_auth_header"); err != nil {
+		return nil, fmt.Errorf("invalid authorization header")
 	}
 	auth := strings.SplitN(authorizationHeader, ":", 3)
 	a.Provider = auth[0]
@@ -136,13 +137,15 @@ func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 
 // IsAdmin determines if the Authorization is an admin.
 // TODO See if this can be removed when refactoring auth.
-func (a Authorization) IsAdmin() bool {
-	return a.Key == authorizationKeyAdmin
-}
-
 // AuthorizedAdmin determines if the Authorization is valid and an Admin.
-func (a Authorization) AuthorizedAdmin(adminSecret string) bool {
-	return a.IsAdmin() && a.Secret == adminSecret
+func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) error {
+	if err := validations.InitValidator().Var(a.Key, "eq=admin"); err != nil {
+		return fmt.Errorf("must be an authorized admin, %s", validations.VarValidationErrors("user", err))
+	}
+	if err := validations.InitValidator().Var(a.Secret, fmt.Sprintf("eq=%s", adminSecret)); err != nil {
+		return fmt.Errorf("must be an authorized admin, invalid admin secret")
+	}
+	return nil
 }
 
 func (v VaultProvider) createPolicyState(name, policy string) error {
@@ -259,10 +262,8 @@ func (v VaultProvider) GetProject(projectName string) (responses.GetProject, err
 		return responses.GetProject{}, ErrNotFound
 	}
 
-
-	return responses.GetProject{Name:projectName}, nil
+	return responses.GetProject{Name: projectName}, nil
 }
-
 
 func (v VaultProvider) GetTarget(projectName, targetName string) (requests.TargetProperties, error) {
 	if !v.isAdmin() {
@@ -349,7 +350,7 @@ func (v VaultProvider) ProjectExists(name string) (bool, error) {
 		return false, err
 	}
 
-	return p.Name != "" , nil
+	return p.Name != "", nil
 }
 
 func (v VaultProvider) readRoleID(appRoleName string) (string, error) {

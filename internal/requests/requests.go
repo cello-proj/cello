@@ -14,10 +14,10 @@ type CreateWorkflowRequest struct {
 
 // Create workflow from git manifest request
 type CreateGitWorkflowRequest struct {
-	Repository string `json:"repository"`
-	CommitHash string `json:"sha"`
-	Path       string `json:"path"`
-	Type       string `json:"type"`
+	Repository string `validate:"required" json:"repository"`
+	CommitHash string `validate:"required,alphanum" json:"sha"`
+	Path       string `validate:"required" json:"path"`
+	Type       string `validate:"required" json:"type"`
 }
 
 type CreateTargetRequest struct {

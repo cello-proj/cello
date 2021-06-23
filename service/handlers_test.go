@@ -485,21 +485,14 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 func TestGetWorkflow(t *testing.T) {
 	tests := []test{
 		{
-			name:    "can get workflow",
+			name:    "workflow exists, successful get workflow",
 			want:    http.StatusOK,
 			asAdmin: true,
 			method:  "GET",
 			url:     "/workflows/WORKFLOW_ALREADY_EXISTS",
 		},
 		{
-			name:    "name must be alphanumeric",
-			want:    http.StatusBadRequest,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/%26%28%40%26%24%5E%26%5E%5E%26%25%26YT%25%26IURIHFHYJFKIR",
-		},
-		{
-			name:    "workflow must exist",
+			name:    "workflow does not exist",
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "GET",
@@ -512,7 +505,7 @@ func TestGetWorkflow(t *testing.T) {
 func TestGetWorkflowLogs(t *testing.T) {
 	tests := []test{
 		{
-			name:    "can get workflow logs",
+			name:    "successful get workflow logs",
 			want:    http.StatusOK,
 			asAdmin: true,
 			method:  "GET",
@@ -526,7 +519,7 @@ func TestGetWorkflowLogs(t *testing.T) {
 			url:     "/workflows/%26%28%40%26%24%5E%26%5E%5E%26%25%26YT%25%26IURIHFHYJFKIR/logs",
 		},
 		{
-			name:    "workflow must exist",
+			name:    "workflow does not exist",
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "GET",

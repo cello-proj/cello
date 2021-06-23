@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/validations"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -166,9 +166,15 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error deserializing request body", http.StatusBadRequest)
 		return
 	}
+	fmt.Sprintf("cgwr: %+v", cgwr)
 
 	ah := r.Header.Get("Authorization")
 
+	if err := validations.InitValidator().Struct(cgwr); err != nil {
+		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
+		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
+		return
+	}
 	//if err := validations.RunValidations(cgwr,
 	//	validations.ValidateCreateWorkflowProjectName,
 	//	validations.ValidateCreateWorkflowTargetName,
@@ -229,12 +235,12 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	if err := validations.InitValidator().Struct(cwr); err != nil {
-		fmt.Println(validations.ValidationErrors(err))
-		level.Error(l).Log("message", "error validating request", "error", validations.ValidationErrors(err))
+
+		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
 		h.errorResponse(w, "error validating request", http.StatusBadRequest)
 		return
 	}
-		log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
+	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	ah := r.Header.Get("Authorization")
 	a, err := credentials.NewAuthorization(ah)
@@ -253,11 +259,10 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflowRequest, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 
-	frameworks := h.config.listFrameworks()
-
-	if !stringInSlice(frameworks, cwr.Framework) {
-		level.Error(l).Log("error", "unknown framework")
-		h.errorResponse(w, "unknown framework", http.StatusBadRequest)
+	validate := validations.InitValidator()
+	if err := validate.Var(cwr.Framework, fmt.Sprintf("oneof=%s", strings.Join(h.config.listFrameworks(), " "))); err != nil {
+		level.Error(l).Log("error", validations.VarValidationErrors("framework", err))
+		h.errorResponse(w, validations.VarValidationErrors("framework", err).Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -268,27 +273,11 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		return
 	}
 
-	if !stringInSlice(types, cwr.Type) {
-		level.Error(l).Log("error", "unknown type")
-		h.errorResponse(w, "unknown type", http.StatusBadRequest)
+	if err = validate.Var(cwr.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " "))); err != nil {
+		level.Error(l).Log("error", validations.VarValidationErrors("type", err))
+		h.errorResponse(w, validations.VarValidationErrors("type", err).Error(), http.StatusBadRequest)
 		return
 	}
-
-	// TODO long term, we should evaluate if hard coding in code is the right approach to
-	// specifying different argument types vs allowing dynmaic specification and
-	// interpolation in service/config.yaml
-	for k := range cwr.Arguments {
-		if k != "init" && k != "execute" {
-			level.Error(l).Log("message", "arguments must be init or execute", "error", err)
-			h.errorResponse(w, "arguments must be init or execute", http.StatusBadRequest)
-			return
-		}
-	}
-
-	// TODO: Fix type must be specified valication and add test
-	//	h.errorResponse(w, "type must be specified", http.StatusBadRequest)
-	//	return
-	//}
 
 	workflowFrom := fmt.Sprintf("workflowtemplate/%s", cwr.WorkflowTemplateName)
 	executeContainerImageURI := cwr.Parameters["execute_container_image_uri"]
@@ -344,12 +333,17 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		return
 	}
 
-	// TODO: handle error when implemented
-	//targetExists, _ := cp.targetExists(cwr.TargetName)
-	//if !targetExists {
-	//	h.errorResponse(w, "target must already exist", http.StatusBadRequest)
-	//	return
-	//}
+	targetExists, err := cp.TargetExists(cwr.ProjectName, cwr.TargetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target", "error", err)
+		h.errorResponse(w, "error retrieving target", http.StatusBadRequest)
+		return
+	}
+	if !targetExists {
+		h.errorResponse(w, fmt.Sprintf("target '%s' does not exist for project `%s`", cwr.TargetName, cwr.ProjectName), http.StatusBadRequest)
+		return
+	}
+
 	level.Debug(l).Log("message", "creating workflow parameters")
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
@@ -381,11 +375,6 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
-	// TODO: Workflow name must include -
-	// need to update validation
-	//if !h.validateWorkflowName(workflowName, w) {
-	//	return
-	//}
 	l := h.requestLogger(r, "op", "get-workflow", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "getting workflow status")
@@ -425,9 +414,10 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.AuthorizedAdmin(h.env.AdminSecret) {
-		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
+
+	if err := a.ValidateAuthorizedAdmin(h.env.AdminSecret); err != nil {
+		level.Error(l).Log("message", err)
+		h.errorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -468,11 +458,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
-	// TODO: Workflow name must include -
-	// need to update validation
-	//if !h.validateWorkflowName(workflowName, w) {
-	//	return
-	//}
+
 	l := h.requestLogger(r, "op", "get-workflow-logs", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "retrieving workflow logs")
@@ -497,11 +483,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
-	// TODO: Workflow name must include -
-	// need to update validation
-	//if !h.validateWorkflowName(workflowName, w) {
-	//	return
-	//}
+
 	l := h.requestLogger(r, "op", "get-workflow-log-stream", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "retrieving workflow logs", "workflow", workflowName)
@@ -531,24 +513,16 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error parsing request", http.StatusBadRequest)
 		return
 	}
-	if err := json.Unmarshal(reqBody, &capp); err != nil{
+	if err := json.Unmarshal(reqBody, &capp); err != nil {
 		level.Error(l).Log("message", "error decoding request", "error", err)
 		h.errorResponse(w, "error decoding request", http.StatusBadRequest)
 		return
 	}
 	if err := validations.InitValidator().Struct(capp); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", validations.ValidationErrors(err))
+		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
 		h.errorResponse(w, "error validating request", http.StatusBadRequest)
 		return
 	}
-	//
-	//if err := validations.RunValidations(capp,
-	//	validations.ValidateCreateProjectName);
-	//	err != nil {
-	//	level.Error(l).Log("message", "error validating request", "error", err)
-	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
-	//	return
-	//}
 
 	l = log.With(l, "project", capp.Name)
 
@@ -562,9 +536,9 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.AuthorizedAdmin(h.env.AdminSecret) {
-		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
+	if err := a.ValidateAuthorizedAdmin(h.env.AdminSecret); err != nil {
+		level.Error(l).Log("message", err)
+		h.errorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -632,9 +606,9 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.AuthorizedAdmin(h.env.AdminSecret) {
-		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
+	if err := a.ValidateAuthorizedAdmin(h.env.AdminSecret); err != nil {
+		level.Error(l).Log("message", err)
+		h.errorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -688,9 +662,9 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "validating authorized admin")
-	if !a.AuthorizedAdmin(h.env.AdminSecret) {
-		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
+	if err := a.ValidateAuthorizedAdmin(h.env.AdminSecret); err != nil {
+		level.Error(l).Log("message", err)
+		h.errorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -768,24 +742,9 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//if err := validations.RunValidations(ctr,
-	//	validations.ValidateCreateTargetName,
-	//	validations.ValidateCreateTargetProperties);
-	//	err != nil {
-	//	level.Error(l).Log("message", "error validating request", "error", err)
-	//	h.errorResponse(w, "error validating request", http.StatusBadRequest)
-	//	return
-	//}
-
 	if err := validations.InitValidator().Struct(ctr); err != nil {
-		fmt.Println(validations.ValidationErrors(err))
-		level.Error(l).Log("message", "error validating request", "error", validations.ValidationErrors(err))
-		h.errorResponse(w, "error validating request", http.StatusBadRequest)
-		return
-	}
-	if err := validations.InitValidator().Struct(ctr.Properties); err != nil {
-		fmt.Println(validations.ValidationErrors(err))
-		level.Error(l).Log("message", "error validating request", "error", err)
+		fmt.Println(validations.StructValidationErrors(err))
+		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
 		h.errorResponse(w, "error validating request", http.StatusBadRequest)
 		return
 	}
@@ -802,9 +761,9 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 
-	if !a.AuthorizedAdmin(h.env.AdminSecret) {
-		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
+	if err := a.ValidateAuthorizedAdmin(h.env.AdminSecret); err != nil {
+		level.Error(l).Log("message", err)
+		h.errorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -851,7 +810,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing delete target permissions")
 	ah := r.Header.Get("Authorization")
-	a, err := credentials.NewAuthorization(ah) // todo add validation
+	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
 		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
 		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
@@ -860,9 +819,9 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 
-	if !a.AuthorizedAdmin(h.env.AdminSecret) {
-		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
+	if err := a.ValidateAuthorizedAdmin(h.env.AdminSecret); err != nil {
+		level.Error(l).Log("message", err)
+		h.errorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -908,9 +867,9 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorized admin")
 
-	if !a.AuthorizedAdmin(h.env.AdminSecret) {
-		level.Error(l).Log("message", "must be an authorized admin")
-		h.errorResponse(w, "must be an authorized admin", http.StatusUnauthorized)
+	if err := a.ValidateAuthorizedAdmin(h.env.AdminSecret); err != nil {
+		level.Error(l).Log("message", err)
+		h.errorResponse(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 

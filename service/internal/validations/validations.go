@@ -19,11 +19,15 @@ func InitValidator() *validator.Validate {
 	validate.RegisterValidation("valid_target_type", ValidTargetType)
 	validate.RegisterValidation("valid_execute_container_image", ValidExecuteContainerImage)
 	validate.RegisterValidation("valid_pre-container_image", ValidPreContainerImage)
+	validate.RegisterValidation("valid_argument", ValidArgument)
+	validate.RegisterValidation("valid_auth_header", ValidateAuthHeader)
 	return validate
 }
 
 // Vault does not allow for dashes
 var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
+// Vault does not allow for dashes
+var isStringAlphaNumericDashes = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9-]*$`).MatchString
 
 // ValidateValuer implements validator.CustomTypeFunc
 func ValidateIsAlphaNumbericUnderscore(fl validator.FieldLevel) bool {
@@ -64,6 +68,23 @@ func ValidTargetType(fl validator.FieldLevel) bool {
 	}
 }
 
+// TODO long term, we should evaluate if hard coding in code is the right approach to
+// specifying different argument types vs allowing dynmaic specification and
+// interpolation in service/config.yaml
+func ValidArgument(fl validator.FieldLevel) bool {
+	for _, key := range fl.Field().MapKeys() {
+		switch key.String() {
+		case "init":
+			return true
+		case "execute":
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
 func ValidARN(fl validator.FieldLevel) bool {
 	return arn.IsARN(fl.Field().String()) //fmt.Errorf("role arn %s must be a valid arn", roleArn)
 }
@@ -74,23 +95,31 @@ func isValidImageURI(imageURI string) bool {
 	return err == nil
 }
 
-func ValidateAuthHeader(authorizationHeader string) error {
-	auth := strings.SplitN(authorizationHeader, ":", 3)
+func ValidateAuthHeader(fl validator.FieldLevel) bool {
+	auth := strings.SplitN(fl.Field().String(), ":", 3)
 	for _, i := range auth {
 		if i == "" {
-			return fmt.Errorf("invalid authorization header provided")
+			return false
 		}
 	}
 	if len(auth) < 3 {
-		return fmt.Errorf("invalid authorization header provided")
+		return false
 	}
-	return nil
+	return true
 }
 
-func ValidationErrors(err error) error {
+func StructValidationErrors(err error) error {
 	var errList []string
 	for _, err := range err.(validator.ValidationErrors) {
-		errList = append(errList, fmt.Sprintf("failed validation %s, validation error found in %v does not have valid value %v", err.Tag(), err.Field(), err.Value()))
+		errList = append(errList, fmt.Sprintf("failed validation for check '%s' on '%v', value '%v' is not valid", err.Tag(), err.Field(), err.Value()))
+	}
+	return fmt.Errorf(strings.Join(errList, "\n"))
+}
+
+func VarValidationErrors(name string, err error) error {
+	var errList []string
+	for _, err := range err.(validator.ValidationErrors) {
+		errList = append(errList, fmt.Sprintf(" %s failed validation, validation of '%s %s', for value %v", name, err.Tag(), err.Param(), err.Value()))
 	}
 	return fmt.Errorf(strings.Join(errList, "\n"))
 }
