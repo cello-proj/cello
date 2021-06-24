@@ -40,7 +40,6 @@ func ValidateIsAlphaNumbericUnderscore(fl validator.FieldLevel) bool {
 }
 
 func ValidExecuteContainerImage(fl validator.FieldLevel) bool {
-	// found validates a key of "execute_container_image_uri" exists in map
 	mapRange := fl.Field().MapRange()
 	for mapRange.Next() {
 		if mapRange.Key().String() == "execute_container_image_uri" {
