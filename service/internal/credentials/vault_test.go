@@ -119,7 +119,7 @@ func TestVaultCreateTarget(t *testing.T) {
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
-			err := v.CreateTarget("test", requests.CreateTargetRequest{})
+			err := v.CreateTarget("test", requests.CreateTarget{})
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)
@@ -245,7 +245,6 @@ func TestVaultGetTarget(t *testing.T) {
 	tests := []struct {
 		name               string
 		admin              bool
-		expectedProperties requests.TargetProperties
 		vaultErr           error
 		errResult          bool
 	}{

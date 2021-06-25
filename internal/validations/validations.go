@@ -10,68 +10,84 @@ import (
 	"github.com/go-playground/validator"
 )
 
-func InitValidator() *validator.Validate {
+func NewValidator() (*validator.Validate, error) {
 	validate := validator.New()
 
 	//add custom validations
 	customValidations := map[string]func(fl validator.FieldLevel) bool{
-		"alphanumunderscore":            ValidateIsAlphaNumbericUnderscore,
-		"is_arn":                        ValidARN,
-		"valid_target_type":             ValidTargetType,
-		"valid_execute_container_image": ValidExecuteContainerImage,
-		"valid_pre-container_image":     ValidPreContainerImage,
-		"valid_argument":                ValidArgument,
-		"valid_auth_header":             ValidateAuthHeader,
+		"alphanumunderscore":            validateIsAlphaNumericUnderscore,
+		"is_arn":                        validARN,
+		"valid_target_type":             validTargetType,
+		"valid_execute_container_image": validExecuteContainerImage,
+		"valid_precontainer_image":      validPreContainerImage,
+		"valid_argument":                validArgument,
 	}
 
 	for jsonTag, fnName := range customValidations {
-		validate.RegisterValidation(jsonTag, fnName)
+		err := validate.RegisterValidation(jsonTag, fnName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return validate
+	return validate, nil
+}
+
+// Initialize validator and validate struct
+func ValidateStruct(s interface{}) error {
+	validate, err := NewValidator()
+	if err != nil {
+		return err
+	}
+	if err := validate.Struct(s); err != nil {
+		return structValidationErrors(err)
+	}
+	return nil
+}
+
+// Initialize validator and validate struct
+func ValidateVar(name string, s interface{}, validation string) error {
+	validate, err := NewValidator()
+	if err != nil {
+		return err
+	}
+	if err := validate.Var(s, validation); err != nil {
+		return varValidationErrors(name, err)
+	}
+	return nil
 }
 
 // Vault does not allow for dashes
 var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
 
 // ValidateValuer implements validator.CustomTypeFunc
-func ValidateIsAlphaNumbericUnderscore(fl validator.FieldLevel) bool {
+func validateIsAlphaNumericUnderscore(fl validator.FieldLevel) bool {
 	return isStringAlphaNumericUnderscore(fl.Field().String())
 }
 
-func ValidExecuteContainerImage(fl validator.FieldLevel) bool {
+func validExecuteContainerImage(fl validator.FieldLevel) bool {
 	mapRange := fl.Field().MapRange()
 	for mapRange.Next() {
 		if mapRange.Key().String() == "execute_container_image_uri" {
-			if isValidImageURI(mapRange.Value().String()) {
-				fmt.Println(mapRange.Key().String(), mapRange.Value().String())
-				return true
-			}
-			// not a valid image uri
-			return false
+			return isValidImageURI(mapRange.Value().String())
 		}
 	}
 	// execute_container_image_uri key missing
 	return false
 }
 
-func ValidPreContainerImage(fl validator.FieldLevel) bool {
+func validPreContainerImage(fl validator.FieldLevel) bool {
 	mapRange := fl.Field().MapRange()
 	for mapRange.Next(){
 		if mapRange.Key().String() == "pre_container_image_uri" {
-			if isValidImageURI(mapRange.Value().String()) {
-				fmt.Println(mapRange.Key().String(), mapRange.Value().String())
-				return true
-			}
-			// not a valid image uri
-			return false
+			return  isValidImageURI(mapRange.Value().String())
 		}
 	}
 	// pre_container_image_uri is not required
 	return true
 }
 
-func ValidTargetType(fl validator.FieldLevel) bool {
+func validTargetType(fl validator.FieldLevel) bool {
 	switch fl.Field().String() {
 	case "aws_account":
 		return true
@@ -83,7 +99,7 @@ func ValidTargetType(fl validator.FieldLevel) bool {
 // TODO long term, we should evaluate if hard coding in code is the right approach to
 // specifying different argument types vs allowing dynmaic specification and
 // interpolation in service/config.yaml
-func ValidArgument(fl validator.FieldLevel) bool {
+func validArgument(fl validator.FieldLevel) bool {
 	for _, key := range fl.Field().MapKeys() {
 		switch key.String() {
 		case "init":
@@ -97,7 +113,7 @@ func ValidArgument(fl validator.FieldLevel) bool {
 	return false
 }
 
-func ValidARN(fl validator.FieldLevel) bool {
+func validARN(fl validator.FieldLevel) bool {
 	return arn.IsARN(fl.Field().String())
 }
 
@@ -107,31 +123,19 @@ func isValidImageURI(imageURI string) bool {
 	return err == nil
 }
 
-func ValidateAuthHeader(fl validator.FieldLevel) bool {
-	auth := strings.SplitN(fl.Field().String(), ":", 3)
-	for _, i := range auth {
-		if i == "" {
-			return false
-		}
-	}
-	if len(auth) < 3 {
-		return false
-	}
-	return true
-}
-
-func StructValidationErrors(err error) error {
+func structValidationErrors(err error) error {
 	var errList []string
+
 	for _, err := range err.(validator.ValidationErrors) {
 		errList = append(errList, fmt.Sprintf("failed validation for check '%s' on '%v', value '%v' is not valid", err.Tag(), err.Field(), err.Value()))
 	}
 	return fmt.Errorf(strings.Join(errList, "\n"))
 }
 
-func VarValidationErrors(name string, err error) error {
+func varValidationErrors(name string, err error) error {
 	var errList []string
 	for _, err := range err.(validator.ValidationErrors) {
-		errList = append(errList, fmt.Sprintf(" %s failed validation, validation of '%s %s', for value %v", name, err.Tag(), err.Param(), err.Value()))
+			errList = append(errList, fmt.Sprintf(" %s failed validation, validation of '%s %s', for value %v", name, err.Tag(), err.Param(), err.Value()))
 	}
 	return fmt.Errorf(strings.Join(errList, "\n"))
 }

@@ -134,14 +134,14 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 }
 
 // Creates workflow init params by pulling manifest from given git repo, commit sha, and code path
-func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (requests.CreateWorkflowRequest, error) {
+func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (requests.CreateWorkflow, error) {
 	level.Debug(h.logger).Log("message", fmt.Sprintf("retrieving manifest from repository %s at sha %s with path %s", repository, commitHash, path))
 	fileContents, err := h.gitClient.CheckoutFileFromRepository(repository, commitHash, path)
 	if err != nil {
-		return requests.CreateWorkflowRequest{}, err
+		return requests.CreateWorkflow{}, err
 	}
 
-	var cwr requests.CreateWorkflowRequest
+	var cwr requests.CreateWorkflow
 	err = yaml.Unmarshal(fileContents, &cwr)
 	return cwr, err
 }
@@ -159,7 +159,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var cgwr requests.CreateGitWorkflowRequest
+	var cgwr requests.CreateGitWorkflow
 	err = json.Unmarshal(reqBody, &cgwr)
 	if err != nil {
 		level.Error(l).Log("message", "error deserializing request body", "error", err)
@@ -172,14 +172,14 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 
 	if err := cgwr.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
-		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
+		level.Error(l).Log("message", "error validating request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("error validating request, %s", err), http.StatusBadRequest)
 		return
 	}
 
-	a, err := credentials.NewAuthorization(ah)
-	if err != nil {
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -204,7 +204,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	level.Debug(l).Log("message", "reading request body")
-	var cwr requests.CreateWorkflowRequest
+	var cwr requests.CreateWorkflow
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading workflow request data", "error", err)
@@ -219,16 +219,16 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := cwr.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
-		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
+		level.Error(l).Log("message", "error validating request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("error validating request, %s", err), http.StatusBadRequest)
 		return
 	}
 	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	ah := r.Header.Get("Authorization")
-	a, err := credentials.NewAuthorization(ah)
-	if err != nil {
-		h.errorResponse(w, "error authorizing", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -239,14 +239,13 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 // Creates a workflow
 // Context is not currently used as Argo has its own and Vault doesn't
 // currently support it.
-func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflowRequest, l log.Logger) {
+func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflow, l log.Logger) {
 	level.Debug(l).Log("message", "validating workflow parameters")
 
-	validate := validations.InitValidator()
 	// validate that cwr.Framework matches one of the string values in config frameworks
-	if err := validate.Var(cwr.Framework, fmt.Sprintf("oneof=%s", strings.Join(h.config.listFrameworks(), " "))); err != nil {
-		level.Error(l).Log("error", validations.VarValidationErrors("framework", err))
-		h.errorResponse(w, validations.VarValidationErrors("framework", err).Error(), http.StatusBadRequest)
+	if err := validations.ValidateVar("framework", cwr.Framework, fmt.Sprintf("oneof=%s", strings.Join(h.config.listFrameworks(), " "))); err != nil {
+		level.Error(l).Log("error",  err)
+		h.errorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -258,9 +257,9 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	}
 
 	// validate that cwr.Type matches one of the string values in config types
-	if err = validate.Var(cwr.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " "))); err != nil {
-		level.Error(l).Log("error", validations.VarValidationErrors("type", err))
-		h.errorResponse(w, validations.VarValidationErrors("type", err).Error(), http.StatusBadRequest)
+	if err = validations.ValidateVar("type", cwr.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " "))); err != nil {
+		level.Error(l).Log("error", err)
+		h.errorResponse(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -391,10 +390,9 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing get target permissions")
 	ah := r.Header.Get("Authorization")
-	a, err := credentials.NewAuthorization(ah) // todo add validation
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -491,7 +489,7 @@ func newArgoCloudOpsToken(provider, key, secret string) *token {
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-project")
 
-	var capp requests.CreateProjectRequest
+	var capp requests.CreateProject
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error parsing request", "error", err)
@@ -504,8 +502,8 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := capp.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
-		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
+		level.Error(l).Log("message", "error validating request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("error validating request, %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -513,10 +511,9 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing project creation")
 	ah := r.Header.Get("Authorization")
-	a, err := credentials.NewAuthorization(ah) // todo add validation
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -583,10 +580,9 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing get project")
 	ah := r.Header.Get("Authorization")
-	a, err := credentials.NewAuthorization(ah) // todo add validation
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing using Authorization token", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -639,10 +635,9 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing delete project")
 	ah := r.Header.Get("Authorization")
-	a, err := credentials.NewAuthorization(ah) // todo add validation
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -714,7 +709,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "reading request body")
 
-	var ctr requests.CreateTargetRequest
+	var ctr requests.CreateTarget
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
@@ -728,18 +723,17 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := ctr.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", validations.StructValidationErrors(err))
-		h.errorResponse(w, fmt.Sprintf("error validating request, %s", validations.StructValidationErrors(err)), http.StatusBadRequest)
+		level.Error(l).Log("message", "error validating request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("error validating request, %v", err), http.StatusBadRequest)
 		return
 	}
 
 	l = log.With(l, "target", ctr.Name)
 
 	level.Debug(l).Log("message", "authorizing target creation")
-	a, err := credentials.NewAuthorization(ah)
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -794,10 +788,9 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "authorizing delete target permissions")
 	ah := r.Header.Get("Authorization")
-	a, err := credentials.NewAuthorization(ah)
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 
@@ -842,10 +835,9 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "list-targets", "project", projectName)
 
 	level.Debug(l).Log("message", "authorizing target list retrieval")
-	a, err := credentials.NewAuthorization(ah)
-	if err != nil {
-		level.Error(l).Log("message", "error authorizing using Authorization header", "error", err)
-		h.errorResponse(w, "error authorizing using Authorization header", http.StatusUnauthorized)
+	a := credentials.NewAuthorization(ah)
+	if err := a.Validate(); err != nil {
+		h.errorResponse(w, "error authorizing, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 

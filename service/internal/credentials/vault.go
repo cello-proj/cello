@@ -20,11 +20,11 @@ const (
 // Provider defines the interface required by providers.
 type Provider interface {
 	CreateProject(string) (string, string, error)
-	CreateTarget(string, requests.CreateTargetRequest) error
+	CreateTarget(string, requests.CreateTarget) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
 	GetProject(string) (responses.GetProject, error)
-	GetTarget(string, string) (requests.TargetProperties, error)
+	GetTarget(string, string) (responses.TargetProperties, error)
 	GetToken() (string, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
@@ -116,33 +116,34 @@ func NewVaultSvc(c VaultConfig, h http.Header) (*vault.Client, error) {
 
 // Authorization represents a user's authorization token.
 type Authorization struct {
-	Provider string
-	Key      string
-	Secret   string
+	Provider string `validate:"required,eq=vault"`
+	Key      string `validate:"required"`
+	Secret   string `validate:"required"`
+}
+
+func (a Authorization) Validate() error {
+	return validations.ValidateStruct(a)
 }
 
 // NewAuthorization provides an Authorization from a header.
 // This is separate from admin functions which use the admin env var
-func NewAuthorization(authorizationHeader string) (*Authorization, error) {
+func NewAuthorization(authorizationHeader string) *Authorization {
 	var a Authorization
-	if err := validations.InitValidator().Var(authorizationHeader, "valid_auth_header"); err != nil {
-		return nil, fmt.Errorf("invalid authorization header format")
-	}
 	auth := strings.SplitN(authorizationHeader, ":", 3)
 	a.Provider = auth[0]
 	a.Key = auth[1]
 	a.Secret = auth[2]
-	return &a, nil
+	return &a
 }
 
 // IsAdmin determines if the Authorization is an admin.
 // TODO See if this can be removed when refactoring auth.
 // AuthorizedAdmin determines if the Authorization is valid and an Admin.
 func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) error {
-	if err := validations.InitValidator().Var(a.Key, "eq=admin"); err != nil {
-		return fmt.Errorf("must be an authorized admin, %s", validations.VarValidationErrors("user", err))
+	if err := validations.ValidateVar("user", a.Key, "eq=admin"); err != nil {
+		return fmt.Errorf("must be an authorized admin, %w", err)
 	}
-	if err := validations.InitValidator().Var(a.Secret, fmt.Sprintf("eq=%s", adminSecret)); err != nil {
+	if err := validations.ValidateVar("admin secret", a.Secret, fmt.Sprintf("eq=%s", adminSecret)); err != nil {
 		return fmt.Errorf("must be an authorized admin, invalid admin secret")
 	}
 	return nil
@@ -187,7 +188,7 @@ func (v VaultProvider) CreateProject(name string) (string, string, error) {
 // CreateTarget creates a target for the project.
 // TODO validate policy and other information is correct in target
 // TODO Validate role exists (if possible, etc)
-func (v VaultProvider) CreateTarget(projectName string, ctr requests.CreateTargetRequest) error {
+func (v VaultProvider) CreateTarget(projectName string, ctr requests.CreateTarget) error {
 	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to create target")
 	}
@@ -265,18 +266,18 @@ func (v VaultProvider) GetProject(projectName string) (responses.GetProject, err
 	return responses.GetProject{Name: projectName}, nil
 }
 
-func (v VaultProvider) GetTarget(projectName, targetName string) (requests.TargetProperties, error) {
+func (v VaultProvider) GetTarget(projectName, targetName string) (responses.TargetProperties, error) {
 	if !v.isAdmin() {
-		return requests.TargetProperties{}, errors.New("admin credentials must be used to get target information")
+		return responses.TargetProperties{}, errors.New("admin credentials must be used to get target information")
 	}
 
 	sec, err := v.vaultLogicalSvc.Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
 	if err != nil {
-		return requests.TargetProperties{}, fmt.Errorf("vault get target error: %w", err)
+		return responses.TargetProperties{}, fmt.Errorf("vault get target error: %w", err)
 	}
 
 	if sec == nil {
-		return requests.TargetProperties{}, ErrTargetNotFound
+		return responses.TargetProperties{}, ErrTargetNotFound
 	}
 
 	roleArn := sec.Data["role_arns"].([]interface{})[0].(string)
@@ -288,7 +289,7 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (requests.Targe
 		policies = append(policies, v.(string))
 	}
 
-	return requests.TargetProperties{CredentialType: credentialType, RoleArn: roleArn, PolicyArns: policies}, nil
+	return responses.TargetProperties{CredentialType: credentialType, RoleArn: roleArn, PolicyArns: policies}, nil
 }
 
 func (v VaultProvider) GetToken() (string, error) {
@@ -374,7 +375,7 @@ func (v VaultProvider) readSecretID(appRoleName string) (string, error) {
 
 func (v VaultProvider) TargetExists(projectName, targetName string) (bool, error) {
 	_, err := v.GetTarget(projectName, targetName)
-	return err != ErrTargetNotFound, nil
+	return !errors.Is(err, ErrTargetNotFound), nil
 }
 
 func (v VaultProvider) writeProjectState(name string) error {
