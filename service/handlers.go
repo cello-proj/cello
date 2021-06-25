@@ -166,10 +166,8 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error deserializing request body", http.StatusBadRequest)
 		return
 	}
-	fmt.Sprintf("cgwr: %+v", cgwr)
 
 	ah := r.Header.Get("Authorization")
-
 
 	if err := cgwr.Validate(); err != nil {
 		level.Error(l).Log("message", "error validating request", "error", err)
