@@ -2,6 +2,7 @@ package validations
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -66,23 +67,21 @@ func validateIsAlphaNumericUnderscore(fl validator.FieldLevel) bool {
 }
 
 func validExecuteContainerImage(fl validator.FieldLevel) bool {
-	mapRange := fl.Field().MapRange()
-	for mapRange.Next() {
-		if mapRange.Key().String() == "execute_container_image_uri" {
-			return isValidImageURI(mapRange.Value().String())
-		}
+
+	image := fl.Field().MapIndex(reflect.ValueOf("execute_container_image_uri"))
+	if image.IsValid() {
+		return isValidImageURI(image.String())
 	}
 	// execute_container_image_uri key missing
 	return false
 }
 
 func validPreContainerImage(fl validator.FieldLevel) bool {
-	mapRange := fl.Field().MapRange()
-	for mapRange.Next(){
-		if mapRange.Key().String() == "pre_container_image_uri" {
-			return  isValidImageURI(mapRange.Value().String())
-		}
+	image := fl.Field().MapIndex(reflect.ValueOf("pre_container_image_uri"))
+	if image.IsValid() {
+		return isValidImageURI(image.String())
 	}
+
 	// pre_container_image_uri is not required
 	return true
 }
