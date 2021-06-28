@@ -14,7 +14,9 @@ import (
 	"testing"
 
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/git"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -27,13 +29,39 @@ const (
 	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
 )
 
+type mockDB struct{}
+
+func newMockDB() db.Client {
+	return mockDB{}
+}
+
+func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) error {
+	if pe.ProjectID == "somedberror" {
+		return fmt.Errorf("some db error")
+	}
+
+	return nil
+}
+
+func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
+	return db.ProjectEntry{}, nil
+}
+
+func (d mockDB) DeleteProjectEntry(ctx context.Context, project string) error {
+	if project == "somedeletedberror" {
+		return fmt.Errorf("some db error")
+	}
+
+	return nil
+}
+
 type mockGitClient struct{}
 
-func newMockGitClient() gitClient {
+func newMockGitClient() git.Client {
 	return mockGitClient{}
 }
 
-func (g mockGitClient) CheckoutFileFromRepository(repository, commitHash, path string) ([]byte, error) {
+func (g mockGitClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
 	return loadFileBytes("TestCreateWorkflow/can_create_workflow.json")
 }
 
@@ -117,6 +145,7 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 		"projectalreadyexists",
 		"undeletableprojecttargets",
 		"undeletableproject",
+		"somedeletedberror",
 	}
 	for _, existingProjects := range existingProjects {
 		if name == existingProjects {
@@ -197,6 +226,14 @@ func TestCreateProject(t *testing.T) {
 			url:     "/projects",
 			method:  "POST",
 		},
+		{
+			name:    "project fails to create db entry",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
+			want:    http.StatusInternalServerError,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
 	}
 	runTests(t, tests)
 }
@@ -229,6 +266,13 @@ func TestDeleteProject(t *testing.T) {
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/undeletableproject",
+			method:  "DELETE",
+		},
+		{
+			name:    "fails to delete project db entry",
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects/somedeletedberror",
 			method:  "DELETE",
 		},
 	}
@@ -465,7 +509,6 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 		{
 			name: "can create workflows",
 			req: createGitWorkflowRequest{
-				Repository: "repository1",
 				CommitHash: "sha123",
 				Path:       "path/to/manifest.yaml",
 				Type:       "sync",
@@ -690,7 +733,9 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		gitClient:              newMockGitClient(),
 		newCredsProviderSvc:    mockCredsProvSvc,
 		env: env.Vars{
-			AdminSecret: testPassword},
+			AdminSecret: testPassword,
+		},
+		dbClient: newMockDB(),
 	}
 
 	var router = setupRouter(h)
