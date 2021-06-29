@@ -1,7 +1,6 @@
 package validations
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -115,20 +114,16 @@ func isValidImageURI(imageURI string) bool {
 
 func structValidationErrors(err error) error {
 	var errList []string
-	if errors.Is(err, &validator.InvalidValidationError{}) {
-		for _, err := range err.(validator.ValidationErrors) {
-			errList = append(errList, fmt.Sprintf("failed validation for check '%s' on '%v', value '%v' is not valid", err.Tag(), err.Field(), err.Value()))
-		}
+	for _, err := range err.(validator.ValidationErrors) {
+		errList = append(errList, fmt.Sprintf("failed validation check for '%s' '%v'", err.Tag(), err.Field()))
 	}
 	return fmt.Errorf(strings.Join(errList, "\n"))
 }
 
 func varValidationErrors(name string, err error) error {
 	var errList []string
-	if errors.Is(err, &validator.InvalidValidationError{}) {
-		for _, err := range err.(validator.ValidationErrors) {
-			errList = append(errList, fmt.Sprintf(" %s failed validation, validation of '%s %s', for value %v", name, err.Tag(), err.Param(), err.Value()))
-		}
+	for _, err := range err.(validator.ValidationErrors) {
+		errList = append(errList, fmt.Sprintf("failed validation check for '%s' '%s'", name, err.Param()))
 	}
 	return fmt.Errorf(strings.Join(errList, "\n"))
 }
