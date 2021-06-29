@@ -8,8 +8,8 @@ if [ -z "$ARGO_CLOUDOPS_DB_HOST" ]; then
     export ARGO_CLOUDOPS_DB_HOST=localhost
 fi
 
-if [ -z "$ARGO_CLOUDOPS_DB_DATABASE_NAME" ]; then
-    export ARGO_CLOUDOPS_DB_DATABASE_NAME=argocloudops
+if [ -z "$ARGO_CLOUDOPS_DB_NAME" ]; then
+    export ARGO_CLOUDOPS_DB_NAME=argocloudops
 fi
 
 if [ -z "$ARGO_CLOUDOPS_DB_USER" ]; then
