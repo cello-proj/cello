@@ -1,6 +1,7 @@
 package validations
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -67,7 +68,6 @@ func validateIsAlphaNumericUnderscore(fl validator.FieldLevel) bool {
 }
 
 func validExecuteContainerImage(fl validator.FieldLevel) bool {
-
 	image := fl.Field().MapIndex(reflect.ValueOf("execute_container_image_uri"))
 	if image.IsValid() {
 		return isValidImageURI(image.String())
@@ -115,17 +115,20 @@ func isValidImageURI(imageURI string) bool {
 
 func structValidationErrors(err error) error {
 	var errList []string
-
-	for _, err := range err.(validator.ValidationErrors) {
-		errList = append(errList, fmt.Sprintf("failed validation for check '%s' on '%v', value '%v' is not valid", err.Tag(), err.Field(), err.Value()))
+	if errors.Is(err, &validator.InvalidValidationError{}) {
+		for _, err := range err.(validator.ValidationErrors) {
+			errList = append(errList, fmt.Sprintf("failed validation for check '%s' on '%v', value '%v' is not valid", err.Tag(), err.Field(), err.Value()))
+		}
 	}
 	return fmt.Errorf(strings.Join(errList, "\n"))
 }
 
 func varValidationErrors(name string, err error) error {
 	var errList []string
-	for _, err := range err.(validator.ValidationErrors) {
+	if errors.Is(err, &validator.InvalidValidationError{}) {
+		for _, err := range err.(validator.ValidationErrors) {
 			errList = append(errList, fmt.Sprintf(" %s failed validation, validation of '%s %s', for value %v", name, err.Tag(), err.Param(), err.Value()))
+		}
 	}
 	return fmt.Errorf(strings.Join(errList, "\n"))
 }
