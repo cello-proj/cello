@@ -87,12 +87,7 @@ func validPreContainerImage(fl validator.FieldLevel) bool {
 }
 
 func validTargetType(fl validator.FieldLevel) bool {
-	switch fl.Field().String() {
-	case "aws_account":
-		return true
-	default:
-		return false
-	}
+	return fl.Field().String() == "aws_account"
 }
 
 // TODO long term, we should evaluate if hard coding in code is the right approach to
@@ -101,12 +96,8 @@ func validTargetType(fl validator.FieldLevel) bool {
 func validArgument(fl validator.FieldLevel) bool {
 	for _, key := range fl.Field().MapKeys() {
 		switch key.String() {
-		case "init":
+		case "execute", "init":
 			return true
-		case "execute":
-			return true
-		default:
-			return false
 		}
 	}
 	return false
