@@ -8,7 +8,7 @@ import (
 
 // Create workflow request.
 type CreateWorkflow struct {
-	Arguments            map[string][]string `yaml:"arguments" json:"arguments"`
+	Arguments            map[string][]string `validate:"valid_argument" yaml:"arguments" json:"arguments"`
 	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
 	Framework            string              `yaml:"framework" json:"framework"`
 	Parameters           map[string]string   `validate:"valid_execute_container_image,valid_precontainer_image" yaml:"parameters" json:"parameters"`
