@@ -306,38 +306,83 @@ func TestValidateVar(t *testing.T) {
 }
 
 func TestValidateStructError(t *testing.T) {
-	type testStruct struct {
-		Test string `validate:"valid_target_type"`
-	}
-
 	tests := []struct {
-		name       string
-		testString string
-		errResult  bool
-		errString  string
+		name             string
+		validationStruct interface{}
+		errResult        bool
+		errString        string
 	}{
 		{
-			name:       "no error",
-			testString: "aws_account",
+			name: "no error",
+			validationStruct: struct {
+				Test string `validate:"valid_target_type"`
+			}{"aws_account"},
 		},
 		{
-			name:       "error with expected string",
-			testString: "bad",
-			errResult:  true,
-			errString:  "failed validation check for 'valid_target_type' 'Test'",
+			name: "invalid target type string",
+			validationStruct: struct {
+				Test string `validate:"valid_target_type"`
+			}{"bad"},
+			errResult: true,
+			errString: "failed validation check for 'valid_target_type', value 'bad' is invalid, types supported:'aws_account'",
+		},
+		{
+			name: "non arn provider to is arn validation",
+			validationStruct: struct {
+				Test string `validate:"is_arn"`
+			}{"bad"},
+			errResult: true,
+			errString: "failed validation check for 'is_arn', value 'bad' is not a valid arn",
+		},
+		{
+			name: "bad values (-)'s in alpha numeric underscore validation",
+			validationStruct: struct {
+				Test string `validate:"alphanumunderscore"`
+			}{"bad-value"},
+			errResult: true,
+			errString: "failed validation check for 'alphanumunderscore', on 'Test', value 'bad-value' is invalid",
+		},
+		{
+			name: "bad execute container uri",
+			validationStruct: struct {
+				Test map[string]string `validate:"valid_execute_container_image"`
+			}{map[string]string{
+				"execute_container_image_uri": "bad()",
+			}},
+			errResult: true,
+			errString: "failed validation check for 'valid_execute_container_image', value 'map[execute_container_image_uri:bad()]' is an invalid container uri",
+		},
+		{
+			name: "bad pre container uri",
+			validationStruct: struct {
+				Test map[string]string `validate:"valid_precontainer_image"`
+			}{map[string]string{
+				"pre_container_image_uri": "bad()",
+			}},
+			errResult: true,
+			errString: "failed validation check for 'valid_precontainer_image', value 'map[pre_container_image_uri:bad()]' is an invalid container uri",
+		},
+		{
+			name: "invalid argument",
+			validationStruct: struct {
+				Test map[string][]string `validate:"valid_argument"`
+			}{map[string][]string{
+				"exec": {""}}},
+			errResult: true,
+			errString: "failed validation check for 'valid_argument', value 'map[exec:[]]' is an invalid argument",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testValidationStruct := testStruct{Test: tt.testString}
-			err := ValidateStruct(&testValidationStruct)
+			testValidationStruct := tt.validationStruct
+			err := ValidateStruct(testValidationStruct)
 			if err != nil {
 				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
+					t.Errorf("\ndid not expect error, got: %v", err.Error())
 				}
 				if err.Error() != tt.errString {
-					t.Errorf("\nexpected error '%v', got: '%v'", tt.errString, err)
+					t.Errorf("\nexpected error '%v', got: '%v'", tt.errString, err.Error())
 				}
 			} else {
 				if tt.errResult {

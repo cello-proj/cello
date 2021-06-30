@@ -41,7 +41,7 @@ func ValidateStruct(s interface{}) error {
 		return err
 	}
 	if err := validate.Struct(s); err != nil {
-		return structValidationErrors(err)
+		return validationErrorMessage("structValidation", err)
 	}
 	return nil
 }
@@ -53,7 +53,7 @@ func ValidateVar(name string, s interface{}, validation string) error {
 		return err
 	}
 	if err := validate.Var(s, validation); err != nil {
-		return varValidationErrors(name, err)
+		return validationErrorMessage(name, err)
 	}
 	return nil
 }
@@ -112,22 +112,29 @@ func isValidImageURI(imageURI string) bool {
 	return err == nil
 }
 
-func structValidationErrors(err error) error {
+// Custom error messages
+func validationErrorMessage(name string, err error) error {
 	var validationErrors validator.ValidationErrors
 	if ok := errors.As(err, &validationErrors); ok {
-		for _, validationError := range validationErrors {
+		validationError := validationErrors[0]
+		switch validationError.Tag() {
+		case "is_arn":
+			return fmt.Errorf("failed validation check for '%s', value '%v' is not a valid arn", validationError.Tag(), validationError.Value())
+		case "valid_target_type":
+			return fmt.Errorf("failed validation check for '%s', value '%v' is invalid, types supported:'aws_account'", validationError.Tag(), validationError.Value())
+		case "alphanumunderscore":
+			return fmt.Errorf("failed validation check for '%s', on '%v', value '%v' is invalid", validationError.Tag(), validationError.Field(), validationError.Value())
+		case "valid_execute_container_image", "valid_precontainer_image":
+			return fmt.Errorf("failed validation check for '%s', value '%v' is an invalid container uri", validationError.Tag(), validationError.Value())
+		case "valid_argument":
+			return fmt.Errorf("failed validation check for '%s', value '%v' is an invalid argument", validationError.Tag(), validationError.Value())
+		default:
+			if validationError.Field() == "" {
+				return fmt.Errorf("failed validation check for '%s' '%v'", name, validationError.Param())
+			}
 			return fmt.Errorf("failed validation check for '%s' '%v'", validationError.Tag(), validationError.Field())
 		}
-	}
-	return err
-}
 
-func varValidationErrors(name string, err error) error {
-	var validationErrors validator.ValidationErrors
-	if ok := errors.As(err, &validationErrors); ok {
-		for _, validationError := range validationErrors {
-			return fmt.Errorf("failed validation check for '%s' '%v'", name, validationError.Param())
-		}
 	}
 	return err
 }
