@@ -121,7 +121,7 @@ type Authorization struct {
 	Secret   string `validate:"required"`
 }
 
-func (a Authorization) Validate(optionalValidations ...func()error) error {
+func (a Authorization) Validate(optionalValidations ...func() error) error {
 	for _, validation := range optionalValidations {
 		if err := validation(); err != nil {
 			return err
@@ -134,7 +134,7 @@ func (a Authorization) Validate(optionalValidations ...func()error) error {
 // TODO See if this can be removed when refactoring auth.
 // Optional validation should be passed as parameter to Validate().
 func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) func() error {
-	return func()error{
+	return func() error {
 		if err := validations.ValidateVar("user", a.Key, "eq=admin"); err != nil {
 			return fmt.Errorf("must be an authorized admin, %w", err)
 		}

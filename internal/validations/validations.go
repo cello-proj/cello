@@ -1,6 +1,7 @@
 package validations
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -112,15 +113,21 @@ func isValidImageURI(imageURI string) bool {
 }
 
 func structValidationErrors(err error) error {
-	for _, err := range err.(validator.ValidationErrors) {
-		return fmt.Errorf("failed validation check for '%s' '%v'", err.Tag(), err.Field())
+	var validationErrors validator.ValidationErrors
+	if ok := errors.As(err, &validationErrors); ok {
+		for _, validationError := range validationErrors {
+			return fmt.Errorf("failed validation check for '%s' '%v'", validationError.Tag(), validationError.Field())
+		}
 	}
 	return err
 }
 
 func varValidationErrors(name string, err error) error {
-	for _, err := range err.(validator.ValidationErrors) {
-		return fmt.Errorf("failed validation check for '%s' '%s'", name, err.Param())
+	var validationErrors validator.ValidationErrors
+	if ok := errors.As(err, &validationErrors); ok {
+		for _, validationError := range validationErrors {
+			return fmt.Errorf("failed validation check for '%s' '%v'", name, validationError.Param())
+		}
 	}
 	return err
 }

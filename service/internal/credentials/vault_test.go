@@ -243,10 +243,10 @@ func TestVaultDeleteTarget(t *testing.T) {
 
 func TestVaultGetTarget(t *testing.T) {
 	tests := []struct {
-		name               string
-		admin              bool
-		vaultErr           error
-		errResult          bool
+		name      string
+		admin     bool
+		vaultErr  error
+		errResult bool
 	}{
 		{
 			name:  "get target success",

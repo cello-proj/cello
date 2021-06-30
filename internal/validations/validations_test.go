@@ -11,18 +11,18 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		testString     string
-		errResult      bool
+		name       string
+		testString string
+		errResult  bool
 	}{
 		{
-			name:           "valid alpha num underscore",
+			name:       "valid alpha num underscore",
 			testString: "abcd1234____",
 		},
 		{
-			name:           "invalid alpha num underscore characters",
+			name:       "invalid alpha num underscore characters",
 			testString: "--[[]]  ",
-			errResult: true,
+			errResult:  true,
 		},
 	}
 
@@ -38,7 +38,8 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
 
@@ -48,28 +49,28 @@ func TestValidateContainerImages(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		testString     string
+		name                  string
+		testString            string
 		noExecuteContainerKey bool
-		errResult      bool
+		errResult             bool
 	}{
 		{
-			name:           "valid execute container image",
+			name:       "valid execute container image",
 			testString: "argocloudops/argo-cloudops-cdk:1.87.1",
 		},
 		{
-			name:           "invalid execute container image",
+			name:       "invalid execute container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
+			errResult:  true,
+		},
+		{
+			name:      "no image provided",
 			errResult: true,
 		},
 		{
-			name:           "no image provided",
-			errResult: true,
-		},
-		{
-			name:           "no execute container key",
+			name:                  "no execute container key",
 			noExecuteContainerKey: true,
-			errResult: true,
+			errResult:             true,
 		},
 	}
 
@@ -89,7 +90,8 @@ func TestValidateContainerImages(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
 
@@ -99,26 +101,26 @@ func TestPreContainerImages(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		testString     string
+		name              string
+		testString        string
 		noPreContainerKey bool
-		errResult      bool
+		errResult         bool
 	}{
 		{
-			name:           "valid pre container image",
+			name:       "valid pre container image",
 			testString: "argocloudops/argo-cloudops-cdk:1.87.1",
 		},
 		{
-			name:           "invalid pre container image",
+			name:       "invalid pre container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
+			errResult:  true,
+		},
+		{
+			name:      "no image provided",
 			errResult: true,
 		},
 		{
-			name:           "no image provided",
-			errResult: true,
-		},
-		{
-			name:           "no provided precontainer key, optional no error",
+			name:              "no provided precontainer key, optional no error",
 			noPreContainerKey: true,
 		},
 	}
@@ -139,10 +141,10 @@ func TestPreContainerImages(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
-
 
 func TestValidTargetType(t *testing.T) {
 	type testStruct struct {
@@ -150,18 +152,18 @@ func TestValidTargetType(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		testString     string
-		errResult      bool
+		name       string
+		testString string
+		errResult  bool
 	}{
 		{
-			name:           "valid target type",
+			name:       "valid target type",
 			testString: "aws_account",
 		},
 		{
-			name:           "invalid target type",
+			name:       "invalid target type",
 			testString: "not_aws_account",
-			errResult: true,
+			errResult:  true,
 		},
 	}
 
@@ -177,7 +179,8 @@ func TestValidTargetType(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
 
@@ -187,23 +190,23 @@ func TestValidArgument(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		testString     string
+		name              string
+		testString        string
 		noPreContainerKey bool
-		errResult      bool
+		errResult         bool
 	}{
 		{
-			name:           "valid argument init",
+			name:       "valid argument init",
 			testString: "init",
 		},
 		{
-			name:           "valid argument execute",
+			name:       "valid argument execute",
 			testString: "execute",
 		},
 		{
-			name:           "invalid argument",
+			name:       "invalid argument",
 			testString: "exec",
-			errResult: true,
+			errResult:  true,
 		},
 	}
 
@@ -223,7 +226,8 @@ func TestValidArgument(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
 
@@ -233,18 +237,18 @@ func TestValidArn(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		testString     string
-		errResult      bool
+		name       string
+		testString string
+		errResult  bool
 	}{
 		{
-			name:           "valid arn",
+			name:       "valid arn",
 			testString: "arn:aws:iam::012345678901:policy/test-policy",
 		},
 		{
-			name:           "invalid arn",
+			name:       "invalid arn",
 			testString: "invalid-arn",
-			errResult: true,
+			errResult:  true,
 		},
 	}
 
@@ -260,27 +264,28 @@ func TestValidArn(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
 
 func TestValidateVar(t *testing.T) {
 	tests := []struct {
-		name           string
-		testString     string
-		validString    string
-		errResult      bool
+		name        string
+		testString  string
+		validString string
+		errResult   bool
 	}{
 		{
-			name:           "valid var",
-			testString: "good",
+			name:        "valid var",
+			testString:  "good",
 			validString: "good",
 		},
 		{
-			name:           "invalid var",
-			testString: "bad",
+			name:        "invalid var",
+			testString:  "bad",
 			validString: "good",
-			errResult: true,
+			errResult:   true,
 		},
 	}
 
@@ -295,7 +300,8 @@ func TestValidateVar(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
 
@@ -305,20 +311,20 @@ func TestValidateStructError(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		testString     string
-		errResult      bool
-		errString      string
+		name       string
+		testString string
+		errResult  bool
+		errString  string
 	}{
 		{
-			name:           "no error",
+			name:       "no error",
 			testString: "aws_account",
 		},
 		{
-			name:           "error with expected string",
+			name:       "error with expected string",
 			testString: "bad",
-			errResult: true,
-			errString: "failed validation check for 'valid_target_type' 'Test'",
+			errResult:  true,
+			errString:  "failed validation check for 'valid_target_type' 'Test'",
 		},
 	}
 
@@ -337,29 +343,30 @@ func TestValidateStructError(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }
 
 func TestValidateVarErrors(t *testing.T) {
 	tests := []struct {
-		name           string
-		testString     string
-		validString    string
-		errResult      bool
-		errString      string
+		name        string
+		testString  string
+		validString string
+		errResult   bool
+		errString   string
 	}{
 		{
-			name:           "valid var",
-			testString: "good",
+			name:        "valid var",
+			testString:  "good",
 			validString: "good",
 		},
 		{
-			name:           "invalid var expected error",
-			testString: "bad",
+			name:        "invalid var expected error",
+			testString:  "bad",
 			validString: "good",
-			errResult: true,
-			errString: "failed validation check for 'validate var' 'good'",
+			errResult:   true,
+			errString:   "failed validation check for 'validate var' 'good'",
 		},
 	}
 
@@ -377,6 +384,7 @@ func TestValidateVarErrors(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error, got: %v", err)
 				}
-			}})
+			}
+		})
 	}
 }

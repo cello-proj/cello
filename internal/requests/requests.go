@@ -2,8 +2,9 @@ package requests
 
 import (
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"strings"
+
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 
 // Create workflow request.
@@ -20,15 +21,19 @@ type CreateWorkflow struct {
 
 // Optional validation should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
-	return func()error{return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))}
+	return func() error {
+		return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))
+	}
 }
 
 // Optional validation should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateType(types []string) func() error {
-	return func()error{return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))}
+	return func() error {
+		return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))
+	}
 }
 
-func (req CreateWorkflow) Validate(optionalValidations ...func()error ) error {
+func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
 	for _, validation := range optionalValidations {
 		if err := validation(); err != nil {
 			return err
@@ -62,7 +67,7 @@ func (req CreateTarget) Validate() error {
 
 // Create project request.
 type CreateProject struct {
-	Name string `validate:"min=4,max=32,alphanum" json:"name"`
+	Name       string `validate:"min=4,max=32,alphanum" json:"name"`
 	Repository string `json:"repository"`
 }
 
