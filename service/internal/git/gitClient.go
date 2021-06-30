@@ -3,6 +3,7 @@ package git
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
@@ -17,10 +18,72 @@ type Client interface {
 	GetManifestFile(repository, commitHash, path string) ([]byte, error)
 }
 
+type gitSvc interface {
+	PlainClone(path string, isBare bool, o *git.CloneOptions) (*git.Repository, error)
+	PlainOpen(path string) (*git.Repository, error)
+	Fetch(r *git.Repository, o *git.FetchOptions) error
+	Worktree(r *git.Repository) (*git.Worktree, error)
+	Checkout(w *git.Worktree, opts *git.CheckoutOptions) error
+}
+
+type gitSvcImpl struct{}
+
+func (g gitSvcImpl) PlainClone(path string, isBare bool, o *git.CloneOptions) (*git.Repository, error) {
+	return git.PlainClone(path, isBare, o)
+}
+
+func (g gitSvcImpl) PlainOpen(path string) (*git.Repository, error) {
+	return git.PlainOpen(path)
+}
+
+func (g gitSvcImpl) Fetch(r *git.Repository, o *git.FetchOptions) error {
+	return r.Fetch(o)
+}
+
+func (g gitSvcImpl) Worktree(r *git.Repository) (*git.Worktree, error) {
+	return r.Worktree()
+}
+
+func (g gitSvcImpl) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
+	return w.Checkout(opts)
+}
+
+type osSvc interface {
+	Stat(name string) (fs.FileInfo, error)
+	Open(name string) (*os.File, error)
+	IsDir(filestat fs.FileInfo) bool
+	Size(filestat fs.FileInfo) int64
+	Read(file *os.File, b []byte) (n int, err error)
+}
+
+type osSvcImpl struct{}
+
+func (o osSvcImpl) Stat(name string) (fs.FileInfo, error) {
+	return os.Stat(name)
+}
+
+func (o osSvcImpl) Open(name string) (*os.File, error) {
+	return os.Open(name)
+}
+
+func (o osSvcImpl) IsDir(filestat fs.FileInfo) bool {
+	return filestat.IsDir()
+}
+
+func (o osSvcImpl) Size(filestat fs.FileInfo) int64 {
+	return filestat.Size()
+}
+
+func (o osSvcImpl) Read(file *os.File, b []byte) (n int, err error) {
+	return file.Read(b)
+}
+
 // BasicClient connects to git using ssh
 type BasicClient struct {
 	auth *ssh.PublicKeys
 	mu   *sync.Mutex
+	git  gitSvc
+	os   osSvc
 }
 
 // NewBasicClient creates a new ssh based git client
@@ -33,6 +96,8 @@ func NewBasicClient(sshPemFile string) (BasicClient, error) {
 	return BasicClient{
 		auth: auth,
 		mu:   &sync.Mutex{},
+		git:  gitSvcImpl{},
+		os:   osSvcImpl{},
 	}, nil
 }
 
@@ -46,9 +111,9 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 
 	var repo *git.Repository
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := g.os.Stat(filePath); os.IsNotExist(err) {
 		// TODO: use context version and make depth configurable
-		repo, err = git.PlainClone(filePath, false, &git.CloneOptions{
+		repo, err = g.git.PlainClone(filePath, false, &git.CloneOptions{
 			URL:  repository,
 			Auth: g.auth,
 		})
@@ -56,22 +121,22 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 			return []byte{}, err
 		}
 	} else {
-		repo, err = git.PlainOpen(filePath)
+		repo, err = g.git.PlainOpen(filePath)
 		if err != nil {
 			return []byte{}, err
 		}
-		err = repo.Fetch(&git.FetchOptions{})
+		err = g.git.Fetch(repo, &git.FetchOptions{})
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return []byte{}, err
 		}
 	}
 
-	w, err := repo.Worktree()
+	w, err := g.git.Worktree(repo)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	err = w.Checkout(&git.CheckoutOptions{
+	err = g.git.Checkout(w, &git.CheckoutOptions{
 		Hash: plumbing.NewHash(commitHash),
 	})
 	if err != nil {
@@ -79,22 +144,22 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 	}
 
 	pathToManifest := filepath.Join(filePath, path)
-	fileStat, err := os.Stat(pathToManifest)
+	fileStat, err := g.os.Stat(pathToManifest)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	if fileStat.IsDir() {
+	if g.os.IsDir(fileStat) {
 		return []byte{}, fmt.Errorf("path provided is not a file '%s'", path)
 	}
 
-	file, err := os.Open(pathToManifest)
+	file, err := g.os.Open(pathToManifest)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	fileContents := make([]byte, fileStat.Size())
-	_, err = file.Read(fileContents)
+	fileContents := make([]byte, g.os.Size(fileStat))
+	_, err = g.os.Read(file, fileContents)
 
 	return fileContents, err
 }
