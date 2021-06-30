@@ -49,11 +49,10 @@ func (g gitSvcImpl) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 }
 
 type osSvc interface {
-	Stat(name string) (fs.FileInfo, error)
-	Open(name string) (*os.File, error)
+	fs.StatFS
 	IsDir(filestat fs.FileInfo) bool
 	Size(filestat fs.FileInfo) int64
-	Read(file *os.File, b []byte) (n int, err error)
+	Read(file fs.File, b []byte) (n int, err error)
 }
 
 type osSvcImpl struct{}
@@ -62,7 +61,7 @@ func (o osSvcImpl) Stat(name string) (fs.FileInfo, error) {
 	return os.Stat(name)
 }
 
-func (o osSvcImpl) Open(name string) (*os.File, error) {
+func (o osSvcImpl) Open(name string) (fs.File, error) {
 	return os.Open(name)
 }
 
@@ -74,7 +73,7 @@ func (o osSvcImpl) Size(filestat fs.FileInfo) int64 {
 	return filestat.Size()
 }
 
-func (o osSvcImpl) Read(file *os.File, b []byte) (n int, err error) {
+func (o osSvcImpl) Read(file fs.File, b []byte) (n int, err error) {
 	return file.Read(b)
 }
 

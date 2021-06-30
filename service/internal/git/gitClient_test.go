@@ -2,7 +2,7 @@ package git
 
 import (
 	"io/fs"
-	"os"
+	"strings"
 	"sync"
 	"testing"
 
@@ -17,10 +17,16 @@ func (g mockGitSvc) PlainClone(path string, isBare bool, o *git.CloneOptions) (*
 }
 
 func (g mockGitSvc) PlainOpen(path string) (*git.Repository, error) {
+	if strings.HasSuffix(path, "myrepo3") {
+		return &git.Repository{}, nil
+	}
 	return nil, nil
 }
 
 func (g mockGitSvc) Fetch(r *git.Repository, o *git.FetchOptions) error {
+	if r != nil {
+		return git.NoErrAlreadyUpToDate
+	}
 	return nil
 }
 
@@ -35,10 +41,14 @@ func (g mockGitSvc) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 type mockOsSvc struct{}
 
 func (o mockOsSvc) Stat(name string) (fs.FileInfo, error) {
+	if strings.HasSuffix(name, "myrepo2") {
+		return nil, fs.ErrNotExist
+	}
+
 	return nil, nil
 }
 
-func (o mockOsSvc) Open(name string) (*os.File, error) {
+func (o mockOsSvc) Open(name string) (fs.File, error) {
 	return nil, nil
 }
 
@@ -50,7 +60,7 @@ func (o mockOsSvc) Size(filestat fs.FileInfo) int64 {
 	return 8
 }
 
-func (o mockOsSvc) Read(file *os.File, b []byte) (n int, err error) {
+func (o mockOsSvc) Read(file fs.File, b []byte) (n int, err error) {
 	copy(b, "my bytes")
 	return 0, nil
 }
@@ -74,8 +84,24 @@ func TestGetManifestFile(t *testing.T) {
 		res        string
 	}{
 		{
-			name:       "get manifest success",
+			name:       "get manifest exists on fs success",
 			repository: "myrepo",
+			commitHash: "123",
+			path:       "path/to/manifest.yaml",
+			errResult:  false,
+			res:        "my bytes",
+		},
+		{
+			name:       "get manifest new clone success",
+			repository: "myrepo2",
+			commitHash: "123",
+			path:       "path/to/manifest.yaml",
+			errResult:  false,
+			res:        "my bytes",
+		},
+		{
+			name:       "get manifest fetch already updated",
+			repository: "myrepo3",
 			commitHash: "123",
 			path:       "path/to/manifest.yaml",
 			errResult:  false,
