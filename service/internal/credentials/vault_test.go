@@ -502,9 +502,10 @@ func TestValidateAuthorizedAdmin(t *testing.T) {
 			if tt.validSecret {
 				secret = "validSecret"
 			}
-			err := Authorization{Key: key, Secret: secret}.ValidateAuthorizedAdmin("validSecret")
+			a := Authorization{Provider: "vault", Key: key, Secret: secret}
+			err := a.Validate(a.ValidateAuthorizedAdmin("validSecret"))
 			if err != nil != tt.expectErr {
-				t.Errorf("\nwant error: %v\n got error: %v", tt.expectErr, err == nil)
+				t.Errorf("\nwant error: %v\n got error: %v", tt.expectErr, err != nil)
 			}
 		})
 	}

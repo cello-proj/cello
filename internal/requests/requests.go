@@ -1,6 +1,10 @@
 package requests
 
-import "github.com/argoproj-labs/argo-cloudops/internal/validations"
+import (
+	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+	"strings"
+)
 
 // Create workflow request.
 type CreateWorkflow struct {
@@ -14,7 +18,20 @@ type CreateWorkflow struct {
 	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
 }
 
-func (req CreateWorkflow) Validate() error {
+func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
+	return func()error{return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))}
+}
+
+func (req CreateWorkflow) ValidateType(types []string) func() error {
+	return func()error{return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))}
+}
+
+func (req CreateWorkflow) Validate(optionalValidations ...func()error ) error {
+	for _, validation := range optionalValidations {
+		if err := validation(); err != nil {
+			return err
+		}
+	}
 	return validations.ValidateStruct(req)
 }
 

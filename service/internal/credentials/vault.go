@@ -121,8 +121,28 @@ type Authorization struct {
 	Secret   string `validate:"required"`
 }
 
-func (a Authorization) Validate() error {
+func (a Authorization) Validate(optionalValidations ...func()error) error {
+	for _, validation := range optionalValidations {
+		if err := validation(); err != nil {
+			return err
+		}
+	}
 	return validations.ValidateStruct(a)
+}
+
+// IsAdmin determines if the Authorization is an admin.
+// TODO See if this can be removed when refactoring auth.
+// AuthorizedAdmin determines if the Authorization is valid and an Admin.
+func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) func() error {
+	return func()error{
+		if err := validations.ValidateVar("user", a.Key, "eq=admin"); err != nil {
+			return fmt.Errorf("must be an authorized admin, %w", err)
+		}
+		if err := validations.ValidateVar("admin secret", a.Secret, fmt.Sprintf("eq=%s", adminSecret)); err != nil {
+			return fmt.Errorf("must be an authorized admin, invalid admin secret")
+		}
+		return nil
+	}
 }
 
 // NewAuthorization provides an Authorization from a header.
@@ -134,19 +154,6 @@ func NewAuthorization(authorizationHeader string) *Authorization {
 	a.Key = auth[1]
 	a.Secret = auth[2]
 	return &a
-}
-
-// IsAdmin determines if the Authorization is an admin.
-// TODO See if this can be removed when refactoring auth.
-// AuthorizedAdmin determines if the Authorization is valid and an Admin.
-func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) error {
-	if err := validations.ValidateVar("user", a.Key, "eq=admin"); err != nil {
-		return fmt.Errorf("must be an authorized admin, %w", err)
-	}
-	if err := validations.ValidateVar("admin secret", a.Secret, fmt.Sprintf("eq=%s", adminSecret)); err != nil {
-		return fmt.Errorf("must be an authorized admin, invalid admin secret")
-	}
-	return nil
 }
 
 func (v VaultProvider) createPolicyState(name, policy string) error {
