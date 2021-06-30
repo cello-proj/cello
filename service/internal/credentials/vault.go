@@ -130,9 +130,9 @@ func (a Authorization) Validate(optionalValidations ...func()error) error {
 	return validations.ValidateStruct(a)
 }
 
-// IsAdmin determines if the Authorization is an admin.
+// ValidateAuthorizedAdmin determines if the Authorization is valid and an admin.
 // TODO See if this can be removed when refactoring auth.
-// AuthorizedAdmin determines if the Authorization is valid and an Admin.
+// Optional validation should be passed as parameter to Validate().
 func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) func() error {
 	return func()error{
 		if err := validations.ValidateVar("user", a.Key, "eq=admin"); err != nil {
