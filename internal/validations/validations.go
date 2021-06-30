@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
@@ -113,17 +112,15 @@ func isValidImageURI(imageURI string) bool {
 }
 
 func structValidationErrors(err error) error {
-	var errList []string
 	for _, err := range err.(validator.ValidationErrors) {
-		errList = append(errList, fmt.Sprintf("failed validation check for '%s' '%v'", err.Tag(), err.Field()))
+		return fmt.Errorf("failed validation check for '%s' '%v'", err.Tag(), err.Field())
 	}
-	return fmt.Errorf(strings.Join(errList, "\n"))
+	return err
 }
 
 func varValidationErrors(name string, err error) error {
-	var errList []string
 	for _, err := range err.(validator.ValidationErrors) {
-		errList = append(errList, fmt.Sprintf("failed validation check for '%s' '%s'", name, err.Param()))
+		return fmt.Errorf("failed validation check for '%s' '%s'", name, err.Param())
 	}
-	return fmt.Errorf(strings.Join(errList, "\n"))
+	return err
 }
