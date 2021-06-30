@@ -1,14 +1,18 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/argoproj-labs/argo-cloudops/cli/cmd"
 )
 
-// TODO Populate during build/release.
-const (
-	version = "0.2.1"
+var (
+	// Populated during build/release
+	commit  string
+	date    string
+	version string
 )
 
 func main() {
-	cmd.Execute(version)
+	cmd.Execute(fmt.Sprintf("%s %s %s", version, commit, date))
 }

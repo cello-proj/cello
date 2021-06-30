@@ -43,6 +43,10 @@ func TestGetEnv(t *testing.T) {
 	os.Setenv("ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE", "argo-ns")
 	os.Setenv("ARGO_CLOUDOPS_CONFIG", "/app/test/config/path")
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
+	os.Setenv("ARGO_CLOUDOPS_DB_HOST", "localhost")
+	os.Setenv("ARGO_CLOUDOPS_DB_NAME", "argocloudops")
+	os.Setenv("ARGO_CLOUDOPS_DB_USER", "argoco")
+	os.Setenv("ARGO_CLOUDOPS_DB_PASSWORD", "1234")
 	os.Setenv("ARGO_CLOUDOPS_LOG_LEVEL", "DEBUG")
 	os.Setenv("ARGO_CLOUDOPS_PORT", "1234")
 
@@ -59,6 +63,10 @@ func TestGetEnv(t *testing.T) {
 	assert.Equal(t, env.SSHPEMFile, "/app/test/ssh.pem")
 	assert.Equal(t, env.LogLevel, "DEBUG")
 	assert.Equal(t, env.Port, 1234)
+	assert.Equal(t, env.DBHost, "localhost")
+	assert.Equal(t, env.DBName, "argocloudops")
+	assert.Equal(t, env.DBUser, "argoco")
+	assert.Equal(t, env.DBPassword, "1234")
 }
 
 func TestDefaults(t *testing.T) {

@@ -10,7 +10,9 @@ import (
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/git"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
@@ -47,10 +49,11 @@ type handler struct {
 	argo                   workflow.Workflow
 	argoCtx                context.Context
 	config                 *Config
-	gitClient              gitClient
+	gitClient              git.Client
 	env                    env.Vars
 	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
 	vaultConfig            credentials.VaultConfig
+	dbClient               db.Client
 }
 
 // Service HealthCheck
@@ -135,7 +138,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 // Creates workflow init params by pulling manifest from given git repo, commit sha, and code path
 func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (requests.CreateWorkflow, error) {
 	level.Debug(h.logger).Log("message", fmt.Sprintf("retrieving manifest from repository %s at sha %s with path %s", repository, commitHash, path))
-	fileContents, err := h.gitClient.CheckoutFileFromRepository(repository, commitHash, path)
+	fileContents, err := h.gitClient.GetManifestFile(repository, commitHash, path)
 	if err != nil {
 		return requests.CreateWorkflow{}, err
 	}
@@ -180,7 +183,15 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cwr, err := h.loadCreateWorkflowRequestFromGit(cgwr.Repository, cgwr.CommitHash, cgwr.Path)
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+	projectEntry, err := h.dbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		h.errorResponse(w, "error reading project data", http.StatusBadRequest)
+		return
+	}
+
+	cwr, err := h.loadCreateWorkflowRequestFromGit(projectEntry.Repository, cgwr.CommitHash, cgwr.Path)
 	if err != nil {
 		level.Error(l).Log("message", "error loading workflow data from git", "error", err)
 		h.errorResponse(w, "error loading workflow data from git", http.StatusBadRequest)
@@ -472,14 +483,14 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	a := credentials.NewAuthorization(ah)
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
-		return
 	}
+	ctx := r.Context()
 
 	var capp requests.CreateProject
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		level.Error(l).Log("message", "error parsing request", "error", err)
-		h.errorResponse(w, "error parsing request", http.StatusBadRequest)
+		level.Error(l).Log("message", "error reading request body", "error", err)
+		h.errorResponse(w, "error reading request body", http.StatusInternalServerError)
 		return
 	}
 	if err := json.Unmarshal(reqBody, &capp); err != nil {
@@ -523,6 +534,15 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	level.Debug(l).Log("message", "inserting into db")
+	err = h.dbClient.CreateProjectEntry(ctx, db.ProjectEntry{
+		ProjectID:  capp.Name,
+		Repository: capp.Repository,
+	})
+	if err != nil {
+		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
+		return
+	}
 	level.Debug(l).Log("message", "creating project")
 	role, secret, err := cp.CreateProject(capp.Name)
 	if err != nil {
@@ -598,6 +618,8 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "delete-project", "project", projectName)
 
 	level.Debug(l).Log("message", "validating authorization header for delete project")
+	ctx := r.Context()
+
 	ah := r.Header.Get("Authorization")
 	a := credentials.NewAuthorization(ah)
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
@@ -651,6 +673,12 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	err = cp.DeleteProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error deleting project", "error", err)
+		h.errorResponse(w, "error deleting project", http.StatusBadRequest)
+		return
+	}
+
+	level.Debug(h.logger).Log("message", "deleting from db")
+	if err = h.dbClient.DeleteProjectEntry(ctx, projectName); err != nil {
 		h.errorResponse(w, "error deleting project", http.StatusBadRequest)
 		return
 	}

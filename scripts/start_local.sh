@@ -4,6 +4,22 @@ unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
 export ARGO_ADDR='http://127.0.0.1:9000'
 
+if [ -z "$ARGO_CLOUDOPS_DB_HOST" ]; then
+    export ARGO_CLOUDOPS_DB_HOST=localhost
+fi
+
+if [ -z "$ARGO_CLOUDOPS_DB_NAME" ]; then
+    export ARGO_CLOUDOPS_DB_NAME=argocloudops
+fi
+
+if [ -z "$ARGO_CLOUDOPS_DB_USER" ]; then
+    export ARGO_CLOUDOPS_DB_USER=argoco
+fi
+
+if [ -z "$ARGO_CLOUDOPS_DB_PASSWORD" ]; then
+    export ARGO_CLOUDOPS_DB_PASSWORD=1234
+fi
+
 if [ -z "$SSH_PEM_FILE" ]; then
     export SSH_PEM_FILE=$HOME/.ssh/id_rsa
 fi

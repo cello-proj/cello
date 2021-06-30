@@ -61,6 +61,7 @@ func (req CreateTarget) Validate() error {
 // Create project request.
 type CreateProject struct {
 	Name string `validate:"min=4,max=32,alphanum" json:"name"`
+	Repository string `json:"repository"`
 }
 
 func (req CreateProject) Validate() error {
