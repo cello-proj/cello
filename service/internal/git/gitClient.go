@@ -50,9 +50,6 @@ func (g gitSvcImpl) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 
 type osSvc interface {
 	fs.StatFS
-	IsDir(filestat fs.FileInfo) bool
-	Size(filestat fs.FileInfo) int64
-	Read(file fs.File, b []byte) (n int, err error)
 }
 
 type osSvcImpl struct{}
@@ -63,18 +60,6 @@ func (o osSvcImpl) Stat(name string) (fs.FileInfo, error) {
 
 func (o osSvcImpl) Open(name string) (fs.File, error) {
 	return os.Open(name)
-}
-
-func (o osSvcImpl) IsDir(filestat fs.FileInfo) bool {
-	return filestat.IsDir()
-}
-
-func (o osSvcImpl) Size(filestat fs.FileInfo) int64 {
-	return filestat.Size()
-}
-
-func (o osSvcImpl) Read(file fs.File, b []byte) (n int, err error) {
-	return file.Read(b)
 }
 
 // BasicClient connects to git using ssh
@@ -148,17 +133,9 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		return []byte{}, err
 	}
 
-	if g.os.IsDir(fileStat) {
+	if fileStat.IsDir() {
 		return []byte{}, fmt.Errorf("path provided is not a file '%s'", path)
 	}
 
-	file, err := g.os.Open(pathToManifest)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	fileContents := make([]byte, g.os.Size(fileStat))
-	_, err = g.os.Read(file, fileContents)
-
-	return fileContents, err
+	return fs.ReadFile(g.os, pathToManifest)
 }

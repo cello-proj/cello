@@ -2,9 +2,12 @@ package git
 
 import (
 	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+	"testing/fstest"
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
@@ -38,39 +41,45 @@ func (g mockGitSvc) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 	return nil
 }
 
-type mockOsSvc struct{}
+type mockOsSvc struct {
+	testFS fs.StatFS
+}
 
 func (o mockOsSvc) Stat(name string) (fs.FileInfo, error) {
 	if strings.HasSuffix(name, "myrepo2") {
 		return nil, fs.ErrNotExist
 	}
 
-	return nil, nil
+	// HACK: testFS does not work with absolute paths starting with /
+	return o.testFS.Stat(name[1:])
 }
 
 func (o mockOsSvc) Open(name string) (fs.File, error) {
-	return nil, nil
-}
-
-func (o mockOsSvc) IsDir(filestat fs.FileInfo) bool {
-	return false
-}
-
-func (o mockOsSvc) Size(filestat fs.FileInfo) int64 {
-	return 8
-}
-
-func (o mockOsSvc) Read(file fs.File, b []byte) (n int, err error) {
-	copy(b, "my bytes")
-	return 0, nil
+	// HACK: testFS does not work with absolute paths starting with /
+	return o.testFS.Open(name[1:])
 }
 
 func newGitClient() BasicClient {
+	basePath := os.TempDir()
+	paths := []string{
+		"myrepo/path/to/manifest.yaml",
+		"myrepo2/path/to/manifest.yaml",
+		"myrepo3/path/to/manifest.yaml",
+	}
+	mapFs := fstest.MapFS{}
+	for _, path := range paths {
+		// HACK: stat fails for testFS on paths starting with /
+		mapFs[filepath.Join(basePath[1:], path)] = &fstest.MapFile{
+			Data: []byte("my bytes"),
+		}
+	}
 	return BasicClient{
 		auth: nil,
 		mu:   &sync.Mutex{},
 		git:  mockGitSvc{},
-		os:   mockOsSvc{},
+		os: mockOsSvc{
+			testFS: mapFs,
+		},
 	}
 }
 
@@ -109,9 +118,9 @@ func TestGetManifestFile(t *testing.T) {
 		},
 	}
 
+	gitClient := newGitClient()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gitClient := newGitClient()
 			res, err := gitClient.GetManifestFile(tt.repository, tt.commitHash, tt.path)
 			if err != nil {
 				if !tt.errResult {
