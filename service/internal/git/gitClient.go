@@ -61,7 +61,7 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 			return []byte{}, err
 		}
 		err = repo.Fetch(&git.FetchOptions{})
-		if err != nil && errors.Is(err, git.NoErrAlreadyUpToDate) {
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return []byte{}, err
 		}
 	}
