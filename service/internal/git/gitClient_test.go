@@ -1,9 +1,6 @@
 package git
 
 import (
-	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -41,26 +38,7 @@ func (g mockGitSvc) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 	return nil
 }
 
-type mockOsSvc struct {
-	testFS fs.StatFS
-}
-
-func (o mockOsSvc) Stat(name string) (fs.FileInfo, error) {
-	if strings.HasSuffix(name, "myrepo2") {
-		return nil, fs.ErrNotExist
-	}
-
-	// HACK: testFS does not work with absolute paths starting with /
-	return o.testFS.Stat(name[1:])
-}
-
-func (o mockOsSvc) Open(name string) (fs.File, error) {
-	// HACK: testFS does not work with absolute paths starting with /
-	return o.testFS.Open(name[1:])
-}
-
 func newGitClient() BasicClient {
-	basePath := os.TempDir()
 	paths := []string{
 		"myrepo/path/to/manifest.yaml",
 		"myrepo2/path/to/manifest.yaml",
@@ -68,8 +46,7 @@ func newGitClient() BasicClient {
 	}
 	mapFs := fstest.MapFS{}
 	for _, path := range paths {
-		// HACK: stat fails for testFS on paths starting with /
-		mapFs[filepath.Join(basePath[1:], path)] = &fstest.MapFile{
+		mapFs[path] = &fstest.MapFile{
 			Data: []byte("my bytes"),
 		}
 	}
@@ -77,9 +54,7 @@ func newGitClient() BasicClient {
 		auth: nil,
 		mu:   &sync.Mutex{},
 		git:  mockGitSvc{},
-		os: mockOsSvc{
-			testFS: mapFs,
-		},
+		fs:   mapFs,
 	}
 }
 

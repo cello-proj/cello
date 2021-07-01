@@ -48,26 +48,13 @@ func (g gitSvcImpl) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 	return w.Checkout(opts)
 }
 
-type osSvc interface {
-	fs.StatFS
-}
-
-type osSvcImpl struct{}
-
-func (o osSvcImpl) Stat(name string) (fs.FileInfo, error) {
-	return os.Stat(name)
-}
-
-func (o osSvcImpl) Open(name string) (fs.File, error) {
-	return os.Open(name)
-}
-
 // BasicClient connects to git using ssh
 type BasicClient struct {
-	auth *ssh.PublicKeys
-	mu   *sync.Mutex
-	git  gitSvc
-	os   osSvc
+	auth    *ssh.PublicKeys
+	mu      *sync.Mutex
+	git     gitSvc
+	fs      fs.FS
+	baseDir string // base directory to run git operations from
 }
 
 // NewBasicClient creates a new ssh based git client
@@ -78,15 +65,16 @@ func NewBasicClient(sshPemFile string) (BasicClient, error) {
 	}
 
 	return BasicClient{
-		auth: auth,
-		mu:   &sync.Mutex{},
-		git:  gitSvcImpl{},
-		os:   osSvcImpl{},
+		auth:    auth,
+		mu:      &sync.Mutex{},
+		git:     gitSvcImpl{},
+		fs:      os.DirFS(os.TempDir()),
+		baseDir: os.TempDir(),
 	}, nil
 }
 
 func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
-	filePath := filepath.Join(os.TempDir(), repository)
+	filePath := filepath.Join(g.baseDir, repository)
 
 	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
 	// TODO: use a lock per repository instead of a single global lock
@@ -95,7 +83,7 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 
 	var repo *git.Repository
 
-	if _, err := g.os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := fs.Stat(g.fs, repository); os.IsNotExist(err) {
 		// TODO: use context version and make depth configurable
 		repo, err = g.git.PlainClone(filePath, false, &git.CloneOptions{
 			URL:  repository,
@@ -127,8 +115,8 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		return []byte{}, err
 	}
 
-	pathToManifest := filepath.Join(filePath, path)
-	fileStat, err := g.os.Stat(pathToManifest)
+	pathToManifest := filepath.Join(repository, path)
+	fileStat, err := fs.Stat(g.fs, pathToManifest)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -137,5 +125,5 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		return []byte{}, fmt.Errorf("path provided is not a file '%s'", path)
 	}
 
-	return fs.ReadFile(g.os, pathToManifest)
+	return fs.ReadFile(g.fs, pathToManifest)
 }
