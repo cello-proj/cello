@@ -74,6 +74,7 @@ func NewBasicClient(sshPemFile string) (BasicClient, error) {
 }
 
 func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
+	// filePath should only be used for git calls. direct fs calls should use repository directly
 	filePath := filepath.Join(g.baseDir, repository)
 
 	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
