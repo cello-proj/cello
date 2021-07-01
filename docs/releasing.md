@@ -21,6 +21,6 @@ attached. If the release process does not find entries for the associated tag,
 it will pull the entries in the `## [Unreleased]` section.
 
 You can create a tag for a semver pre-release version, such as: `v0.1.0`
-followed by a hyphen and characters (rc/alpha/beta, etc). This will result in
-creating a GitHub pre-release. This can be useful for testing without releasing
-a "final" version.
+followed by a hyphen and characters (`v0.1.0-dev1`, `v0.1.0-alpha`, etc.). This
+will result in creating a GitHub pre-release. This can be useful for testing
+without releasing a "final" version.
