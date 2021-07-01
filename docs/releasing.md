@@ -3,7 +3,7 @@
 This project uses [GoReleaser](https://goreleaser.com/) and GitHub Actions for
 releases. You can find the release workflow at
 `./github/workflows/release.yaml`. The release workflow only triggers on tags
-which start with `v`.
+which start with `v` (e.g. `v0.1.0`).
 
 To create a new release:
 
