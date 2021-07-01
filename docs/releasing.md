@@ -2,8 +2,8 @@
 
 This project uses [GoReleaser](https://goreleaser.com/) and GitHub Actions for
 releases. You can find the release workflow at
-`./github/workflows/release.yaml`. The release workflow only triggers on semver
-tags.
+`./github/workflows/release.yaml`. The release workflow only triggers on tags
+which start with `v`.
 
 To create a new release:
 
