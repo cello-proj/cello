@@ -25,8 +25,7 @@ func NewValidator() (*validator.Validate, error) {
 	}
 
 	for jsonTag, fnName := range customValidations {
-		err := validate.RegisterValidation(jsonTag, fnName)
-		if err != nil {
+		if err := validate.RegisterValidation(jsonTag, fnName); err != nil {
 			return nil, err
 		}
 	}
@@ -61,7 +60,7 @@ func ValidateVar(name string, s interface{}, validation string) error {
 // Vault does not allow for dashes
 var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
 
-// ValidateValuer implements validator.CustomTypeFunc
+// validateIsAlphaNumericUnderscore implements validator.CustomTypeFunc
 func validateIsAlphaNumericUnderscore(fl validator.FieldLevel) bool {
 	return isStringAlphaNumericUnderscore(fl.Field().String())
 }
