@@ -19,14 +19,14 @@ type CreateWorkflow struct {
 	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
 }
 
-// Optional validation should be passed as parameter to Validate().
+// ValidateFramework is an optional validation that should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
 	return func() error {
 		return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))
 	}
 }
 
-// Optional validation should be passed as parameter to Validate().
+// ValidateType is an optional validation should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateType(types []string) func() error {
 	return func() error {
 		return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))
@@ -42,7 +42,7 @@ func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
 	return validations.ValidateStruct(req)
 }
 
-// Create workflow from git manifest request
+// CreateGitWorkflow from git manifest request
 type CreateGitWorkflow struct {
 	Repository string `validate:"required" json:"repository"`
 	CommitHash string `validate:"required,alphanum" json:"sha"`
@@ -54,7 +54,7 @@ func (req CreateGitWorkflow) Validate() error {
 	return validations.ValidateStruct(req)
 }
 
-// Create target request.
+// CreateTarget request.
 type CreateTarget struct {
 	Name       string           `validate:"min=4,max=32,alphanumunderscore" json:"name"`
 	Properties TargetProperties `json:"properties"`
@@ -65,7 +65,7 @@ func (req CreateTarget) Validate() error {
 	return validations.ValidateStruct(req)
 }
 
-// Create project request.
+// CreateProject request.
 type CreateProject struct {
 	Name       string `validate:"min=4,max=32,alphanum" json:"name"`
 	Repository string `json:"repository"`
@@ -75,7 +75,7 @@ func (req CreateProject) Validate() error {
 	return validations.ValidateStruct(req)
 }
 
-// Target properties for target requests.
+// TargetProperties for target requests.
 type TargetProperties struct {
 	CredentialType string   `json:"credential_type"`
 	PolicyArns     []string `validate:"max=5,dive,is_arn" json:"policy_arns"`

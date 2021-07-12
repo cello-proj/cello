@@ -25,8 +25,7 @@ func NewValidator() (*validator.Validate, error) {
 	}
 
 	for jsonTag, fnName := range customValidations {
-		err := validate.RegisterValidation(jsonTag, fnName)
-		if err != nil {
+		if err := validate.RegisterValidation(jsonTag, fnName); err != nil {
 			return nil, err
 		}
 	}
