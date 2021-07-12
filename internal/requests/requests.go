@@ -9,12 +9,12 @@ import (
 
 // Create workflow request.
 type CreateWorkflow struct {
-	Arguments            map[string][]string `validate:"valid_argument" yaml:"arguments" json:"arguments"`
+	Arguments            map[string][]string `validate:"is_valid_argument" yaml:"arguments" json:"arguments"`
 	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
 	Framework            string              `yaml:"framework" json:"framework"`
-	Parameters           map[string]string   `validate:"valid_execute_container_image,valid_precontainer_image" yaml:"parameters" json:"parameters"`
+	Parameters           map[string]string   `validate:"is_valid_execute_container_image,is_valid_precontainer_image" yaml:"parameters" json:"parameters"`
 	ProjectName          string              `validate:"min=4,max=32,alphanum" yaml:"project_name" json:"project_name"`
-	TargetName           string              `validate:"min=4,max=32,alphanumunderscore" yaml:"target_name" json:"target_name"`
+	TargetName           string              `validate:"min=4,max=32,is_alphanumunderscore" yaml:"target_name" json:"target_name"`
 	Type                 string              `yaml:"type" json:"type"`
 	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
 }
@@ -56,9 +56,9 @@ func (req CreateGitWorkflow) Validate() error {
 
 // CreateTarget request.
 type CreateTarget struct {
-	Name       string           `validate:"min=4,max=32,alphanumunderscore" json:"name"`
+	Name       string           `validate:"min=4,max=32,is_alphanumunderscore" json:"name"`
 	Properties TargetProperties `json:"properties"`
-	Type       string           `validate:"valid_target_type" json:"type"`
+	Type       string           `validate:"is_valid_target_type" json:"type"`
 }
 
 func (req CreateTarget) Validate() error {

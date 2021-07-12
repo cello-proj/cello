@@ -16,12 +16,12 @@ func NewValidator() (*validator.Validate, error) {
 
 	//add custom validations
 	customValidations := map[string]func(fl validator.FieldLevel) bool{
-		"alphanumunderscore":            isAlphaNumericUnderscore,
-		"is_arn":                        isValidARN,
-		"valid_target_type":             isValidTargetType,
-		"valid_execute_container_image": isValidExecuteContainerImage,
-		"valid_precontainer_image":      isValidPreContainerImage,
-		"valid_argument":                isValidArgument,
+		"is_alphanumunderscore":            isAlphaNumericUnderscore,
+		"is_arn":                           isValidARN,
+		"is_valid_target_type":             isValidTargetType,
+		"is_valid_execute_container_image": isValidExecuteContainerImage,
+		"is_valid_precontainer_image":      isValidPreContainerImage,
+		"is_valid_argument":                isValidArgument,
 	}
 
 	for jsonTag, fnName := range customValidations {
@@ -117,13 +117,13 @@ func validationErrorMessage(name string, err error) error {
 		switch validationError.Tag() {
 		case "is_arn":
 			return fmt.Errorf("'%s' value '%v' is not a valid arn", validationError.Tag(), validationError.Value())
-		case "valid_target_type":
+		case "is_valid_target_type":
 			return fmt.Errorf("'%s' value '%v' is invalid, types supported:'aws_account'", validationError.Tag(), validationError.Value())
-		case "alphanumunderscore":
+		case "is_alphanumunderscore":
 			return fmt.Errorf("value '%v' is invalid, must only contain alpha numberic underscore characters", validationError.Value())
-		case "valid_execute_container_image", "valid_precontainer_image":
+		case "is_valid_execute_container_image", "is_valid_precontainer_image":
 			return fmt.Errorf("'%s' value '%v' is an invalid container uri", validationError.Tag(), validationError.Value())
-		case "valid_argument":
+		case "is_valid_argument":
 			return fmt.Errorf("'%s' value '%v' is an invalid argument", validationError.Tag(), validationError.Value())
 		default:
 			if validationError.Field() == "" {

@@ -7,11 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testErr = fmt.Errorf("error")
-
 func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 	type testStruct struct {
-		Test string `validate:"alphanumunderscore"`
+		Test string `validate:"is_alphanumunderscore"`
 	}
 
 	tests := []struct {
@@ -45,7 +43,7 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 
 func TestValidateContainerImages(t *testing.T) {
 	type testStruct struct {
-		Test map[string]string `validate:"valid_execute_container_image"`
+		Test map[string]string `validate:"is_valid_execute_container_image"`
 	}
 
 	tests := []struct {
@@ -61,16 +59,16 @@ func TestValidateContainerImages(t *testing.T) {
 		{
 			name:       "invalid execute container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			wantErr:    fmt.Errorf("'valid_execute_container_image' value 'map[execute_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
+			wantErr:    fmt.Errorf("'is_valid_execute_container_image' value 'map[execute_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
 		},
 		{
 			name:    "no image provided",
-			wantErr: fmt.Errorf("'valid_execute_container_image' value 'map[execute_container_image_uri:]' is an invalid container uri"),
+			wantErr: fmt.Errorf("'is_valid_execute_container_image' value 'map[execute_container_image_uri:]' is an invalid container uri"),
 		},
 		{
 			name:                  "no execute container key",
 			noExecuteContainerKey: true,
-			wantErr:               fmt.Errorf("'valid_execute_container_image' value 'map[]' is an invalid container uri"),
+			wantErr:               fmt.Errorf("'is_valid_execute_container_image' value 'map[]' is an invalid container uri"),
 		},
 	}
 
@@ -93,7 +91,7 @@ func TestValidateContainerImages(t *testing.T) {
 
 func TestPreContainerImages(t *testing.T) {
 	type testStruct struct {
-		Test map[string]string `validate:"valid_precontainer_image"`
+		Test map[string]string `validate:"is_valid_precontainer_image"`
 	}
 
 	tests := []struct {
@@ -109,11 +107,11 @@ func TestPreContainerImages(t *testing.T) {
 		{
 			name:       "invalid pre container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			wantErr:    fmt.Errorf("'valid_precontainer_image' value 'map[pre_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
+			wantErr:    fmt.Errorf("'is_valid_precontainer_image' value 'map[pre_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
 		},
 		{
 			name:    "no image provided",
-			wantErr: fmt.Errorf("'valid_precontainer_image' value 'map[pre_container_image_uri:]' is an invalid container uri"),
+			wantErr: fmt.Errorf("'is_valid_precontainer_image' value 'map[pre_container_image_uri:]' is an invalid container uri"),
 		},
 		{
 			name:              "no provided precontainer key, optional no error",
@@ -140,7 +138,7 @@ func TestPreContainerImages(t *testing.T) {
 
 func TestValidTargetType(t *testing.T) {
 	type testStruct struct {
-		Test string `validate:"valid_target_type"`
+		Test string `validate:"is_valid_target_type"`
 	}
 
 	tests := []struct {
@@ -155,7 +153,7 @@ func TestValidTargetType(t *testing.T) {
 		{
 			name:       "invalid target type",
 			testString: "not_aws_account",
-			wantErr:    fmt.Errorf("'valid_target_type' value 'not_aws_account' is invalid, types supported:'aws_account'"),
+			wantErr:    fmt.Errorf("'is_valid_target_type' value 'not_aws_account' is invalid, types supported:'aws_account'"),
 		},
 	}
 
@@ -174,7 +172,7 @@ func TestValidTargetType(t *testing.T) {
 
 func TestValidArgument(t *testing.T) {
 	type testStruct struct {
-		Test map[string][]string `validate:"valid_argument"`
+		Test map[string][]string `validate:"is_valid_argument"`
 	}
 
 	tests := []struct {
@@ -194,7 +192,7 @@ func TestValidArgument(t *testing.T) {
 		{
 			name:       "invalid argument",
 			testString: "exec",
-			wantErr:    fmt.Errorf("'valid_argument' value 'map[exec:[foo]]' is an invalid argument"),
+			wantErr:    fmt.Errorf("'is_valid_argument' value 'map[exec:[foo]]' is an invalid argument"),
 		},
 	}
 
@@ -291,16 +289,16 @@ func TestValidateStructError(t *testing.T) {
 		{
 			name: "no error",
 			validationStruct: struct {
-				Test string `validate:"valid_target_type"`
+				Test string `validate:"is_valid_target_type"`
 			}{"aws_account"},
 		},
 		{
 			name: "invalid target type string",
 			validationStruct: struct {
-				Test string `validate:"valid_target_type"`
+				Test string `validate:"is_valid_target_type"`
 			}{"bad"},
 			errResult: true,
-			wantErr:   fmt.Errorf("'valid_target_type' value 'bad' is invalid, types supported:'aws_account'"),
+			wantErr:   fmt.Errorf("'is_valid_target_type' value 'bad' is invalid, types supported:'aws_account'"),
 		},
 		{
 			name: "non arn provider to is arn validation",
@@ -313,7 +311,7 @@ func TestValidateStructError(t *testing.T) {
 		{
 			name: "bad values (-)'s in alpha numeric underscore validation",
 			validationStruct: struct {
-				Test string `validate:"alphanumunderscore"`
+				Test string `validate:"is_alphanumunderscore"`
 			}{"bad-value"},
 			errResult: true,
 			wantErr:   fmt.Errorf("value 'bad-value' is invalid, must only contain alpha numberic underscore characters"),
@@ -321,31 +319,31 @@ func TestValidateStructError(t *testing.T) {
 		{
 			name: "bad execute container uri",
 			validationStruct: struct {
-				Test map[string]string `validate:"valid_execute_container_image"`
+				Test map[string]string `validate:"is_valid_execute_container_image"`
 			}{map[string]string{
 				"execute_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'valid_execute_container_image' value 'map[execute_container_image_uri:bad()]' is an invalid container uri"),
+			wantErr:   fmt.Errorf("'is_valid_execute_container_image' value 'map[execute_container_image_uri:bad()]' is an invalid container uri"),
 		},
 		{
 			name: "bad pre container uri",
 			validationStruct: struct {
-				Test map[string]string `validate:"valid_precontainer_image"`
+				Test map[string]string `validate:"is_valid_precontainer_image"`
 			}{map[string]string{
 				"pre_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'valid_precontainer_image' value 'map[pre_container_image_uri:bad()]' is an invalid container uri"),
+			wantErr:   fmt.Errorf("'is_valid_precontainer_image' value 'map[pre_container_image_uri:bad()]' is an invalid container uri"),
 		},
 		{
 			name: "invalid argument",
 			validationStruct: struct {
-				Test map[string][]string `validate:"valid_argument"`
+				Test map[string][]string `validate:"is_valid_argument"`
 			}{map[string][]string{
 				"exec": {""}}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'valid_argument' value 'map[exec:[]]' is an invalid argument"),
+			wantErr:   fmt.Errorf("'is_valid_argument' value 'map[exec:[]]' is an invalid argument"),
 		},
 	}
 
