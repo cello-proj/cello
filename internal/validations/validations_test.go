@@ -3,7 +3,11 @@ package validations
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+var testErr = fmt.Errorf("error")
 
 func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 	type testStruct struct {
@@ -13,7 +17,7 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 	tests := []struct {
 		name       string
 		testString string
-		errResult  bool
+		wantErr    error
 	}{
 		{
 			name:       "valid alpha num underscore",
@@ -22,7 +26,7 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 		{
 			name:       "invalid alpha num underscore characters",
 			testString: "--[[]]  ",
-			errResult:  true,
+			wantErr:    fmt.Errorf("value '--[[]]  ' is invalid, must only contain alpha numberic underscore characters"),
 		},
 	}
 
@@ -30,14 +34,10 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testValidationStruct := testStruct{Test: tt.testString}
 			err := ValidateStruct(&testValidationStruct)
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -52,7 +52,7 @@ func TestValidateContainerImages(t *testing.T) {
 		name                  string
 		testString            string
 		noExecuteContainerKey bool
-		errResult             bool
+		wantErr               error
 	}{
 		{
 			name:       "valid execute container image",
@@ -61,16 +61,16 @@ func TestValidateContainerImages(t *testing.T) {
 		{
 			name:       "invalid execute container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			errResult:  true,
+			wantErr:    fmt.Errorf("'valid_execute_container_image' value 'map[execute_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
 		},
 		{
-			name:      "no image provided",
-			errResult: true,
+			name:    "no image provided",
+			wantErr: fmt.Errorf("'valid_execute_container_image' value 'map[execute_container_image_uri:]' is an invalid container uri"),
 		},
 		{
 			name:                  "no execute container key",
 			noExecuteContainerKey: true,
-			errResult:             true,
+			wantErr:               fmt.Errorf("'valid_execute_container_image' value 'map[]' is an invalid container uri"),
 		},
 	}
 
@@ -82,14 +82,10 @@ func TestValidateContainerImages(t *testing.T) {
 				testValidationStruct.Test["execute_container_image_uri"] = tt.testString
 			}
 			err := ValidateStruct(&testValidationStruct)
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -104,7 +100,7 @@ func TestPreContainerImages(t *testing.T) {
 		name              string
 		testString        string
 		noPreContainerKey bool
-		errResult         bool
+		wantErr           error
 	}{
 		{
 			name:       "valid pre container image",
@@ -113,11 +109,11 @@ func TestPreContainerImages(t *testing.T) {
 		{
 			name:       "invalid pre container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			errResult:  true,
+			wantErr:    fmt.Errorf("'valid_precontainer_image' value 'map[pre_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
 		},
 		{
-			name:      "no image provided",
-			errResult: true,
+			name:    "no image provided",
+			wantErr: fmt.Errorf("'valid_precontainer_image' value 'map[pre_container_image_uri:]' is an invalid container uri"),
 		},
 		{
 			name:              "no provided precontainer key, optional no error",
@@ -133,14 +129,10 @@ func TestPreContainerImages(t *testing.T) {
 				testValidationStruct.Test["pre_container_image_uri"] = tt.testString
 			}
 			err := ValidateStruct(&testValidationStruct)
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -154,7 +146,7 @@ func TestValidTargetType(t *testing.T) {
 	tests := []struct {
 		name       string
 		testString string
-		errResult  bool
+		wantErr    error
 	}{
 		{
 			name:       "valid target type",
@@ -163,7 +155,7 @@ func TestValidTargetType(t *testing.T) {
 		{
 			name:       "invalid target type",
 			testString: "not_aws_account",
-			errResult:  true,
+			wantErr:    fmt.Errorf("'valid_target_type' value 'not_aws_account' is invalid, types supported:'aws_account'"),
 		},
 	}
 
@@ -171,14 +163,10 @@ func TestValidTargetType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testValidationStruct := testStruct{Test: tt.testString}
 			err := ValidateStruct(testValidationStruct)
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -193,7 +181,7 @@ func TestValidArgument(t *testing.T) {
 		name              string
 		testString        string
 		noPreContainerKey bool
-		errResult         bool
+		wantErr           error
 	}{
 		{
 			name:       "valid argument init",
@@ -206,7 +194,7 @@ func TestValidArgument(t *testing.T) {
 		{
 			name:       "invalid argument",
 			testString: "exec",
-			errResult:  true,
+			wantErr:    fmt.Errorf("'valid_argument' value 'map[exec:[foo]]' is an invalid argument"),
 		},
 	}
 
@@ -218,14 +206,10 @@ func TestValidArgument(t *testing.T) {
 				testValidationStruct.Test[tt.testString] = []string{"foo"}
 			}
 			err := ValidateStruct(&testValidationStruct)
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -239,7 +223,7 @@ func TestValidArn(t *testing.T) {
 	tests := []struct {
 		name       string
 		testString string
-		errResult  bool
+		wantErr    error
 	}{
 		{
 			name:       "valid arn",
@@ -248,7 +232,7 @@ func TestValidArn(t *testing.T) {
 		{
 			name:       "invalid arn",
 			testString: "invalid-arn",
-			errResult:  true,
+			wantErr:    fmt.Errorf("'is_arn' value 'invalid-arn' is not a valid arn"),
 		},
 	}
 
@@ -256,14 +240,10 @@ func TestValidArn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testValidationStruct := testStruct{Test: tt.testString}
 			err := ValidateStruct(testValidationStruct)
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -274,7 +254,7 @@ func TestValidateVar(t *testing.T) {
 		name        string
 		testString  string
 		validString string
-		errResult   bool
+		wantErr     error
 	}{
 		{
 			name:        "valid var",
@@ -285,21 +265,17 @@ func TestValidateVar(t *testing.T) {
 			name:        "invalid var",
 			testString:  "bad",
 			validString: "good",
-			errResult:   true,
+			wantErr:     fmt.Errorf("'validate var' 'good'"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateVar("validate var", tt.testString, fmt.Sprintf("eq=%s", tt.validString))
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -310,7 +286,7 @@ func TestValidateStructError(t *testing.T) {
 		name             string
 		validationStruct interface{}
 		errResult        bool
-		errString        string
+		wantErr          error
 	}{
 		{
 			name: "no error",
@@ -324,7 +300,7 @@ func TestValidateStructError(t *testing.T) {
 				Test string `validate:"valid_target_type"`
 			}{"bad"},
 			errResult: true,
-			errString: "failed validation check for 'valid_target_type', value 'bad' is invalid, types supported:'aws_account'",
+			wantErr:   fmt.Errorf("'valid_target_type' value 'bad' is invalid, types supported:'aws_account'"),
 		},
 		{
 			name: "non arn provider to is arn validation",
@@ -332,7 +308,7 @@ func TestValidateStructError(t *testing.T) {
 				Test string `validate:"is_arn"`
 			}{"bad"},
 			errResult: true,
-			errString: "failed validation check for 'is_arn', value 'bad' is not a valid arn",
+			wantErr:   fmt.Errorf("'is_arn' value 'bad' is not a valid arn"),
 		},
 		{
 			name: "bad values (-)'s in alpha numeric underscore validation",
@@ -340,7 +316,7 @@ func TestValidateStructError(t *testing.T) {
 				Test string `validate:"alphanumunderscore"`
 			}{"bad-value"},
 			errResult: true,
-			errString: "failed validation check for 'alphanumunderscore', on 'Test', value 'bad-value' is invalid",
+			wantErr:   fmt.Errorf("value 'bad-value' is invalid, must only contain alpha numberic underscore characters"),
 		},
 		{
 			name: "bad execute container uri",
@@ -350,7 +326,7 @@ func TestValidateStructError(t *testing.T) {
 				"execute_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			errString: "failed validation check for 'valid_execute_container_image', value 'map[execute_container_image_uri:bad()]' is an invalid container uri",
+			wantErr:   fmt.Errorf("'valid_execute_container_image' value 'map[execute_container_image_uri:bad()]' is an invalid container uri"),
 		},
 		{
 			name: "bad pre container uri",
@@ -360,7 +336,7 @@ func TestValidateStructError(t *testing.T) {
 				"pre_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			errString: "failed validation check for 'valid_precontainer_image', value 'map[pre_container_image_uri:bad()]' is an invalid container uri",
+			wantErr:   fmt.Errorf("'valid_precontainer_image' value 'map[pre_container_image_uri:bad()]' is an invalid container uri"),
 		},
 		{
 			name: "invalid argument",
@@ -369,7 +345,7 @@ func TestValidateStructError(t *testing.T) {
 			}{map[string][]string{
 				"exec": {""}}},
 			errResult: true,
-			errString: "failed validation check for 'valid_argument', value 'map[exec:[]]' is an invalid argument",
+			wantErr:   fmt.Errorf("'valid_argument' value 'map[exec:[]]' is an invalid argument"),
 		},
 	}
 
@@ -377,17 +353,10 @@ func TestValidateStructError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testValidationStruct := tt.validationStruct
 			err := ValidateStruct(testValidationStruct)
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err.Error())
-				}
-				if err.Error() != tt.errString {
-					t.Errorf("\nexpected error '%v', got: '%v'", tt.errString, err.Error())
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -398,8 +367,7 @@ func TestValidateVarErrors(t *testing.T) {
 		name        string
 		testString  string
 		validString string
-		errResult   bool
-		errString   string
+		wantErr     error
 	}{
 		{
 			name:        "valid var",
@@ -410,25 +378,17 @@ func TestValidateVarErrors(t *testing.T) {
 			name:        "invalid var expected error",
 			testString:  "bad",
 			validString: "good",
-			errResult:   true,
-			errString:   "failed validation check for 'validate var' 'good'",
+			wantErr:     fmt.Errorf("'validate var' 'good'"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateVar("validate var", tt.testString, fmt.Sprintf("eq=%s", tt.validString))
-			if err != nil {
-				if !tt.errResult {
-					t.Errorf("\ndid not expect error, got: %v", err)
-				}
-				if err.Error() != tt.errString {
-					t.Errorf("\nexpected error '%v', got: '%v'", tt.errString, err)
-				}
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
 			} else {
-				if tt.errResult {
-					t.Errorf("\nexpected error, got: %v", err)
-				}
+				assert.Nil(t, err)
 			}
 		})
 	}

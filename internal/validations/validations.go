@@ -16,12 +16,12 @@ func NewValidator() (*validator.Validate, error) {
 
 	//add custom validations
 	customValidations := map[string]func(fl validator.FieldLevel) bool{
-		"alphanumunderscore":            validateIsAlphaNumericUnderscore,
-		"is_arn":                        validARN,
-		"valid_target_type":             validTargetType,
-		"valid_execute_container_image": validExecuteContainerImage,
-		"valid_precontainer_image":      validPreContainerImage,
-		"valid_argument":                validArgument,
+		"alphanumunderscore":            isAlphaNumericUnderscore,
+		"is_arn":                        isValidARN,
+		"valid_target_type":             isValidTargetType,
+		"valid_execute_container_image": isValidExecuteContainerImage,
+		"valid_precontainer_image":      isValidPreContainerImage,
+		"valid_argument":                isValidArgument,
 	}
 
 	for jsonTag, fnName := range customValidations {
@@ -58,15 +58,13 @@ func ValidateVar(name string, s interface{}, validation string) error {
 	return nil
 }
 
-// Vault does not allow for dashes
-var isStringAlphaNumericUnderscore = regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString
-
 // ValidateValuer implements validator.CustomTypeFunc
-func validateIsAlphaNumericUnderscore(fl validator.FieldLevel) bool {
-	return isStringAlphaNumericUnderscore(fl.Field().String())
+// Vault does not allow dashes
+func isAlphaNumericUnderscore(fl validator.FieldLevel) bool {
+	return regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString(fl.Field().String())
 }
 
-func validExecuteContainerImage(fl validator.FieldLevel) bool {
+func isValidExecuteContainerImage(fl validator.FieldLevel) bool {
 	image := fl.Field().MapIndex(reflect.ValueOf("execute_container_image_uri"))
 	if image.IsValid() {
 		return isValidImageURI(image.String())
@@ -75,7 +73,7 @@ func validExecuteContainerImage(fl validator.FieldLevel) bool {
 	return false
 }
 
-func validPreContainerImage(fl validator.FieldLevel) bool {
+func isValidPreContainerImage(fl validator.FieldLevel) bool {
 	image := fl.Field().MapIndex(reflect.ValueOf("pre_container_image_uri"))
 	if image.IsValid() {
 		return isValidImageURI(image.String())
@@ -85,14 +83,14 @@ func validPreContainerImage(fl validator.FieldLevel) bool {
 	return true
 }
 
-func validTargetType(fl validator.FieldLevel) bool {
+func isValidTargetType(fl validator.FieldLevel) bool {
 	return fl.Field().String() == "aws_account"
 }
 
 // TODO long term, we should evaluate if hard coding in code is the right approach to
 // specifying different argument types vs allowing dynmaic specification and
 // interpolation in service/config.yaml
-func validArgument(fl validator.FieldLevel) bool {
+func isValidArgument(fl validator.FieldLevel) bool {
 	for _, key := range fl.Field().MapKeys() {
 		switch key.String() {
 		case "execute", "init":
@@ -102,7 +100,7 @@ func validArgument(fl validator.FieldLevel) bool {
 	return false
 }
 
-func validARN(fl validator.FieldLevel) bool {
+func isValidARN(fl validator.FieldLevel) bool {
 	return arn.IsARN(fl.Field().String())
 }
 
@@ -119,20 +117,20 @@ func validationErrorMessage(name string, err error) error {
 		validationError := validationErrors[0]
 		switch validationError.Tag() {
 		case "is_arn":
-			return fmt.Errorf("failed validation check for '%s', value '%v' is not a valid arn", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is not a valid arn", validationError.Tag(), validationError.Value())
 		case "valid_target_type":
-			return fmt.Errorf("failed validation check for '%s', value '%v' is invalid, types supported:'aws_account'", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is invalid, types supported:'aws_account'", validationError.Tag(), validationError.Value())
 		case "alphanumunderscore":
-			return fmt.Errorf("failed validation check for '%s', on '%v', value '%v' is invalid", validationError.Tag(), validationError.Field(), validationError.Value())
+			return fmt.Errorf("value '%v' is invalid, must only contain alpha numberic underscore characters", validationError.Value())
 		case "valid_execute_container_image", "valid_precontainer_image":
-			return fmt.Errorf("failed validation check for '%s', value '%v' is an invalid container uri", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is an invalid container uri", validationError.Tag(), validationError.Value())
 		case "valid_argument":
-			return fmt.Errorf("failed validation check for '%s', value '%v' is an invalid argument", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is an invalid argument", validationError.Tag(), validationError.Value())
 		default:
 			if validationError.Field() == "" {
-				return fmt.Errorf("failed validation check for '%s' '%v'", name, validationError.Param())
+				return fmt.Errorf("'%s' '%v'", name, validationError.Param())
 			}
-			return fmt.Errorf("failed validation check for '%s' '%v'", validationError.Tag(), validationError.Field())
+			return fmt.Errorf("'%s' '%v'", validationError.Tag(), validationError.Field())
 		}
 
 	}
