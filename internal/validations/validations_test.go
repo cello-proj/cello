@@ -43,7 +43,7 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 
 func TestValidateContainerImages(t *testing.T) {
 	type testStruct struct {
-		Test map[string]string `validate:"is_valid_execute_container_image"`
+		Parameters map[string]string `validate:"is_valid_execute_container_image"`
 	}
 
 	tests := []struct {
@@ -59,16 +59,16 @@ func TestValidateContainerImages(t *testing.T) {
 		{
 			name:       "invalid execute container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			wantErr:    fmt.Errorf("'is_valid_execute_container_image' value 'map[execute_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
+			wantErr:    fmt.Errorf("'Parameters' value 'map[execute_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
 		},
 		{
 			name:    "no image provided",
-			wantErr: fmt.Errorf("'is_valid_execute_container_image' value 'map[execute_container_image_uri:]' is an invalid container uri"),
+			wantErr: fmt.Errorf("'Parameters' value 'map[execute_container_image_uri:]' is an invalid container uri"),
 		},
 		{
 			name:                  "no execute container key",
 			noExecuteContainerKey: true,
-			wantErr:               fmt.Errorf("'is_valid_execute_container_image' value 'map[]' is an invalid container uri"),
+			wantErr:               fmt.Errorf("'Parameters' value 'map[]' is an invalid container uri"),
 		},
 	}
 
@@ -76,8 +76,8 @@ func TestValidateContainerImages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var testValidationStruct testStruct
 			if !tt.noExecuteContainerKey {
-				testValidationStruct.Test = make(map[string]string)
-				testValidationStruct.Test["execute_container_image_uri"] = tt.testString
+				testValidationStruct.Parameters = make(map[string]string)
+				testValidationStruct.Parameters["execute_container_image_uri"] = tt.testString
 			}
 			err := ValidateStruct(&testValidationStruct)
 			if tt.wantErr != nil {
@@ -91,7 +91,7 @@ func TestValidateContainerImages(t *testing.T) {
 
 func TestPreContainerImages(t *testing.T) {
 	type testStruct struct {
-		Test map[string]string `validate:"is_valid_precontainer_image"`
+		Parameters map[string]string `validate:"is_valid_precontainer_image"`
 	}
 
 	tests := []struct {
@@ -107,11 +107,11 @@ func TestPreContainerImages(t *testing.T) {
 		{
 			name:       "invalid pre container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			wantErr:    fmt.Errorf("'is_valid_precontainer_image' value 'map[pre_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
+			wantErr:    fmt.Errorf("'Parameters' value 'map[pre_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
 		},
 		{
 			name:    "no image provided",
-			wantErr: fmt.Errorf("'is_valid_precontainer_image' value 'map[pre_container_image_uri:]' is an invalid container uri"),
+			wantErr: fmt.Errorf("'Parameters' value 'map[pre_container_image_uri:]' is an invalid container uri"),
 		},
 		{
 			name:              "no provided precontainer key, optional no error",
@@ -123,8 +123,8 @@ func TestPreContainerImages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var testValidationStruct testStruct
 			if !tt.noPreContainerKey {
-				testValidationStruct.Test = make(map[string]string)
-				testValidationStruct.Test["pre_container_image_uri"] = tt.testString
+				testValidationStruct.Parameters = make(map[string]string)
+				testValidationStruct.Parameters["pre_container_image_uri"] = tt.testString
 			}
 			err := ValidateStruct(&testValidationStruct)
 			if tt.wantErr != nil {
@@ -138,7 +138,7 @@ func TestPreContainerImages(t *testing.T) {
 
 func TestValidTargetType(t *testing.T) {
 	type testStruct struct {
-		Test string `validate:"is_valid_target_type"`
+		Type string `validate:"is_valid_target_type"`
 	}
 
 	tests := []struct {
@@ -153,13 +153,13 @@ func TestValidTargetType(t *testing.T) {
 		{
 			name:       "invalid target type",
 			testString: "not_aws_account",
-			wantErr:    fmt.Errorf("'is_valid_target_type' value 'not_aws_account' is invalid, types supported:'aws_account'"),
+			wantErr:    fmt.Errorf("'Type' value 'not_aws_account' is invalid, types supported:'aws_account'"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testValidationStruct := testStruct{Test: tt.testString}
+			testValidationStruct := testStruct{Type: tt.testString}
 			err := ValidateStruct(testValidationStruct)
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
@@ -172,7 +172,7 @@ func TestValidTargetType(t *testing.T) {
 
 func TestValidArgument(t *testing.T) {
 	type testStruct struct {
-		Test map[string][]string `validate:"is_valid_argument"`
+		Arguments map[string][]string `validate:"is_valid_argument"`
 	}
 
 	tests := []struct {
@@ -192,7 +192,7 @@ func TestValidArgument(t *testing.T) {
 		{
 			name:       "invalid argument",
 			testString: "exec",
-			wantErr:    fmt.Errorf("'is_valid_argument' value 'map[exec:[foo]]' is an invalid argument"),
+			wantErr:    fmt.Errorf("'Arguments' value 'map[exec:[foo]]' is an invalid argument"),
 		},
 	}
 
@@ -200,8 +200,8 @@ func TestValidArgument(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var testValidationStruct testStruct
 			if !tt.noPreContainerKey {
-				testValidationStruct.Test = make(map[string][]string)
-				testValidationStruct.Test[tt.testString] = []string{"foo"}
+				testValidationStruct.Arguments = make(map[string][]string)
+				testValidationStruct.Arguments[tt.testString] = []string{"foo"}
 			}
 			err := ValidateStruct(&testValidationStruct)
 			if tt.wantErr != nil {
@@ -215,7 +215,7 @@ func TestValidArgument(t *testing.T) {
 
 func TestValidArn(t *testing.T) {
 	type testStruct struct {
-		Test string `validate:"is_arn"`
+		Arn string `validate:"is_arn"`
 	}
 
 	tests := []struct {
@@ -230,13 +230,13 @@ func TestValidArn(t *testing.T) {
 		{
 			name:       "invalid arn",
 			testString: "invalid-arn",
-			wantErr:    fmt.Errorf("'is_arn' value 'invalid-arn' is not a valid arn"),
+			wantErr:    fmt.Errorf("'Arn' value 'invalid-arn' is not a valid arn"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testValidationStruct := testStruct{Test: tt.testString}
+			testValidationStruct := testStruct{Arn: tt.testString}
 			err := ValidateStruct(testValidationStruct)
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
@@ -289,29 +289,29 @@ func TestValidateStructError(t *testing.T) {
 		{
 			name: "no error",
 			validationStruct: struct {
-				Test string `validate:"is_valid_target_type"`
+				Type string `validate:"is_valid_target_type"`
 			}{"aws_account"},
 		},
 		{
 			name: "invalid target type string",
 			validationStruct: struct {
-				Test string `validate:"is_valid_target_type"`
+				Type string `validate:"is_valid_target_type"`
 			}{"bad"},
 			errResult: true,
-			wantErr:   fmt.Errorf("'is_valid_target_type' value 'bad' is invalid, types supported:'aws_account'"),
+			wantErr:   fmt.Errorf("'Type' value 'bad' is invalid, types supported:'aws_account'"),
 		},
 		{
 			name: "non arn provider to is arn validation",
 			validationStruct: struct {
-				Test string `validate:"is_arn"`
+				Arn string `validate:"is_arn"`
 			}{"bad"},
 			errResult: true,
-			wantErr:   fmt.Errorf("'is_arn' value 'bad' is not a valid arn"),
+			wantErr:   fmt.Errorf("'Arn' value 'bad' is not a valid arn"),
 		},
 		{
 			name: "bad values (-)'s in alpha numeric underscore validation",
 			validationStruct: struct {
-				Test string `validate:"is_alphanumunderscore"`
+				TargetName string `validate:"is_alphanumunderscore"`
 			}{"bad-value"},
 			errResult: true,
 			wantErr:   fmt.Errorf("value 'bad-value' is invalid, must only contain alpha numberic underscore characters"),
@@ -319,31 +319,31 @@ func TestValidateStructError(t *testing.T) {
 		{
 			name: "bad execute container uri",
 			validationStruct: struct {
-				Test map[string]string `validate:"is_valid_execute_container_image"`
+				Parameters map[string]string `validate:"is_valid_execute_container_image"`
 			}{map[string]string{
 				"execute_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'is_valid_execute_container_image' value 'map[execute_container_image_uri:bad()]' is an invalid container uri"),
+			wantErr:   fmt.Errorf("'Parameters' value 'map[execute_container_image_uri:bad()]' is an invalid container uri"),
 		},
 		{
 			name: "bad pre container uri",
 			validationStruct: struct {
-				Test map[string]string `validate:"is_valid_precontainer_image"`
+				Parameters map[string]string `validate:"is_valid_precontainer_image"`
 			}{map[string]string{
 				"pre_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'is_valid_precontainer_image' value 'map[pre_container_image_uri:bad()]' is an invalid container uri"),
+			wantErr:   fmt.Errorf("'Parameters' value 'map[pre_container_image_uri:bad()]' is an invalid container uri"),
 		},
 		{
 			name: "invalid argument",
 			validationStruct: struct {
-				Test map[string][]string `validate:"is_valid_argument"`
+				Argument map[string][]string `validate:"is_valid_argument"`
 			}{map[string][]string{
 				"exec": {""}}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'is_valid_argument' value 'map[exec:[]]' is an invalid argument"),
+			wantErr:   fmt.Errorf("'Argument' value 'map[exec:[]]' is an invalid argument"),
 		},
 	}
 

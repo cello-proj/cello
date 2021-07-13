@@ -116,20 +116,20 @@ func validationErrorMessage(name string, err error) error {
 		validationError := validationErrors[0]
 		switch validationError.Tag() {
 		case "is_arn":
-			return fmt.Errorf("'%s' value '%v' is not a valid arn", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is not a valid arn", validationError.Field(), validationError.Value())
 		case "is_valid_target_type":
-			return fmt.Errorf("'%s' value '%v' is invalid, types supported:'aws_account'", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is invalid, types supported:'aws_account'", validationError.Field(), validationError.Value())
 		case "is_alphanumunderscore":
 			return fmt.Errorf("value '%v' is invalid, must only contain alpha numberic underscore characters", validationError.Value())
 		case "is_valid_execute_container_image", "is_valid_precontainer_image":
-			return fmt.Errorf("'%s' value '%v' is an invalid container uri", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is an invalid container uri", validationError.Field(), validationError.Value())
 		case "is_valid_argument":
-			return fmt.Errorf("'%s' value '%v' is an invalid argument", validationError.Tag(), validationError.Value())
+			return fmt.Errorf("'%s' value '%v' is an invalid argument", validationError.Field(), validationError.Value())
 		default:
 			if validationError.Field() == "" {
 				return fmt.Errorf("'%s' '%v'", name, validationError.Param())
 			}
-			return fmt.Errorf("'%s' '%v'", validationError.Tag(), validationError.Field())
+			return fmt.Errorf("'%s' '%v'", validationError.Field(), validationError.Field())
 		}
 
 	}
