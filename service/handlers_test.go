@@ -791,7 +791,7 @@ func loadCreateProjectRequest(t *testing.T, filename string) (r *requests.Create
 }
 
 // Load a createWorkflowRequest from the testdata directory.
-func loadCreateWorkflowRequest(t *testing.T, filename string) (r *requests.CreateWorkflow) {
+func loadCreateWorkflowRequest(t *testing.T, filename string) (r *requests.ExecuteWorkflow) {
 	loadJSON(t, filename, &r)
 	return
 }

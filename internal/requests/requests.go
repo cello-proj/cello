@@ -8,7 +8,7 @@ import (
 )
 
 // Create workflow request.
-type CreateWorkflow struct {
+type ExecuteWorkflow struct {
 	Arguments            map[string][]string `validate:"is_valid_argument" yaml:"arguments" json:"arguments"`
 	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
 	Framework            string              `yaml:"framework" json:"framework"`
@@ -20,20 +20,20 @@ type CreateWorkflow struct {
 }
 
 // ValidateFramework is an optional validation that should be passed as parameter to Validate().
-func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
+func (req ExecuteWorkflow) ValidateFramework(frameworks []string) func() error {
 	return func() error {
 		return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))
 	}
 }
 
 // ValidateType is an optional validation should be passed as parameter to Validate().
-func (req CreateWorkflow) ValidateType(types []string) func() error {
+func (req ExecuteWorkflow) ValidateType(types []string) func() error {
 	return func() error {
 		return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))
 	}
 }
 
-func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
+func (req ExecuteWorkflow) Validate(optionalValidations ...func() error) error {
 	for _, validation := range optionalValidations {
 		if err := validation(); err != nil {
 			return err
@@ -80,4 +80,15 @@ type TargetProperties struct {
 	CredentialType string   `json:"credential_type"`
 	PolicyArns     []string `validate:"max=5,dive,is_arn" json:"policy_arns"`
 	RoleArn        string   `validate:"is_arn" json:"role_arn"`
+}
+
+// TargetOperation represents a target operation request.
+type TargetOperation struct {
+	Path string `validate:"required" json:"path"`
+	SHA  string `validate:"required,alphanum" json:"sha"`
+	Type string `validate:"required,oneof=diff sync" json:"type"`
+}
+
+func (req TargetOperation) Validate() error {
+	return validations.ValidateStruct(req)
 }

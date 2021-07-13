@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 
 	"github.com/argoproj-labs/argo-cloudops/cli/internal/api"
 	"github.com/argoproj-labs/argo-cloudops/cli/internal/helpers"
@@ -44,7 +45,7 @@ var workflowCmd = &cobra.Command{
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), token)
 
-		input := api.ExecuteWorkflowInput{
+		input := requests.ExecuteWorkflow{
 			Arguments:            arguments,
 			EnvironmentVariables: envVars,
 			Framework:            framework,
