@@ -57,7 +57,7 @@ You will need two windows
 * Use the `createdbtables.sql` script to create the relevant tables and create a new user with read/write permissions. This can be done using the command:
 
     ```sh
-    psql -d argocloudops -f createdbtables.sql
+    psql -d argocloudops -f scripts/createdbtables.sql
     ```
 
 * Create an S3 bucket (change the bucket name below) and set it as **ARGO_CLOUDOPS_BUILD_BUCKET** environment variable:
