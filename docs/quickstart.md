@@ -48,15 +48,17 @@ You will need two windows
 
 * In window **#1**, ensure you have AWS credentials for the target account.
 
-* Use the `createdb.sql` script to create a new postgres database and user.
-
-* Switch the database in use to the newly created `argocloudops` database. Using psql, the command would be:
+* Create a new postgres database. This can be done using the command:
 
     ```sh
-    postgres=# \c argocloudops;
+    createdb argocloudops
     ```
 
-* Use the `createdbtables.sql` script to create the relevant tables and grant the new user read/write permissions
+* Use the `createdbtables.sql` script to create the relevant tables and create a new user with read/write permissions. This can be done using the command:
+
+    ```sh
+    psql -d argocloudops -f createdbtables.sql
+    ```
 
 * Create an S3 bucket (change the bucket name below) and set it as **ARGO_CLOUDOPS_BUILD_BUCKET** environment variable:
 

@@ -1,2 +1,0 @@
-CREATE DATABASE argocloudops;
-CREATE USER argoco WITH PASSWORD '1234';
