@@ -50,7 +50,18 @@ You will need two windows
 
 * Create a new database and use the `createdb.sql` script to create the relevant tables
 
+Command for creating database in postgres:
+    ```sh
+    CREATE DATABASE argocloudops;
+    ```
+
 * Create a database user with read/write permissions to the created database and set the `ARGO_CLOUDOPS_DB_NAME`, `ARGO_CLOUDOPS_DB_USER`, and `ARGO_CLOUDOPS_DB_PASSWORD` variables as needed. The default values if the variables are not set are `argocloudops`, `argoco`, and `1234` respectively
+
+Command for creating user with permissions in postgres:
+    ```sh
+    CREATE USER argoco WITH PASSWORD '1234';
+    GRANT ALL PRIVILEGES ON DATABASE argocloudops TO argoco;
+    ```
 
 * Create an S3 bucket (change the bucket name below) and set it as **ARGO_CLOUDOPS_BUILD_BUCKET** environment variable:
 
