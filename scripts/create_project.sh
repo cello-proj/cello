@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
-ACCOUNT_ID=$1
-GIT_REPO=$2
+GIT_REPO=$1
+ACCOUNT_ID=$2
 
 ROLE_NAME=ArgoCloudOpsSampleRole
 
