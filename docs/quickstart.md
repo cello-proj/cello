@@ -69,6 +69,8 @@ You will need two windows
     cd ./examples ; make ; cd -
     ```
 
+* Create a fork of the [example repository](https://github.com/Acepie/argo-cloudops-example) and update the `CODE_URI` in the `manifest.yaml` file to use the correct build bucket based on the `ARGO_CLOUDOPS_BUILD_BUCKET` variable set
+
 * Create the default workflow template in Argo.
 
     ```sh
@@ -118,24 +120,24 @@ the Argo CloudOps service.
 env set to the same value used above.
 
 * Ensure your credentials are set for the **target account** and create your first
-project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
+project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project. For the git repo, use the example fork that was made earlier
 
     ```sh
-    bash scripts/create_project.sh
+    bash scripts/create_project.sh git@github.com:Acepie/argo-cloudops-example.git
     ```
 
 ### Run Workflow
 
-* Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified.
+* Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified. The second argument for the bash commands below should be the commit sha for the commit on your fork that has your manifest
 
 * CDK Example
 
     ```sh
     # CDK Example
-    CDK_WORKFLOW_NAME=`bash scripts/run_cdk_example.sh`
+    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 0cb2797bfae9d0d18f6ab22c3e1fde5ac170be5e`
 
     # Terraform Example
-    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_terraform_example.sh`
+    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 0cb2797bfae9d0d18f6ab22c3e1fde5ac170be5e`
 
     # Get the status / logs
     ./build/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
