@@ -87,8 +87,9 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 	if _, err := fs.Stat(g.fs, repository); os.IsNotExist(err) {
 		// TODO: use context version and make depth configurable
 		repo, err = g.git.PlainClone(filePath, false, &git.CloneOptions{
-			URL:  repository,
-			Auth: g.auth,
+			URL:      repository,
+			Auth:     g.auth,
+			Progress: os.Stdout,
 		})
 		if err != nil {
 			return []byte{}, err
@@ -98,7 +99,9 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		if err != nil {
 			return []byte{}, err
 		}
-		err = g.git.Fetch(repo, &git.FetchOptions{})
+		err = g.git.Fetch(repo, &git.FetchOptions{
+			Progress: os.Stdout,
+		})
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return []byte{}, err
 		}

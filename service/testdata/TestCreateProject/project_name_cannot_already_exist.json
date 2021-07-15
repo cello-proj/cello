@@ -1,3 +1,4 @@
 {
-  "name": "projectalreadyexists"
+  "name": "projectalreadyexists",
+  "repository": "git@github.com:myorg/myrepo.git"
 }

@@ -1,3 +1,4 @@
 {
-  "name": "PROJECT"
+  "name": "PROJECT",
+  "repository": "git@github.com:myorg/myrepo.git"
 }

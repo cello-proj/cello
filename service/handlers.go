@@ -630,6 +630,12 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isValidGitRepo, err := h.validateGitRepository(capp.Repository, w)
+	if !isValidGitRepo {
+		level.Error(l).Log("message", err)
+		return
+	}
+
 	projectExists, err := cp.ProjectExists(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
@@ -1055,6 +1061,18 @@ func (h handler) validateTargetName(targetName string, w http.ResponseWriter) (b
 	if !isStringAlphaNumericUnderscore(targetName) {
 		h.errorResponse(w, "target name must be alpha-numeric with underscores", http.StatusBadRequest)
 		return false, errors.New("target name must be alpha-numeric with underscores")
+	}
+
+	return true, nil
+}
+
+// Validates git repository
+func (h handler) validateGitRepository(gitRepo string, w http.ResponseWriter) (bool, error) {
+	isGitRepo := regexp.MustCompile(`^git@([\w\d\.]+):(.*)`).MatchString
+
+	if !isGitRepo(gitRepo) {
+		h.errorResponse(w, "git repository must match regex `^git@([\\w\\d\\.]+):(.*)`", http.StatusBadRequest)
+		return false, errors.New("git repository must match regex `^git@([\\w\\d\\.]+):(.*)`")
 	}
 
 	return true, nil

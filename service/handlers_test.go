@@ -195,6 +195,14 @@ func TestCreateProject(t *testing.T) {
 			method:  "POST",
 		},
 		{
+			name:    "git repo must be valid",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/git_repo_must_be_valid.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
 			name:    "project name must be alphanumeric",
 			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_must_be_alphanumeric.json"),
 			want:    http.StatusBadRequest,
