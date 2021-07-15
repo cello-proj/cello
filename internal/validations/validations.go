@@ -22,6 +22,7 @@ func NewValidator() (*validator.Validate, error) {
 		"is_valid_execute_container_image": isValidExecuteContainerImage,
 		"is_valid_precontainer_image":      isValidPreContainerImage,
 		"is_valid_argument":                isValidArgument,
+		"is_valid_git_repository":          isValidGitRepository,
 	}
 
 	for jsonTag, fnName := range customValidations {
@@ -33,7 +34,7 @@ func NewValidator() (*validator.Validate, error) {
 	return validate, nil
 }
 
-// Initialize validator and validate struct
+// ValidateStruct Initializes validators and validates struct
 func ValidateStruct(s interface{}) error {
 	validate, err := NewValidator()
 	if err != nil {
@@ -45,7 +46,7 @@ func ValidateStruct(s interface{}) error {
 	return nil
 }
 
-// Initialize validator and validate struct
+// ValidateVar initalizes validator and validates a var
 func ValidateVar(name string, s interface{}, validation string) error {
 	validate, err := NewValidator()
 	if err != nil {
@@ -109,6 +110,10 @@ func isValidImageURI(imageURI string) bool {
 	return err == nil
 }
 
+func isValidGitRepository(fl validator.FieldLevel) bool {
+	return regexp.MustCompile(`^git@([\w\d\.]+):(.*)`).MatchString(fl.Field().String())
+}
+
 // Custom error messages
 func validationErrorMessage(name string, err error) error {
 	var validationErrors validator.ValidationErrors
@@ -125,6 +130,8 @@ func validationErrorMessage(name string, err error) error {
 			return fmt.Errorf("'%s' value '%v' is an invalid container uri", validationError.Field(), validationError.Value())
 		case "is_valid_argument":
 			return fmt.Errorf("'%s' value '%v' is an invalid argument", validationError.Field(), validationError.Value())
+		case "is_valid_git_repository":
+			return fmt.Errorf("'%s' value '%v' is an invalid git repository name, repo name must be in the format of 'git@url.com:owner/repo.git'", validationError.Field(), validationError.Value())
 		default:
 			if validationError.Field() == "" {
 				return fmt.Errorf("'%s' '%v'", name, validationError.Param())

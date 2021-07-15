@@ -8,7 +8,7 @@ import (
 )
 
 // Create workflow request.
-type ExecuteWorkflow struct {
+type CreateWorkflow struct {
 	Arguments            map[string][]string `validate:"is_valid_argument" yaml:"arguments" json:"arguments"`
 	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
 	Framework            string              `yaml:"framework" json:"framework"`
@@ -20,20 +20,20 @@ type ExecuteWorkflow struct {
 }
 
 // ValidateFramework is an optional validation that should be passed as parameter to Validate().
-func (req ExecuteWorkflow) ValidateFramework(frameworks []string) func() error {
+func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
 	return func() error {
 		return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))
 	}
 }
 
 // ValidateType is an optional validation should be passed as parameter to Validate().
-func (req ExecuteWorkflow) ValidateType(types []string) func() error {
+func (req CreateWorkflow) ValidateType(types []string) func() error {
 	return func() error {
 		return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))
 	}
 }
 
-func (req ExecuteWorkflow) Validate(optionalValidations ...func() error) error {
+func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
 	for _, validation := range optionalValidations {
 		if err := validation(); err != nil {
 			return err
@@ -44,7 +44,7 @@ func (req ExecuteWorkflow) Validate(optionalValidations ...func() error) error {
 
 // CreateGitWorkflow from git manifest request
 type CreateGitWorkflow struct {
-	Repository string `validate:"required" json:"repository"`
+	Repository string `validate:"required,is_valid_git_repository" json:"repository"`
 	CommitHash string `validate:"required,alphanum" json:"sha"`
 	Path       string `validate:"required" json:"path"`
 	Type       string `validate:"required" json:"type"`
@@ -68,7 +68,7 @@ func (req CreateTarget) Validate() error {
 // CreateProject request.
 type CreateProject struct {
 	Name       string `validate:"min=4,max=32,alphanum" json:"name"`
-	Repository string `json:"repository"`
+	Repository string `validate:"required,is_valid_git_repository" json:"repository"`
 }
 
 func (req CreateProject) Validate() error {
