@@ -136,14 +136,14 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 }
 
 // Creates workflow init params by pulling manifest from given git repo, commit sha, and code path
-func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (requests.ExecuteWorkflow, error) {
+func (h handler) loadCreateWorkflowRequestFromGit(repository, commitHash, path string) (requests.CreateWorkflow, error) {
 	level.Debug(h.logger).Log("message", fmt.Sprintf("retrieving manifest from repository %s at sha %s with path %s", repository, commitHash, path))
 	fileContents, err := h.gitClient.GetManifestFile(repository, commitHash, path)
 	if err != nil {
-		return requests.ExecuteWorkflow{}, err
+		return requests.CreateWorkflow{}, err
 	}
 
-	var cwr requests.ExecuteWorkflow
+	var cwr requests.CreateWorkflow
 	err = yaml.Unmarshal(fileContents, &cwr)
 	return cwr, err
 }
@@ -220,7 +220,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "reading request body")
-	var cwr requests.ExecuteWorkflow
+	var cwr requests.CreateWorkflow
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading workflow request data", "error", err)
@@ -242,7 +242,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 // Creates a workflow
 // Context is not currently used as Argo has its own and Vault doesn't
 // currently support it.
-func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.ExecuteWorkflow, l log.Logger) {
+func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflow, l log.Logger) {
 	types, err := h.config.listTypes(cwr.Framework)
 	if err != nil {
 		level.Error(l).Log("message", "error reading types from config", "error", err)

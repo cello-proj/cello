@@ -197,6 +197,14 @@ func TestCreateProject(t *testing.T) {
 			method:  "POST",
 		},
 		{
+			name:    "git repo must be valid",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/git_repo_must_be_valid.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
 			name:    "project name must be alphanumeric",
 			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_must_be_alphanumeric.json"),
 			want:    http.StatusBadRequest,
@@ -485,23 +493,22 @@ func TestCreateWorkflow(t *testing.T) {
 			method:  "POST",
 			url:     "/workflows",
 		},
-		// TODO: Once projectExists and targetExists are implemented uncomment
-		//{
-		//	name:    "project must exist",
-		//	req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/project_must_exist.json"),
-		//	want:    http.StatusBadRequest,
-		//	asAdmin: true,
-		//	method:  "POST",
-		//	url:     "/workflows",
-		//},
-		//{
-		//	name:    "target must exist",
-		//	req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/target_must_exist.json"),
-		//	want:    http.StatusBadRequest,
-		//	asAdmin: true,
-		//	method:  "POST",
-		//	url:     "/workflows",
-		//},
+		{
+			name:    "project must exist",
+			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/project_must_exist.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			method:  "POST",
+			url:     "/workflows",
+		},
+		{
+			name:    "target must exist",
+			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/target_must_exist.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			method:  "POST",
+			url:     "/workflows",
+		},
 	}
 	runTests(t, tests)
 }
@@ -511,14 +518,26 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 		{
 			name: "can create workflows",
 			req: requests.CreateGitWorkflow{
-				Repository: "repository1",
-
+				Repository: "git@github.com:myorg/myrepo.git",
 				CommitHash: "sha123",
 				Path:       "path/to/manifest.yaml",
 				Type:       "sync",
 			},
 			want:    http.StatusOK,
 			body:    "{\"workflow_name\":\"success\"}\n",
+			asAdmin: true,
+			method:  "POST",
+			url:     "/projects/project1/targets/target1/operations",
+		},
+		{
+			name: "bad repo name",
+			req: requests.CreateGitWorkflow{
+				Repository: "my repo",
+				CommitHash: "sha123",
+				Path:       "path/to/manifest.yaml",
+				Type:       "sync",
+			},
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/projects/project1/targets/target1/operations",
@@ -791,7 +810,7 @@ func loadCreateProjectRequest(t *testing.T, filename string) (r *requests.Create
 }
 
 // Load a createWorkflowRequest from the testdata directory.
-func loadCreateWorkflowRequest(t *testing.T, filename string) (r *requests.ExecuteWorkflow) {
+func loadCreateWorkflowRequest(t *testing.T, filename string) (r *requests.CreateWorkflow) {
 	loadJSON(t, filename, &r)
 	return
 }

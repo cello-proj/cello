@@ -541,7 +541,7 @@ func TestDiff(t *testing.T) {
 func TestExecuteWorkflow(t *testing.T) {
 	tests := []struct {
 		name                  string
-		input                 requests.ExecuteWorkflow
+		input                 requests.CreateWorkflow
 		apiRespBody           []byte
 		apiRespStatusCode     int
 		endpoint              string          // Used to create new request error.
@@ -796,7 +796,7 @@ func readFile(t *testing.T, fileName string) []byte {
 }
 
 var (
-	executeWorkflowValidInput = requests.ExecuteWorkflow{
+	executeWorkflowValidInput = requests.CreateWorkflow{
 		Arguments: map[string][]string{
 			"execute": {"--no-color", "--require-approval never"},
 		},

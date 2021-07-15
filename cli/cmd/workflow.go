@@ -45,7 +45,7 @@ var workflowCmd = &cobra.Command{
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), token)
 
-		input := requests.ExecuteWorkflow{
+		input := requests.CreateWorkflow{
 			Arguments:            arguments,
 			EnvironmentVariables: envVars,
 			Framework:            framework,

@@ -150,7 +150,7 @@ func (c *Client) Diff(ctx context.Context, input TargetOperationInput) (response
 }
 
 // ExecuteWorkflow submits a workflow execution request.
-func (c *Client) ExecuteWorkflow(ctx context.Context, input requests.ExecuteWorkflow) (responses.ExecuteWorkflow, error) {
+func (c *Client) ExecuteWorkflow(ctx context.Context, input requests.CreateWorkflow) (responses.ExecuteWorkflow, error) {
 	// TODO this should probably be refactored to be a different operation type
 	// (like diff/sync).
 	url := fmt.Sprintf("%s/workflows", c.endpoint)

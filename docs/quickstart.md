@@ -48,7 +48,17 @@ You will need two windows
 
 * In window **#1**, ensure you have AWS credentials for the target account.
 
-* Create a new database and use the `createdb.sql` script to create the relevant tables
+* Create a new postgres database. This can be done using the command:
+
+    ```sh
+    createdb argocloudops
+    ```
+
+* Use the `createdbtables.sql` script to create the relevant tables and create a new user with read/write permissions. This can be done using the command:
+
+    ```sh
+    psql -d argocloudops -f scripts/createdbtables.sql
+    ```
 
 * Create an S3 bucket (change the bucket name below) and set it as **ARGO_CLOUDOPS_BUILD_BUCKET** environment variable:
 
@@ -68,6 +78,8 @@ You will need two windows
     ```sh
     cd ./examples ; make ; cd -
     ```
+
+* Create a fork of the [example repository](https://github.com/Acepie/argo-cloudops-example) and update the `CODE_URI` in the `manifest.yaml` file to use the correct build bucket based on the `ARGO_CLOUDOPS_BUILD_BUCKET` variable set
 
 * Create the default workflow template in Argo.
 
@@ -118,24 +130,24 @@ the Argo CloudOps service.
 env set to the same value used above.
 
 * Ensure your credentials are set for the **target account** and create your first
-project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
+project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project. For the git repo, use the example fork that was made earlier
 
     ```sh
-    bash scripts/create_project.sh
+    bash scripts/create_project.sh git@github.com:Acepie/argo-cloudops-example.git
     ```
 
 ### Run Workflow
 
-* Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified.
+* Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified. The second argument for the bash commands below should be the commit sha for the commit on your fork that has your manifest
 
 * CDK Example
 
     ```sh
     # CDK Example
-    CDK_WORKFLOW_NAME=`bash scripts/run_cdk_example.sh`
+    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 0cb2797bfae9d0d18f6ab22c3e1fde5ac170be5e`
 
     # Terraform Example
-    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_terraform_example.sh`
+    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 0cb2797bfae9d0d18f6ab22c3e1fde5ac170be5e`
 
     # Get the status / logs
     ./build/argo-cloudops get $TERRAFORM_WORKFLOW_NAME

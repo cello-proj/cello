@@ -3,6 +3,7 @@ package git
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
@@ -17,10 +18,43 @@ type Client interface {
 	GetManifestFile(repository, commitHash, path string) ([]byte, error)
 }
 
+type gitSvc interface {
+	PlainClone(path string, isBare bool, o *git.CloneOptions) (*git.Repository, error)
+	PlainOpen(path string) (*git.Repository, error)
+	Fetch(r *git.Repository, o *git.FetchOptions) error
+	Worktree(r *git.Repository) (*git.Worktree, error)
+	Checkout(w *git.Worktree, opts *git.CheckoutOptions) error
+}
+
+type gitSvcImpl struct{}
+
+func (g gitSvcImpl) PlainClone(path string, isBare bool, o *git.CloneOptions) (*git.Repository, error) {
+	return git.PlainClone(path, isBare, o)
+}
+
+func (g gitSvcImpl) PlainOpen(path string) (*git.Repository, error) {
+	return git.PlainOpen(path)
+}
+
+func (g gitSvcImpl) Fetch(r *git.Repository, o *git.FetchOptions) error {
+	return r.Fetch(o)
+}
+
+func (g gitSvcImpl) Worktree(r *git.Repository) (*git.Worktree, error) {
+	return r.Worktree()
+}
+
+func (g gitSvcImpl) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
+	return w.Checkout(opts)
+}
+
 // BasicClient connects to git using ssh
 type BasicClient struct {
-	auth *ssh.PublicKeys
-	mu   *sync.Mutex
+	auth    *ssh.PublicKeys
+	mu      *sync.Mutex
+	git     gitSvc
+	fs      fs.FS
+	baseDir string // base directory to run git operations from
 }
 
 // NewBasicClient creates a new ssh based git client
@@ -31,13 +65,17 @@ func NewBasicClient(sshPemFile string) (BasicClient, error) {
 	}
 
 	return BasicClient{
-		auth: auth,
-		mu:   &sync.Mutex{},
+		auth:    auth,
+		mu:      &sync.Mutex{},
+		git:     gitSvcImpl{},
+		fs:      os.DirFS(os.TempDir()),
+		baseDir: os.TempDir(),
 	}, nil
 }
 
 func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
-	filePath := filepath.Join(os.TempDir(), repository)
+	// filePath should only be used for git calls. direct fs calls should use repository directly
+	filePath := filepath.Join(g.baseDir, repository)
 
 	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
 	// TODO: use a lock per repository instead of a single global lock
@@ -46,40 +84,43 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 
 	var repo *git.Repository
 
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+	if _, err := fs.Stat(g.fs, repository); os.IsNotExist(err) {
 		// TODO: use context version and make depth configurable
-		repo, err = git.PlainClone(filePath, false, &git.CloneOptions{
-			URL:  repository,
-			Auth: g.auth,
+		repo, err = g.git.PlainClone(filePath, false, &git.CloneOptions{
+			URL:      repository,
+			Auth:     g.auth,
+			Progress: os.Stdout,
 		})
 		if err != nil {
 			return []byte{}, err
 		}
 	} else {
-		repo, err = git.PlainOpen(filePath)
+		repo, err = g.git.PlainOpen(filePath)
 		if err != nil {
 			return []byte{}, err
 		}
-		err = repo.Fetch(&git.FetchOptions{})
-		if err != nil && errors.Is(err, git.NoErrAlreadyUpToDate) {
+		err = g.git.Fetch(repo, &git.FetchOptions{
+			Progress: os.Stdout,
+		})
+		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return []byte{}, err
 		}
 	}
 
-	w, err := repo.Worktree()
+	w, err := g.git.Worktree(repo)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	err = w.Checkout(&git.CheckoutOptions{
+	err = g.git.Checkout(w, &git.CheckoutOptions{
 		Hash: plumbing.NewHash(commitHash),
 	})
 	if err != nil {
 		return []byte{}, err
 	}
 
-	pathToManifest := filepath.Join(filePath, path)
-	fileStat, err := os.Stat(pathToManifest)
+	pathToManifest := filepath.Join(repository, path)
+	fileStat, err := fs.Stat(g.fs, pathToManifest)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -88,13 +129,5 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		return []byte{}, fmt.Errorf("path provided is not a file '%s'", path)
 	}
 
-	file, err := os.Open(pathToManifest)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	fileContents := make([]byte, fileStat.Size())
-	_, err = file.Read(fileContents)
-
-	return fileContents, err
+	return fs.ReadFile(g.fs, pathToManifest)
 }
