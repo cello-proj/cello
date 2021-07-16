@@ -67,4 +67,7 @@ release:
   # Mark non-final version tags (e.g. -dev, -alpha, -beta, etc.) as draft
   # releases.
   prerelease: auto
+  extra_files:
+    - glob: ./tmp/cdk-typescript-example.tar.gz
+    - glob: ./tmp/terraform-example.tar.gz
 changelog:
