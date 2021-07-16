@@ -40,6 +40,11 @@ jobs:
           echo "${{steps.changelog_reader.outputs.changes}}" > ./tmp/release_notes.md
           echo "Our release notes:"
           cat ./tmp/release_notes.md
+      - name: Create code examples
+        run: |
+          export TMPDIR=$(pwd)/tmp
+          cd examples
+          bash ./build_examples.sh
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
@@ -51,8 +56,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      -
-        name: Run GoReleaser
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
           distribution: goreleaser
@@ -60,3 +64,4 @@ jobs:
           args: release --debug --rm-dist --release-notes ./tmp/release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          

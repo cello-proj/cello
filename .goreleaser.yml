@@ -67,4 +67,6 @@ release:
   # Mark non-final version tags (e.g. -dev, -alpha, -beta, etc.) as draft
   # releases.
   prerelease: auto
+  extra_files:
+    - glob: ./tmp/*
 changelog:
