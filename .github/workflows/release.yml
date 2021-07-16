@@ -40,7 +40,7 @@ jobs:
           echo "${{steps.changelog_reader.outputs.changes}}" > ./tmp/release_notes.md
           echo "Our release notes:"
           cat ./tmp/release_notes.md
-      - name: Create code examples
+      - name: Archive code examples
         run: |
           export TMPDIR=$(pwd)/tmp
           cd examples
