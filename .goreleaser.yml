@@ -68,5 +68,6 @@ release:
   # releases.
   prerelease: auto
   extra_files:
-    - glob: ./tmp/*
+    - glob: ./tmp/cdk-typescript-example.tar.gz
+    - glob: ./tmp/terraform-example.tar.gz
 changelog:
