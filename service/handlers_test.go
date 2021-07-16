@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/responses"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -114,16 +116,16 @@ func (m mockCredentialsProvider) DeleteProject(name string) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetProject(string) (string, error) {
-	return `{"name":"project1"}`, nil
+func (m mockCredentialsProvider) GetProject(string) (responses.GetProject, error) {
+	return responses.GetProject{Name: "project1"}, nil
 }
 
-func (m mockCredentialsProvider) CreateTarget(name string, req credentials.CreateTargetRequest) error {
+func (m mockCredentialsProvider) CreateTarget(name string, req requests.CreateTarget) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetTarget(string, string) (credentials.TargetProperties, error) {
-	return credentials.TargetProperties{}, nil
+func (m mockCredentialsProvider) GetTarget(string, string) (responses.TargetProperties, error) {
+	return responses.TargetProperties{}, nil
 }
 
 func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
@@ -155,8 +157,8 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 	return false, nil
 }
 
-func (m mockCredentialsProvider) TargetExists(name string) (bool, error) {
-	if name == "TARGET_ALREADY_EXISTS" {
+func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (bool, error) {
+	if targetName == "TARGET_ALREADY_EXISTS" {
 		return true, nil
 	}
 	return false, nil
@@ -422,7 +424,7 @@ func TestCreateWorkflow(t *testing.T) {
 		{
 			name:    "execute_container_image_uri must be present",
 			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/execute_container_image_uri_must_be_present.json"),
-			want:    http.StatusInternalServerError,
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -430,7 +432,7 @@ func TestCreateWorkflow(t *testing.T) {
 		{
 			name:    "execute_container_image_uri must be valid",
 			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/execute_container_image_uri_must_be_valid.json"),
-			want:    http.StatusInternalServerError,
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -454,7 +456,7 @@ func TestCreateWorkflow(t *testing.T) {
 		{
 			name:    "parameters must be present",
 			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/parameters_must_be_present.json"),
-			want:    http.StatusInternalServerError,
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -491,23 +493,22 @@ func TestCreateWorkflow(t *testing.T) {
 			method:  "POST",
 			url:     "/workflows",
 		},
-		// TODO: Once projectExists and targetExists are implemented uncomment
-		//{
-		//	name:    "project must exist",
-		//	req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/project_must_exist.json"),
-		//	want:    http.StatusBadRequest,
-		//	asAdmin: true,
-		//	method:  "POST",
-		//	url:     "/workflows",
-		//},
-		//{
-		//	name:    "target must exist",
-		//	req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/target_must_exist.json"),
-		//	want:    http.StatusBadRequest,
-		//	asAdmin: true,
-		//	method:  "POST",
-		//	url:     "/workflows",
-		//},
+		{
+			name:    "project must exist",
+			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/project_must_exist.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			method:  "POST",
+			url:     "/workflows",
+		},
+		{
+			name:    "target must exist",
+			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/target_must_exist.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			method:  "POST",
+			url:     "/workflows",
+		},
 	}
 	runTests(t, tests)
 }
@@ -516,13 +517,27 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 	tests := []test{
 		{
 			name: "can create workflows",
-			req: createGitWorkflowRequest{
+			req: requests.CreateGitWorkflow{
+				Repository: "git@github.com:myorg/myrepo.git",
 				CommitHash: "sha123",
 				Path:       "path/to/manifest.yaml",
 				Type:       "sync",
 			},
 			want:    http.StatusOK,
 			body:    "{\"workflow_name\":\"success\"}\n",
+			asAdmin: true,
+			method:  "POST",
+			url:     "/projects/project1/targets/target1/operations",
+		},
+		{
+			name: "bad repo name",
+			req: requests.CreateGitWorkflow{
+				Repository: "my repo",
+				CommitHash: "sha123",
+				Path:       "path/to/manifest.yaml",
+				Type:       "sync",
+			},
+			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/projects/project1/targets/target1/operations",
@@ -534,21 +549,14 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 func TestGetWorkflow(t *testing.T) {
 	tests := []test{
 		{
-			name:    "can get workflow",
+			name:    "workflow exists, successful get workflow",
 			want:    http.StatusOK,
 			asAdmin: true,
 			method:  "GET",
 			url:     "/workflows/WORKFLOW_ALREADY_EXISTS",
 		},
 		{
-			name:    "name must be alphanumeric",
-			want:    http.StatusBadRequest,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/%26%28%40%26%24%5E%26%5E%5E%26%25%26YT%25%26IURIHFHYJFKIR",
-		},
-		{
-			name:    "workflow must exist",
+			name:    "workflow does not exist",
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "GET",
@@ -561,7 +569,7 @@ func TestGetWorkflow(t *testing.T) {
 func TestGetWorkflowLogs(t *testing.T) {
 	tests := []test{
 		{
-			name:    "can get workflow logs",
+			name:    "successful get workflow logs",
 			want:    http.StatusOK,
 			asAdmin: true,
 			method:  "GET",
@@ -575,7 +583,7 @@ func TestGetWorkflowLogs(t *testing.T) {
 			url:     "/workflows/%26%28%40%26%24%5E%26%5E%5E%26%25%26YT%25%26IURIHFHYJFKIR/logs",
 		},
 		{
-			name:    "workflow must exist",
+			name:    "workflow does not exist",
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "GET",
@@ -790,19 +798,19 @@ func loadJSON(t *testing.T, filename string, output interface{}) {
 }
 
 // Load a createTargetRequest from the testdata directory.
-func loadCreateTargetRequest(t *testing.T, filename string) (r *credentials.CreateTargetRequest) {
+func loadCreateTargetRequest(t *testing.T, filename string) (r *requests.CreateTarget) {
 	loadJSON(t, filename, &r)
 	return
 }
 
 // Load a createProjectRequest from the testdata directory.
-func loadCreateProjectRequest(t *testing.T, filename string) (r *credentials.CreateProjectRequest) {
+func loadCreateProjectRequest(t *testing.T, filename string) (r *requests.CreateProject) {
 	loadJSON(t, filename, &r)
 	return
 }
 
 // Load a createWorkflowRequest from the testdata directory.
-func loadCreateWorkflowRequest(t *testing.T, filename string) (r *createWorkflowRequest) {
+func loadCreateWorkflowRequest(t *testing.T, filename string) (r *requests.CreateWorkflow) {
 	loadJSON(t, filename, &r)
 	return
 }

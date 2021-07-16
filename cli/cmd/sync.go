@@ -24,7 +24,7 @@ var syncCmd = &cobra.Command{
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), token)
 
-		resp, err := apiCl.Sync(context.Background(), projectName, targetName, gitSHA, gitPath)
+		resp, err := apiCl.Sync(context.Background(), api.TargetOperationInput{Path: gitPath, ProjectName: projectName, SHA: gitSHA, TargetName: targetName})
 		if err != nil {
 			cobra.CheckErr(err)
 		}

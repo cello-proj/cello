@@ -11,6 +11,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,14 +29,14 @@ func TestGetLogs(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  GetLogsOutput
+		want                  responses.GetLogs
 		wantErr               error
 	}{
 		{
 			name:              "good",
 			apiRespBody:       readFile(t, "get_logs_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want: GetLogsOutput{
+			want: responses.GetLogs{
 				Logs: []string{
 					"line 1",
 					"line 2",
@@ -226,14 +229,14 @@ func TestGetWorkflowStatus(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  GetWorkflowStatusOutput
+		want                  responses.GetWorkflowStatus
 		wantErr               error
 	}{
 		{
 			name:              "good",
 			apiRespBody:       readFile(t, "get_workflow_status_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want: GetWorkflowStatusOutput{
+			want: responses.GetWorkflowStatus{
 				Name:     "foo-name",
 				Status:   "succeeded",
 				Created:  "1257891000",
@@ -326,14 +329,14 @@ func TestGetWorkflows(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  GetWorkflowsOutput
+		want                  responses.GetWorkflows
 		wantErr               error
 	}{
 		{
 			name:              "good",
 			apiRespBody:       readFile(t, "get_workflows_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want:              GetWorkflowsOutput{"foo", "bar", "baz"},
+			want:              responses.GetWorkflows{"foo", "bar", "baz"},
 		},
 		{
 			name:              "error non-200 response",
@@ -421,7 +424,7 @@ func TestDiff(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  DiffOutput
+		want                  responses.Diff
 		wantAPIReqBody        []byte
 		wantErr               error
 	}{
@@ -429,7 +432,7 @@ func TestDiff(t *testing.T) {
 			name:              "good",
 			apiRespBody:       readFile(t, "diff_response_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want: DiffOutput{
+			want: responses.Diff{
 				WorkflowName: "workflow1",
 			},
 			wantAPIReqBody: readFile(t, "diff_request_good.json"),
@@ -517,10 +520,12 @@ func TestDiff(t *testing.T) {
 
 			got, err := client.Diff(
 				context.Background(),
-				"project1",
-				"target1",
-				"7fa96067f580a20c3908f5b872377181091ffaec",
-				"./prod/target1.yaml",
+				TargetOperationInput{
+					"./prod/target1.yaml",
+					"project1",
+					"7fa96067f580a20c3908f5b872377181091ffaec",
+					"target1",
+				},
 			)
 
 			if tt.wantErr != nil {
@@ -536,13 +541,13 @@ func TestDiff(t *testing.T) {
 func TestExecuteWorkflow(t *testing.T) {
 	tests := []struct {
 		name                  string
-		input                 ExecuteWorkflowInput
+		input                 requests.CreateWorkflow
 		apiRespBody           []byte
 		apiRespStatusCode     int
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  ExecuteWorkflowOutput
+		want                  responses.ExecuteWorkflow
 		wantAPIReqBody        []byte
 		wantErr               error
 	}{
@@ -551,7 +556,7 @@ func TestExecuteWorkflow(t *testing.T) {
 			input:             executeWorkflowValidInput,
 			apiRespBody:       readFile(t, "execute_workflow_response_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want: ExecuteWorkflowOutput{
+			want: responses.ExecuteWorkflow{
 				WorkflowName: "workflow1",
 			},
 			wantAPIReqBody: readFile(t, "execute_workflow_good.json"),
@@ -661,7 +666,7 @@ func TestSync(t *testing.T) {
 		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
-		want                  SyncOutput
+		want                  responses.Sync
 		wantAPIReqBody        []byte
 		wantErr               error
 	}{
@@ -669,7 +674,7 @@ func TestSync(t *testing.T) {
 			name:              "good",
 			apiRespBody:       readFile(t, "sync_response_good.json"),
 			apiRespStatusCode: http.StatusOK,
-			want: SyncOutput{
+			want: responses.Sync{
 				WorkflowName: "workflow1",
 			},
 			wantAPIReqBody: readFile(t, "sync_request_good.json"),
@@ -756,10 +761,12 @@ func TestSync(t *testing.T) {
 
 			got, err := client.Sync(
 				context.Background(),
-				"project1",
-				"target1",
-				"7fa96067f580a20c3908f5b872377181091ffaec",
-				"./prod/target1.yaml",
+				TargetOperationInput{
+					"./prod/target1.yaml",
+					"project1",
+					"7fa96067f580a20c3908f5b872377181091ffaec",
+					"target1",
+				},
 			)
 
 			if tt.wantErr != nil {
@@ -789,7 +796,7 @@ func readFile(t *testing.T, fileName string) []byte {
 }
 
 var (
-	executeWorkflowValidInput = ExecuteWorkflowInput{
+	executeWorkflowValidInput = requests.CreateWorkflow{
 		Arguments: map[string][]string{
 			"execute": {"--no-color", "--require-approval never"},
 		},

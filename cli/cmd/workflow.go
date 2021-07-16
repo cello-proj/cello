@@ -8,6 +8,7 @@ import (
 
 	"github.com/argoproj-labs/argo-cloudops/cli/internal/api"
 	"github.com/argoproj-labs/argo-cloudops/cli/internal/helpers"
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 
 	"github.com/spf13/cobra"
 )
@@ -44,7 +45,7 @@ var workflowCmd = &cobra.Command{
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), token)
 
-		input := api.ExecuteWorkflowInput{
+		input := requests.CreateWorkflow{
 			Arguments:            arguments,
 			EnvironmentVariables: envVars,
 			Framework:            framework,

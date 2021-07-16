@@ -9,6 +9,8 @@ require (
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/go-git/go-git/v5 v5.3.0
 	github.com/go-kit/kit v0.10.0
+	github.com/go-playground/universal-translator v0.17.0 // indirect
+	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/google/go-cmp v0.5.2
 	github.com/google/uuid v1.2.0
@@ -18,11 +20,13 @@ require (
 	github.com/hashicorp/vault/api v1.0.5-0.20201001211907-38d91b749c77
 	github.com/hashicorp/vault/sdk v0.1.14-0.20210127182440-8477cfe632c0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.6.1
 	github.com/upper/db/v4 v4.1.0
 	google.golang.org/grpc v1.33.1
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.6
 	k8s.io/apimachinery v0.19.6

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+
 	"github.com/google/go-cmp/cmp"
 	vault "github.com/hashicorp/vault/api"
 )
@@ -117,7 +119,7 @@ func TestVaultCreateTarget(t *testing.T) {
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
-			err := v.CreateTarget("test", CreateTargetRequest{})
+			err := v.CreateTarget("test", requests.CreateTarget{})
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)
@@ -241,11 +243,10 @@ func TestVaultDeleteTarget(t *testing.T) {
 
 func TestVaultGetTarget(t *testing.T) {
 	tests := []struct {
-		name               string
-		admin              bool
-		expectedProperties TargetProperties
-		vaultErr           error
-		errResult          bool
+		name      string
+		admin     bool
+		vaultErr  error
+		errResult bool
 	}{
 		{
 			name:  "get target success",
@@ -415,7 +416,7 @@ func TestVaultProjectExists(t *testing.T) {
 		path      string
 		exists    bool
 		vaultErr  error
-		errResult bool
+		expectErr bool
 	}{
 		{
 			name:   "get project success",
@@ -427,14 +428,14 @@ func TestVaultProjectExists(t *testing.T) {
 			path:      "test-path",
 			exists:    false,
 			vaultErr:  ErrNotFound,
-			errResult: false,
+			expectErr: false,
 		},
 		{
 			name:      "vault error",
 			path:      "test-path",
 			exists:    false,
 			vaultErr:  errTest,
-			errResult: true,
+			expectErr: true,
 		},
 	}
 
@@ -447,11 +448,11 @@ func TestVaultProjectExists(t *testing.T) {
 
 			status, err := v.ProjectExists(tt.path)
 			if err != nil {
-				if !tt.errResult {
+				if !tt.expectErr {
 					t.Errorf("\ndid not expect error, got: %v", err)
 				}
 			} else {
-				if tt.errResult {
+				if tt.expectErr {
 					t.Errorf("\nexpected error")
 				}
 
@@ -463,63 +464,30 @@ func TestVaultProjectExists(t *testing.T) {
 	}
 }
 
-func TestIsAdmin(t *testing.T) {
-	tests := []struct {
-		name   string
-		admin  bool
-		expect bool
-	}{
-		{
-			name:   "is admin",
-			admin:  true,
-			expect: true,
-		},
-		{
-			name:   "isn't admin",
-			admin:  false,
-			expect: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			var key = "test"
-			if tt.admin {
-				key = authorizationKeyAdmin
-			}
-			admin := Authorization{Key: key}.IsAdmin()
-			if admin != tt.expect {
-				t.Errorf("\nwant: %v\n got: %v", tt.expect, admin)
-			}
-		})
-	}
-}
-
-func TestIsAuthorizedAdmin(t *testing.T) {
+func TestValidateAuthorizedAdmin(t *testing.T) {
 	tests := []struct {
 		name        string
 		admin       bool
 		validSecret bool
-		expect      bool
+		expectErr   bool
 	}{
 		{
 			name:        "is authorized admin",
 			admin:       true,
 			validSecret: true,
-			expect:      true,
+			expectErr:   false,
 		},
 		{
 			name:        "isn't admin, with valid secret",
 			admin:       false,
 			validSecret: true,
-			expect:      false,
+			expectErr:   true,
 		},
 		{
 			name:        "is admin, with invalid secret",
 			admin:       true,
 			validSecret: false,
-			expect:      false,
+			expectErr:   true,
 		},
 	}
 
@@ -534,9 +502,10 @@ func TestIsAuthorizedAdmin(t *testing.T) {
 			if tt.validSecret {
 				secret = "validSecret"
 			}
-			admin := Authorization{Key: key, Secret: secret}.AuthorizedAdmin("validSecret")
-			if admin != tt.expect {
-				t.Errorf("\nwant: %v\n got: %v", tt.expect, admin)
+			a := Authorization{Provider: "vault", Key: key, Secret: secret}
+			err := a.Validate(a.ValidateAuthorizedAdmin("validSecret"))
+			if err != nil != tt.expectErr {
+				t.Errorf("\nwant error: %v\n got error: %v", tt.expectErr, err != nil)
 			}
 		})
 	}
