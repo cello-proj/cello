@@ -45,6 +45,7 @@ jobs:
           export TMPDIR=$(pwd)/tmp
           cd examples
           bash ./build_examples.sh
+          git checkout ./app-cdk-typescript/package-lock.json
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
