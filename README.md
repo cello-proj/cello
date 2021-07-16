@@ -1,11 +1,11 @@
 **Argo CloudOps is Alpha on a good day, please only use as appropriate!!!**
 
-[![build](https://github.com/argoproj-labs/argo-cloudops/actions/workflows/build.yaml/badge.svg)](https://github.com/bw-intuit/argo-cloudops/actions/workflows/build.yaml)
+[![build](https://github.com/argoproj-labs/argo-cloudops/actions/workflows/build.yaml/badge.svg)](https://github.com/argoproj-labs/argo-cloudops/actions/workflows/build.yaml)
 
 # What Is Argo CloudOps?
 
 Argo CloudOps is a service for running infrastructure as code software tools
-including CDK, Terraform and Cloud Formation.
+including CDK, Terraform and Cloud Formation via GitOps.
 
 * Separate build and deployment
 * Isolate cloud credentials
@@ -13,6 +13,7 @@ including CDK, Terraform and Cloud Formation.
 
 # Why Argo CloudOps?
 
+* GitOps opperating model
 * Multi cloud support (AWS, GCP, etc)
 * Multi framework support (CDK, Terraform, etc)
 * Pluggable components (Workflows, Frameworks, Credentials Providers, etc)
