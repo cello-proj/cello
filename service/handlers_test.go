@@ -518,26 +518,12 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 		{
 			name: "can create workflows",
 			req: requests.CreateGitWorkflow{
-				Repository: "git@github.com:myorg/myrepo.git",
 				CommitHash: "sha123",
 				Path:       "path/to/manifest.yaml",
 				Type:       "sync",
 			},
 			want:    http.StatusOK,
 			body:    "{\"workflow_name\":\"success\"}\n",
-			asAdmin: true,
-			method:  "POST",
-			url:     "/projects/project1/targets/target1/operations",
-		},
-		{
-			name: "bad repo name",
-			req: requests.CreateGitWorkflow{
-				Repository: "my repo",
-				CommitHash: "sha123",
-				Path:       "path/to/manifest.yaml",
-				Type:       "sync",
-			},
-			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/projects/project1/targets/target1/operations",
