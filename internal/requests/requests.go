@@ -44,7 +44,6 @@ func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
 
 // CreateGitWorkflow from git manifest request
 type CreateGitWorkflow struct {
-	Repository string `validate:"required,is_valid_git_repository" json:"repository"`
 	CommitHash string `validate:"required,alphanum" json:"sha"`
 	Path       string `validate:"required" json:"path"`
 	Type       string `validate:"required" json:"type"`
