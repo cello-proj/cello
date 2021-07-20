@@ -111,7 +111,7 @@ func isValidImageURI(imageURI string) bool {
 }
 
 func isValidGitRepository(fl validator.FieldLevel) bool {
-	return regexp.MustCompile(`^git@([\w\d\.]+):(.*)`).MatchString(fl.Field().String())
+	return regexp.MustCompile(`((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?`).MatchString(fl.Field().String())
 }
 
 // Custom error messages
