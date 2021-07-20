@@ -60,8 +60,8 @@ type BasicClient struct {
 	baseDir string // base directory to run git operations from
 }
 
-// NewSshBasicClient creates a new ssh based git client
-func NewSshBasicClient(sshPemFile string) (BasicClient, error) {
+// NewSSHBasicClient creates a new ssh based git client
+func NewSSHBasicClient(sshPemFile string) (BasicClient, error) {
 	auth, err := ssh.NewPublicKeysFromFile("git", sshPemFile, "")
 	if err != nil {
 		return BasicClient{}, err
@@ -76,8 +76,8 @@ func NewSshBasicClient(sshPemFile string) (BasicClient, error) {
 	}, nil
 }
 
-// NewHttpsBasicClient creates a new ssh based git client
-func NewHttpsBasicClient(user, pass string) (BasicClient, error) {
+// NewHTTPSBasicClient creates a new ssh based git client
+func NewHTTPSBasicClient(user, pass string) (BasicClient, error) {
 	return BasicClient{
 		auth: &http.BasicAuth{
 			Username: user,

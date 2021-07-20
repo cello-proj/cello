@@ -49,9 +49,9 @@ func main() {
 	var gitClient git.BasicClient
 
 	if env.GitAuthMethod == "https" {
-		gitClient, err = git.NewHttpsBasicClient(env.GitHTTPSUser, env.GitHTTPSPass)
+		gitClient, err = git.NewHTTPSBasicClient(env.GitHTTPSUser, env.GitHTTPSPass)
 	} else if env.GitAuthMethod == "ssh" {
-		gitClient, err = git.NewSshBasicClient(env.SSHPEMFile)
+		gitClient, err = git.NewSSHBasicClient(env.SSHPEMFile)
 	} else {
 		panic(fmt.Sprintf("Invalid git auth method provided %s", env.GitAuthMethod))
 	}
