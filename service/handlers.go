@@ -18,7 +18,6 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
-	vault "github.com/hashicorp/vault/api"
 	"gopkg.in/yaml.v2"
 )
 
@@ -45,13 +44,12 @@ func generateErrorResponseJSON(message string) string {
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
-	newCredentialsProvider func(a credentials.Authorization, svc *vault.Client) (credentials.Provider, error)
+	newCredentialsProvider func(a credentials.Authorization, env env.Vars, h http.Header, vaultConfig credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error)
 	argo                   workflow.Workflow
 	argoCtx                context.Context
 	config                 *Config
 	gitClient              git.Client
 	env                    env.Vars
-	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
 	vaultConfig            credentials.VaultConfig
 	dbClient               db.Client
 }
@@ -59,7 +57,6 @@ type handler struct {
 // Service HealthCheck
 func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", h.env.VaultAddress)
-
 	l := h.requestLogger(r, "op", "health-check", "vault-endpoint", vaultEndpoint)
 	level.Debug(l).Log("message", "executing")
 
@@ -278,15 +275,8 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating new credentials provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "bad or unknown credentials provider", "error", err)
 		h.errorResponse(w, "bad or unknown credentials provider", http.StatusInternalServerError)
@@ -393,15 +383,8 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
@@ -506,15 +489,8 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	l = log.With(l, "project", capp.Name)
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
@@ -577,15 +553,8 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
@@ -627,15 +596,8 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
@@ -721,15 +683,8 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 
 	l = log.With(l, "target", ctr.Name)
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
@@ -770,15 +725,8 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
@@ -809,15 +757,8 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)

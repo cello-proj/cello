@@ -16,7 +16,6 @@ import (
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	vault "github.com/hashicorp/vault/api"
 )
 
 var (
@@ -72,13 +71,7 @@ func main() {
 		config:                 config,
 		gitClient:              gitClient,
 		env:                    env,
-		// Function that the handler will use to create a Vault svc using the vaultConfig below.
-		// Vault svc needs to be created within the handler methods because Vault uses headers
-		// to add metadata (e.g. transaction ID) to its logs.
-		newCredsProviderSvc: credentials.NewVaultSvc,
-		// A Vault config is needed to be able to create a Vault service from within the handlers.
-		vaultConfig: *credentials.NewVaultConfig(&vault.Config{Address: env.VaultAddress}, env.VaultRole, env.VaultSecret),
-		dbClient:    dbClient,
+		dbClient: dbClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)

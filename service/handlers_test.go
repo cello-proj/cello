@@ -95,9 +95,10 @@ func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map
 	return "success", nil
 }
 
-func newMockProvider(a credentials.Authorization, svc *vault.Client) (credentials.Provider, error) {
+func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
 	return &mockCredentialsProvider{}, nil
 }
+
 
 type mockCredentialsProvider struct{}
 
@@ -747,7 +748,6 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
-		newCredsProviderSvc:    mockCredsProvSvc,
 		env: env.Vars{
 			AdminSecret: testPassword,
 		},
