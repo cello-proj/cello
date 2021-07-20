@@ -22,7 +22,6 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
-	vault "github.com/hashicorp/vault/api"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -99,7 +98,6 @@ func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f
 	return &mockCredentialsProvider{}, nil
 }
 
-
 type mockCredentialsProvider struct{}
 
 func (m mockCredentialsProvider) GetToken() (string, error) {
@@ -163,10 +161,6 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 		return true, nil
 	}
 	return false, nil
-}
-
-func mockCredsProvSvc(c credentials.VaultConfig, h http.Header) (*vault.Client, error) {
-	return &vault.Client{}, nil
 }
 
 type test struct {

@@ -71,7 +71,7 @@ func main() {
 		config:                 config,
 		gitClient:              gitClient,
 		env:                    env,
-		dbClient: dbClient,
+		dbClient:               dbClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)

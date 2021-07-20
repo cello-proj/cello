@@ -3,13 +3,13 @@ package credentials
 import (
 	"errors"
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 	"net/http"
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 
 	vault "github.com/hashicorp/vault/api"
 )

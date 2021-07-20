@@ -50,7 +50,6 @@ type handler struct {
 	config                 *Config
 	gitClient              git.Client
 	env                    env.Vars
-	vaultConfig            credentials.VaultConfig
 	dbClient               db.Client
 }
 
