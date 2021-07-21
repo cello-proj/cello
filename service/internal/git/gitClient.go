@@ -76,7 +76,7 @@ func NewSSHBasicClient(sshPemFile string) (BasicClient, error) {
 	}, nil
 }
 
-// NewHTTPSBasicClient creates a new ssh based git client
+// NewHTTPSBasicClient creates a new https based git client
 func NewHTTPSBasicClient(user, pass string) (BasicClient, error) {
 	return BasicClient{
 		auth: &http.BasicAuth{
