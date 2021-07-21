@@ -104,7 +104,7 @@ env set to the same value used above.
 project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
 
     ```sh
-    bash scripts/create_project.sh git@github.com:Acepie/argo-cloudops-example.git
+    bash scripts/create_project.sh https://github.com/Acepie/argo-cloudops-example.git
     ```
 
 ### Run Workflow
