@@ -89,7 +89,7 @@ if [[ "$CODE_URI" =~ ^s3://.* ]]; then
     echo "Download complete."
 elif [[ "$CODE_URI" =~ ^https://.* ]]; then
     echo "Downloading $CODE_URI using HTTPS."
-    curl -o code.tar.gz ${CODE_URI}
+    curl -L -o code.tar.gz ${CODE_URI}
     echo "Download complete."
 else
     echo "$CODE_URI is not a supported format"

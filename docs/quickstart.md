@@ -48,6 +48,12 @@ You will need two windows
 
 * In window **#1**, ensure you have AWS credentials for the target account.
 
+* Create the IAM role which will be used for the sample project.
+
+    ```sh
+    bash scripts/create_iam_role.sh
+    ```
+
 * Create a new postgres database. This can be done using the command:
 
     ```sh
@@ -60,45 +66,10 @@ You will need two windows
     psql -d argocloudops -f scripts/createdbtables.sql
     ```
 
-* Create an S3 bucket (change the bucket name below) and set it as **ARGO_CLOUDOPS_BUILD_BUCKET** environment variable:
-
-    ```sh
-    export ARGO_CLOUDOPS_BUILD_BUCKET=<UPDATE_ME>
-    aws s3 mb s3://${ARGO_CLOUDOPS_BUILD_BUCKET} --region us-west-2
-    ```
-
-* Create the IAM role which will be used for the sample project.
-
-    ```sh
-    bash scripts/create_iam_role.sh
-    ```
-
-* Build and upload the framework code to S3.
-
-    ```sh
-    cd ./examples ; make ; cd -
-    ```
-
-* Create a fork of the [example repository](https://github.com/Acepie/argo-cloudops-example) and update the `CODE_URI` in the `manifest.yaml` file to use the correct build bucket based on the `ARGO_CLOUDOPS_BUILD_BUCKET` variable set
-
 * Create the default workflow template in Argo.
 
     ```sh
     argo template create -n argo workflows/argo-cloudops-single-step-vault-aws.yaml
-    ```
-
-* Create the terraform state bucket (can be the same bucket as the ARGO_CLOUDOPS_BUILD_BUCKET for dev).
-
-    ```sh
-    export TERRAFORM_STATE_BUCKET=<UPDATE_ME>
-    aws s3 mb "s3://${TERRAFORM_STATE_BUCKET}" --region us-west-2
-    ```
-
-* Update `./examples/app-terraform/main.tf` with your bucket name and region in
-the 'backend' section and init terraform.
-
-    ```sh
-    terraform init ./examples/app-terraform/
     ```
 
 ### Start Vault & Argo CloudOps Service
@@ -130,7 +101,7 @@ the Argo CloudOps service.
 env set to the same value used above.
 
 * Ensure your credentials are set for the **target account** and create your first
-project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project. For the git repo, use the example fork that was made earlier
+project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
 
     ```sh
     bash scripts/create_project.sh git@github.com:Acepie/argo-cloudops-example.git
@@ -138,16 +109,24 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
 ### Run Workflow
 
-* Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified. The second argument for the bash commands below should be the commit sha for the commit on your fork that has your manifest
+* Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified
 
 * CDK Example
 
     ```sh
     # CDK Example
-    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 0cb2797bfae9d0d18f6ab22c3e1fde5ac170be5e`
+    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 8bacf9cd5cf08c142fd5d29317a4d072bdd0800c`
 
+    # Get the status / logs
+    ./build/argo-cloudops get $CDK_WORKFLOW_NAME
+    ./build/argo-cloudops logs $CDK_WORKFLOW_NAME
+    ```
+
+* TERRAFORM Example
+
+    ```sh
     # Terraform Example
-    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 0cb2797bfae9d0d18f6ab22c3e1fde5ac170be5e`
+    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 8bacf9cd5cf08c142fd5d29317a4d072bdd0800c`
 
     # Get the status / logs
     ./build/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
