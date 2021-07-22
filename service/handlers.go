@@ -183,6 +183,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	projectName := vars["projectName"]
 	projectEntry, err := h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
+		level.Error(l).Log("message", "error reading project data", "error", err)
 		h.errorResponse(w, "error reading project data", http.StatusBadRequest)
 		return
 	}
@@ -640,6 +641,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(h.logger).Log("message", "deleting from db")
 	if err = h.dbClient.DeleteProjectEntry(ctx, projectName); err != nil {
+		level.Error(l).Log("message", "error deleting project in database", "error", err)
 		h.errorResponse(w, "error deleting project", http.StatusBadRequest)
 		return
 	}
