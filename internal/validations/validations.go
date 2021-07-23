@@ -95,9 +95,11 @@ func isValidArgument(fl validator.FieldLevel) bool {
 		switch key.String() {
 		case "execute", "init":
 			return true
+		default:
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func isValidARN(fl validator.FieldLevel) bool {
