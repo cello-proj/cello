@@ -20,8 +20,8 @@ if [ -z "$ARGO_CLOUDOPS_DB_PASSWORD" ]; then
     export ARGO_CLOUDOPS_DB_PASSWORD=1234
 fi
 
-if [ -z "$SSH_PEM_FILE" ]; then
-    export SSH_PEM_FILE=$HOME/.ssh/id_rsa
+if [ -z "$ARGO_CLOUDOPS_GIT_AUTH_METHOD" ]; then
+    export ARGO_CLOUDOPS_GIT_AUTH_METHOD=https
 fi
 
 # TODO / HACK: Vault was not loading credentials from the default chain.

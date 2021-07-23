@@ -6,10 +6,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 )
 
@@ -50,15 +53,15 @@ func (g gitSvcImpl) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 
 // BasicClient connects to git using ssh
 type BasicClient struct {
-	auth    *ssh.PublicKeys
+	auth    transport.AuthMethod
 	mu      *sync.Mutex
 	git     gitSvc
 	fs      fs.FS
 	baseDir string // base directory to run git operations from
 }
 
-// NewBasicClient creates a new ssh based git client
-func NewBasicClient(sshPemFile string) (BasicClient, error) {
+// NewSSHBasicClient creates a new ssh based git client
+func NewSSHBasicClient(sshPemFile string) (BasicClient, error) {
 	auth, err := ssh.NewPublicKeysFromFile("git", sshPemFile, "")
 	if err != nil {
 		return BasicClient{}, err
@@ -73,9 +76,24 @@ func NewBasicClient(sshPemFile string) (BasicClient, error) {
 	}, nil
 }
 
+// NewHTTPSBasicClient creates a new https based git client
+func NewHTTPSBasicClient(user, pass string) (BasicClient, error) {
+	return BasicClient{
+		auth: &http.BasicAuth{
+			Username: user,
+			Password: pass,
+		},
+		mu:      &sync.Mutex{},
+		git:     gitSvcImpl{},
+		fs:      os.DirFS(os.TempDir()),
+		baseDir: os.TempDir(),
+	}, nil
+}
+
 func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
 	// filePath should only be used for git calls. direct fs calls should use repository directly
-	filePath := filepath.Join(g.baseDir, repository)
+	repPath := strings.ReplaceAll(repository, "/", "")
+	filePath := filepath.Join(g.baseDir, repPath)
 
 	// Locking here since we need to make sure nobody else is using the repo at the same time to ensure the right sha is checked out
 	// TODO: use a lock per repository instead of a single global lock
@@ -84,7 +102,7 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 
 	var repo *git.Repository
 
-	if _, err := fs.Stat(g.fs, repository); os.IsNotExist(err) {
+	if _, err := fs.Stat(g.fs, repPath); os.IsNotExist(err) {
 		// TODO: use context version and make depth configurable
 		repo, err = g.git.PlainClone(filePath, false, &git.CloneOptions{
 			URL:      repository,
@@ -101,6 +119,7 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		}
 		err = g.git.Fetch(repo, &git.FetchOptions{
 			Progress: os.Stdout,
+			Auth:     g.auth,
 		})
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 			return []byte{}, err
@@ -119,7 +138,7 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		return []byte{}, err
 	}
 
-	pathToManifest := filepath.Join(repository, path)
+	pathToManifest := filepath.Join(repPath, path)
 	fileStat, err := fs.Stat(g.fs, pathToManifest)
 	if err != nil {
 		return []byte{}, err

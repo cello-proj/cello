@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2021-07-23
+### Added
+* Git auth can now be configured for ssh or https
+
 ## [0.4.6] - 2021-07-19
 ### Changed
 * Terraform example code no longer needs state bucket
