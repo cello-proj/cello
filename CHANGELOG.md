@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * `policy_document` to targets.
 
+### Changed
+* Updated go to 1.16.6.
+
 ## [0.5.1] - 2021-07-23
 ### Fixed
 * Validations for workflow should not fail if arguments are empty
