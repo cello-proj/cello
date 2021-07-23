@@ -46,7 +46,16 @@ func main() {
 	}
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", env.ConfigFilePath))
 
-	gitClient, err := git.NewBasicClient(env.SSHPEMFile)
+	var gitClient git.BasicClient
+
+	if env.GitAuthMethod == "https" {
+		gitClient, err = git.NewHTTPSBasicClient(env.GitHTTPSUser, env.GitHTTPSPass)
+	} else if env.GitAuthMethod == "ssh" {
+		gitClient, err = git.NewSSHBasicClient(env.SSHPEMFile)
+	} else {
+		panic(fmt.Sprintf("Invalid git auth method provided %s", env.GitAuthMethod))
+	}
+
 	if err != nil {
 		level.Error(logger).Log("message", "error creating git client", "error", err)
 		panic("error creating git client")
