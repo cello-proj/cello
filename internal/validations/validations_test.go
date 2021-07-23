@@ -182,6 +182,10 @@ func TestValidArgument(t *testing.T) {
 		wantErr           error
 	}{
 		{
+			name:              "valid empty map",
+			noPreContainerKey: true,
+		},
+		{
 			name:       "valid argument init",
 			testString: "init",
 		},
