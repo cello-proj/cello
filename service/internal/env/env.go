@@ -17,7 +17,10 @@ type Vars struct {
 	ArgoAddress    string `envconfig:"ARGO_ADDR" required:"true"`
 	ArgoNamespace  string `envconfig:"WORKFLOW_EXECUTION_NAMESPACE" default:"argo"`
 	ConfigFilePath string `envconfig:"CONFIG" default:"argo-cloudops.yaml"`
-	SSHPEMFile     string `envconfig:"SSH_PEM_FILE" required:"true"`
+	SSHPEMFile     string `envconfig:"SSH_PEM_FILE"`
+	GitAuthMethod  string `split_words:"true" required:"true"`
+	GitHTTPSUser   string `envconfig:"GIT_HTTPS_USER"`
+	GitHTTPSPass   string `envconfig:"GIT_HTTPS_PASS"`
 	LogLevel       string `split_words:"true"`
 	Port           int    `default:"8443"`
 	DBHost         string `split_words:"true" required:"true"`

@@ -19,7 +19,10 @@ var allEnvVars = []string{
 	"ARGO_ADDR",
 	"ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE",
 	"ARGO_CLOUDOPS_CONFIG",
+	"ARGO_CLOUDOPS_GIT_AUTH_METHOD",
 	"SSH_PEM_FILE",
+	"ARGO_CLOUDOPS_GIT_HTTPS_USER",
+	"ARGO_CLOUDOPS_GIT_HTTPS_PASS",
 	"ARGO_CLOUDOPS_LOG_LEVEL",
 	"ARGO_CLOUDOPS_PORT",
 }
@@ -43,6 +46,9 @@ func TestGetEnv(t *testing.T) {
 	os.Setenv("ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE", "argo-ns")
 	os.Setenv("ARGO_CLOUDOPS_CONFIG", "/app/test/config/path")
 	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
+	os.Setenv("ARGO_CLOUDOPS_GIT_AUTH_METHOD", "https")
+	os.Setenv("ARGO_CLOUDOPS_GIT_HTTPS_USER", "testuser")
+	os.Setenv("ARGO_CLOUDOPS_GIT_HTTPS_PASS", "testpass")
 	os.Setenv("ARGO_CLOUDOPS_DB_HOST", "localhost")
 	os.Setenv("ARGO_CLOUDOPS_DB_NAME", "argocloudops")
 	os.Setenv("ARGO_CLOUDOPS_DB_USER", "argoco")
@@ -61,6 +67,9 @@ func TestGetEnv(t *testing.T) {
 	assert.Equal(t, env.ArgoNamespace, "argo-ns")
 	assert.Equal(t, env.ConfigFilePath, "/app/test/config/path")
 	assert.Equal(t, env.SSHPEMFile, "/app/test/ssh.pem")
+	assert.Equal(t, env.GitAuthMethod, "https")
+	assert.Equal(t, env.GitHTTPSUser, "testuser")
+	assert.Equal(t, env.GitHTTPSPass, "testpass")
 	assert.Equal(t, env.LogLevel, "DEBUG")
 	assert.Equal(t, env.Port, 1234)
 	assert.Equal(t, env.DBHost, "localhost")
@@ -77,7 +86,7 @@ func TestDefaults(t *testing.T) {
 	os.Setenv("VAULT_SECRET", testSecret)
 	os.Setenv("VAULT_ADDR", "1.2.3.4")
 	os.Setenv("ARGO_ADDR", "2.3.4.5")
-	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
+	os.Setenv("ARGO_CLOUDOPS_GIT_AUTH_METHOD", "https")
 
 	// When
 	var env, _ = GetEnv()
@@ -96,7 +105,7 @@ func TestValidations(t *testing.T) {
 	os.Setenv("VAULT_SECRET", testSecret)
 	os.Setenv("VAULT_ADDR", "1.2.3.4")
 	os.Setenv("ARGO_ADDR", "2.3.4.5")
-	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
+	os.Setenv("ARGO_CLOUDOPS_GIT_AUTH_METHOD", "https")
 
 	// When
 	_, err := GetEnv()
@@ -114,7 +123,7 @@ func TestRequiredVars(t *testing.T) {
 	os.Setenv("ARGO_ADDR", "2.3.4.5")
 	os.Setenv("ARGO_CLOUDOPS_NAMESPACE", "argo-ns")
 	os.Setenv("ARGO_CLOUDOPS_CONFIG", "/app/test/config/path")
-	os.Setenv("SSH_PEM_FILE", "/app/test/ssh.pem")
+	os.Setenv("ARGO_CLOUDOPS_GIT_AUTH_METHOD", "https")
 	os.Setenv("ARGO_CLOUDOPS_LOG_LEVEL", "DEBUG")
 	os.Setenv("ARGO_CLOUDOPS_PORT", "1234")
 
