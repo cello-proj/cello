@@ -268,14 +268,14 @@ func TestDeleteProject(t *testing.T) {
 		},
 		{
 			name:    "fails to delete project",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			url:     "/projects/undeletableproject",
 			method:  "DELETE",
 		},
 		{
 			name:    "fails to delete project db entry",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			url:     "/projects/somedeletedberror",
 			method:  "DELETE",
@@ -396,7 +396,7 @@ func TestDeleteTarget(t *testing.T) {
 		},
 		{
 			name:    "target fails to delete",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets/undeletabletarget",
 			method:  "DELETE",
@@ -538,7 +538,7 @@ func TestGetWorkflow(t *testing.T) {
 		},
 		{
 			name:    "workflow does not exist",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			method:  "GET",
 			url:     "/workflows/WORKFLOW_DOES_NOT_EXIST",
@@ -557,7 +557,7 @@ func TestGetWorkflowLogs(t *testing.T) {
 			url:     "/workflows/WORKFLOW_ALREADY_EXISTS/logs",
 		},
 		{
-			name:    "name must be alphanumeric",
+			name:    "name must be alphanumunderscore",
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "GET",
@@ -565,7 +565,7 @@ func TestGetWorkflowLogs(t *testing.T) {
 		},
 		{
 			name:    "workflow does not exist",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			method:  "GET",
 			url:     "/workflows/WORKFLOW_DOES_NOT_EXIST/logs",
