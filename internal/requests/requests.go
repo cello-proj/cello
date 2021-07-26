@@ -7,6 +7,7 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 
+// TODO: diff and sync should have separate validations/structs for validations
 // Create workflow request.
 type CreateWorkflow struct {
 	Arguments            map[string][]string `validate:"is_valid_argument" yaml:"arguments" json:"arguments"`

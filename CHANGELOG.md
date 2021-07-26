@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2021-07-23
+### Fixed
+* Validations for workflow should not fail if arguments are empty
+
 ## [0.5.0] - 2021-07-23
 ### Added
 * Git auth can now be configured for ssh or https
