@@ -62,6 +62,7 @@ Request Body
       "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
       "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
     ],
+    "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\" } ] }",
     "role_arn": "arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>"
   }
 }

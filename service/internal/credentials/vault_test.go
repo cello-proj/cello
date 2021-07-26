@@ -33,12 +33,6 @@ func TestVaultCreateProject(t *testing.T) {
 			errResult: true,
 		},
 		{
-			name:      "create prolicy error",
-			admin:     true,
-			vaultErr:  errTest,
-			errResult: true,
-		},
-		{
 			name:      "create project error",
 			admin:     true,
 			vaultErr:  errTest,
@@ -253,12 +247,12 @@ func TestVaultGetTarget(t *testing.T) {
 			admin: true,
 		},
 		{
-			name:      "delete target admin error",
+			name:      "get target admin error",
 			admin:     false,
 			errResult: true,
 		},
 		{
-			name:      "delete target error",
+			name:      "get target error",
 			admin:     true,
 			vaultErr:  errTest,
 			errResult: true,

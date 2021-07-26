@@ -46,5 +46,6 @@ type TargetOperation struct {
 type TargetProperties struct {
 	CredentialType string   `json:"credential_type"`
 	PolicyArns     []string `json:"policy_arns"`
+	PolicyDocument string   `json:"policy_document"`
 	RoleArn        string   `json:"role_arn"`
 }
