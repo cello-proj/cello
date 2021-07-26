@@ -295,8 +295,7 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (responses.Targ
 
 	// Optional.
 	policies := []string{}
-	val, ok := sec.Data["policy_arns"]
-	if ok {
+	if val, ok := sec.Data["policy_arns"]; ok {
 		for _, v := range val.([]interface{}) {
 			policies = append(policies, v.(string))
 		}
