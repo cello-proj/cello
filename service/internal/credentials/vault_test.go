@@ -33,12 +33,6 @@ func TestVaultCreateProject(t *testing.T) {
 			errResult: true,
 		},
 		{
-			name:      "create prolicy error",
-			admin:     true,
-			vaultErr:  errTest,
-			errResult: true,
-		},
-		{
 			name:      "create project error",
 			admin:     true,
 			vaultErr:  errTest,
@@ -253,12 +247,12 @@ func TestVaultGetTarget(t *testing.T) {
 			admin: true,
 		},
 		{
-			name:      "delete target admin error",
+			name:      "get target admin error",
 			admin:     false,
 			errResult: true,
 		},
 		{
-			name:      "delete target error",
+			name:      "get target error",
 			admin:     true,
 			vaultErr:  errTest,
 			errResult: true,
@@ -277,6 +271,7 @@ func TestVaultGetTarget(t *testing.T) {
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
 					"role_arns":       []interface{}{"test-role-arn"},
 					"policy_arns":     []interface{}{"test-policy-arn"},
+					"policy_document": `{ "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Action": "s3:ListBuckets", "Resource": "*" } ] }`,
 					"credential_type": "test-cred-type",
 				}},
 			}

@@ -212,12 +212,14 @@ func (v VaultProvider) CreateTarget(projectName string, ctr requests.CreateTarge
 	targetName := ctr.Name
 	credentialType := ctr.Properties.CredentialType
 	policyArns := ctr.Properties.PolicyArns
+	policyDocument := ctr.Properties.PolicyDocument
 	roleArn := ctr.Properties.RoleArn
 
 	options := map[string]interface{}{
-		"role_arns":       roleArn,
 		"credential_type": credentialType,
 		"policy_arns":     policyArns,
+		"policy_document": policyDocument,
+		"role_arns":       roleArn,
 	}
 
 	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
@@ -296,16 +298,30 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (responses.Targ
 		return responses.TargetProperties{}, ErrTargetNotFound
 	}
 
+	// These should always exist.
 	roleArn := sec.Data["role_arns"].([]interface{})[0].(string)
-	policyArns := sec.Data["policy_arns"].([]interface{})
 	credentialType := sec.Data["credential_type"].(string)
 
-	var policies []string
-	for _, v := range policyArns {
-		policies = append(policies, v.(string))
+	// Optional.
+	policies := []string{}
+	if val, ok := sec.Data["policy_arns"]; ok {
+		for _, v := range val.([]interface{}) {
+			policies = append(policies, v.(string))
+		}
 	}
 
-	return responses.TargetProperties{CredentialType: credentialType, RoleArn: roleArn, PolicyArns: policies}, nil
+	// Optional.
+	var policyDocument string
+	if val, ok := sec.Data["policy_document"]; ok {
+		policyDocument = val.(string)
+	}
+
+	return responses.TargetProperties{
+		CredentialType: credentialType,
+		PolicyArns:     policies,
+		PolicyDocument: policyDocument,
+		RoleArn:        roleArn,
+	}, nil
 }
 
 func (v VaultProvider) GetToken() (string, error) {

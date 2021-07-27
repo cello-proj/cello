@@ -7,8 +7,8 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 
+// CreateWorkflow request.
 // TODO: diff and sync should have separate validations/structs for validations
-// Create workflow request.
 type CreateWorkflow struct {
 	Arguments            map[string][]string `validate:"is_valid_argument" yaml:"arguments" json:"arguments"`
 	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
@@ -34,6 +34,7 @@ func (req CreateWorkflow) ValidateType(types []string) func() error {
 	}
 }
 
+// Validate validates CreateWorkflow.
 func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
 	for _, validation := range optionalValidations {
 		if err := validation(); err != nil {
@@ -50,6 +51,7 @@ type CreateGitWorkflow struct {
 	Type       string `validate:"required" json:"type"`
 }
 
+// Validate validates CreateGitWorkflow.
 func (req CreateGitWorkflow) Validate() error {
 	return validations.ValidateStruct(req)
 }
@@ -61,6 +63,7 @@ type CreateTarget struct {
 	Type       string           `validate:"is_valid_target_type" json:"type"`
 }
 
+// Validate validates CreateTarget.
 func (req CreateTarget) Validate() error {
 	return validations.ValidateStruct(req)
 }
@@ -71,6 +74,7 @@ type CreateProject struct {
 	Repository string `validate:"required,is_valid_git_repository" json:"repository"`
 }
 
+// Validate validates CreateProject.
 func (req CreateProject) Validate() error {
 	return validations.ValidateStruct(req)
 }
@@ -79,6 +83,7 @@ func (req CreateProject) Validate() error {
 type TargetProperties struct {
 	CredentialType string   `json:"credential_type"`
 	PolicyArns     []string `validate:"max=5,dive,is_arn" json:"policy_arns"`
+	PolicyDocument string   `json:"policy_document"`
 	RoleArn        string   `validate:"is_arn" json:"role_arn"`
 }
 
@@ -89,6 +94,7 @@ type TargetOperation struct {
 	Type string `validate:"required,oneof=diff sync" json:"type"`
 }
 
+// Validate validates TargetOperation.
 func (req TargetOperation) Validate() error {
 	return validations.ValidateStruct(req)
 }

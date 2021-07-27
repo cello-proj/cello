@@ -49,7 +49,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.5
+          go-version: 1.16.6
       - name: cache
         uses: actions/cache@v2
         with:
@@ -65,4 +65,4 @@ jobs:
           args: release --debug --rm-dist --release-notes ./tmp/release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
