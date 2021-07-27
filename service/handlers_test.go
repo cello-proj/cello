@@ -115,7 +115,10 @@ func (m mockCredentialsProvider) DeleteProject(name string) error {
 	return nil
 }
 
-func (m mockCredentialsProvider) GetProject(string) (responses.GetProject, error) {
+func (m mockCredentialsProvider) GetProject(proj string) (responses.GetProject, error) {
+	if proj == "projectdoesnotexist" {
+		return responses.GetProject{}, credentials.ErrNotFound
+	}
 	return responses.GetProject{Name: "project1"}, nil
 }
 
@@ -279,6 +282,26 @@ func TestDeleteProject(t *testing.T) {
 			asAdmin: true,
 			url:     "/projects/somedeletedberror",
 			method:  "DELETE",
+		},
+	}
+	runTests(t, tests)
+}
+
+func TestGetProject(t *testing.T) {
+	tests := []test{
+		{
+			name:    "project exists, successful get project",
+			want:    http.StatusOK,
+			asAdmin: true,
+			method:  "GET",
+			url:     "/projects/project1",
+		},
+		{
+			name:    "project does not exist",
+			want:    http.StatusNotFound,
+			asAdmin: true,
+			method:  "GET",
+			url:     "/projects/projectdoesnotexist",
 		},
 	}
 	runTests(t, tests)

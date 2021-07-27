@@ -583,7 +583,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, data)
+	fmt.Fprint(w, string(data))
 }
 
 // Delete a project
