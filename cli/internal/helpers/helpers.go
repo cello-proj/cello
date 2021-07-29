@@ -47,7 +47,7 @@ func ParseEqualsSeparatedCSVToMap(s string) (map[string]string, error) {
 	r := make(map[string]string)
 	l := strings.Split(s, ",")
 	for _, e := range l {
-		v := strings.Split(e, "=")
+		v := strings.SplitN(e, "=", 2)
 		if len(v) != 2 {
 			return r, fmt.Errorf("could not parse equals separated value %s", e)
 		}
