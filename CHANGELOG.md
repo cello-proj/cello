@@ -6,9 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2021-07-29
+### Fixed
+* Parsing of csv arguments in cli with `=` in the value.
+
 ## [0.6.1] - 2021-07-27
 ### Fixed
-* fixed get project response shape
+* Fixed get project response shape.
 
 ## [0.6.0] - 2021-07-26
 ### Added
