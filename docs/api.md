@@ -68,10 +68,11 @@ Request Body
 }
 ```
 
-Note: **role_arn** will be assumed as the target by vault. Vault's IAM
-credentials must be a principle authorized to assume this role. The **policy_arns**
-will be applied at role assumption time to scope down permissions.  Today
-only type is only **aws_account** and **credential_type** is only assumed role.
+Note: `role_arn` will be assumed as the target by vault. Vault's IAM
+credentials must be a principle authorized to assume this role. The
+`policy_arns` and `policy_document` will be applied at role assumption time to
+scope down permissions. Today only type is only `aws_account` and
+`credential_type` is only assumed role.
 
 Response Body
 
@@ -98,7 +99,13 @@ Response Body
 ```json
 {
   "credential_type":"assumed_role",
-  "policy_arns":["arn:aws:iam::aws:policy/AmazonS3FullAccess","arn:aws:iam::aws:policy/AmazonSNSFullAccess","arn:aws:iam::aws:policy/AmazonSQSFullAccess","arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"],
+  "policy_arns": [
+    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+    "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+    "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
+    "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+  ],
+  "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
   "role_arn":"arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
 }
 ```
