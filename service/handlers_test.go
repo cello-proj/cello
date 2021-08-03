@@ -22,7 +22,6 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
 
 	"github.com/go-kit/kit/log"
-	vault "github.com/hashicorp/vault/api"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,7 +94,7 @@ func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map
 	return "success", nil
 }
 
-func newMockProvider(a credentials.Authorization, svc *vault.Client) (credentials.Provider, error) {
+func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
 	return &mockCredentialsProvider{}, nil
 }
 
@@ -165,10 +164,6 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 		return true, nil
 	}
 	return false, nil
-}
-
-func mockCredsProvSvc(c credentials.VaultConfig, h http.Header) (*vault.Client, error) {
-	return &vault.Client{}, nil
 }
 
 type test struct {
@@ -276,14 +271,14 @@ func TestDeleteProject(t *testing.T) {
 		},
 		{
 			name:    "fails to delete project",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			url:     "/projects/undeletableproject",
 			method:  "DELETE",
 		},
 		{
 			name:    "fails to delete project db entry",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			url:     "/projects/somedeletedberror",
 			method:  "DELETE",
@@ -424,7 +419,7 @@ func TestDeleteTarget(t *testing.T) {
 		},
 		{
 			name:    "target fails to delete",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets/undeletabletarget",
 			method:  "DELETE",
@@ -566,7 +561,7 @@ func TestGetWorkflow(t *testing.T) {
 		},
 		{
 			name:    "workflow does not exist",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			method:  "GET",
 			url:     "/workflows/WORKFLOW_DOES_NOT_EXIST",
@@ -585,15 +580,8 @@ func TestGetWorkflowLogs(t *testing.T) {
 			url:     "/workflows/WORKFLOW_ALREADY_EXISTS/logs",
 		},
 		{
-			name:    "name must be alphanumeric",
-			want:    http.StatusBadRequest,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/%26%28%40%26%24%5E%26%5E%5E%26%25%26YT%25%26IURIHFHYJFKIR/logs",
-		},
-		{
 			name:    "workflow does not exist",
-			want:    http.StatusBadRequest,
+			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			method:  "GET",
 			url:     "/workflows/WORKFLOW_DOES_NOT_EXIST/logs",
@@ -756,7 +744,6 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		argo:                   mockWorkflowSvc{},
 		config:                 config,
 		gitClient:              newMockGitClient(),
-		newCredsProviderSvc:    mockCredsProvSvc,
 		env: env.Vars{
 			AdminSecret: testPassword,
 		},

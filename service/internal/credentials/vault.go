@@ -9,6 +9,7 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 
 	vault "github.com/hashicorp/vault/api"
 )
@@ -50,7 +51,6 @@ const (
 )
 
 var (
-
 	// ErrNotFound conveys that the item was not found.
 	ErrNotFound = errors.New("item not found")
 	// ErrTargetNotFound conveys that the target was not round.
@@ -65,7 +65,12 @@ type VaultProvider struct {
 }
 
 // NewVaultProvider returns a new VaultProvider
-func NewVaultProvider(a Authorization, svc *vault.Client) (Provider, error) {
+func NewVaultProvider(a Authorization, env env.Vars, h http.Header, vaultConfigFn VaultConfigFn, vaultSvcFn VaultSvcFn) (Provider, error) {
+	config := vaultConfigFn(&vault.Config{Address: env.VaultAddress}, env.VaultRole, env.VaultSecret)
+	svc, err := vaultSvcFn(*config, h)
+	if err != nil {
+		return nil, err
+	}
 	return &VaultProvider{
 		vaultLogicalSvc: vaultLogical(svc.Logical()),
 		vaultSysSvc:     vaultSys(svc.Sys()),
@@ -80,6 +85,8 @@ type VaultConfig struct {
 	secret string
 }
 
+type VaultConfigFn func(config *vault.Config, role, secret string) *VaultConfig
+
 // NewVaultConfig returns a new VaultConfig.
 func NewVaultConfig(config *vault.Config, role, secret string) *VaultConfig {
 	return &VaultConfig{
@@ -88,6 +95,8 @@ func NewVaultConfig(config *vault.Config, role, secret string) *VaultConfig {
 		secret: secret,
 	}
 }
+
+type VaultSvcFn func(c VaultConfig, h http.Header) (svc *vault.Client, err error)
 
 // NewVaultSvc returns a new vault.Client.
 // TODO before open sourcing we should provide the token instead of generating it

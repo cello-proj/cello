@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2021-08-03
+### Fixed
+* Refactor credential provider client.
+* Fix response statuses.
+
 ## [0.6.2] - 2021-07-29
 ### Fixed
 * Parsing of csv arguments in cli with `=` in the value.

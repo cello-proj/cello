@@ -18,7 +18,6 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
-	vault "github.com/hashicorp/vault/api"
 	"gopkg.in/yaml.v2"
 )
 
@@ -45,21 +44,18 @@ func generateErrorResponseJSON(message string) string {
 // HTTP handler
 type handler struct {
 	logger                 log.Logger
-	newCredentialsProvider func(a credentials.Authorization, svc *vault.Client) (credentials.Provider, error)
+	newCredentialsProvider func(a credentials.Authorization, env env.Vars, h http.Header, vaultConfig credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error)
 	argo                   workflow.Workflow
 	argoCtx                context.Context
 	config                 *Config
 	gitClient              git.Client
 	env                    env.Vars
-	newCredsProviderSvc    func(c credentials.VaultConfig, h http.Header) (*vault.Client, error)
-	vaultConfig            credentials.VaultConfig
 	dbClient               db.Client
 }
 
 // Service HealthCheck
 func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", h.env.VaultAddress)
-
 	l := h.requestLogger(r, "op", "health-check", "vault-endpoint", vaultEndpoint)
 	level.Debug(l).Log("message", "executing")
 
@@ -106,7 +102,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	workflowIDs, err := h.argo.List(h.argoCtx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
-		h.errorResponse(w, "error listing workflows", http.StatusBadRequest)
+		h.errorResponse(w, "error listing workflows", http.StatusInternalServerError)
 		return
 	}
 
@@ -118,7 +114,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 			workflow, err := h.argo.Status(h.argoCtx, workflowID)
 			if err != nil {
 				level.Error(l).Log("message", "error retrieving workflows", "error", err)
-				h.errorResponse(w, "error retrieving workflows", http.StatusBadRequest)
+				h.errorResponse(w, "error retrieving workflows", http.StatusInternalServerError)
 				return
 			}
 			workflows = append(workflows, *workflow)
@@ -128,7 +124,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(workflows)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow IDs", "error", err)
-		h.errorResponse(w, "error serializing workflow IDs", http.StatusBadRequest)
+		h.errorResponse(w, "error serializing workflow IDs", http.StatusInternalServerError)
 		return
 	}
 
@@ -179,7 +175,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 	if err := cgwr.Validate(); err != nil {
 		level.Error(l).Log("message", "error validating request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("error validating request, %s", err), http.StatusBadRequest)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -187,14 +183,15 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	projectName := vars["projectName"]
 	projectEntry, err := h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
-		h.errorResponse(w, "error reading project data", http.StatusBadRequest)
+		level.Error(l).Log("message", "error reading project data", "error", err)
+		h.errorResponse(w, "error reading project data", http.StatusInternalServerError)
 		return
 	}
 
 	cwr, err := h.loadCreateWorkflowRequestFromGit(projectEntry.Repository, cgwr.CommitHash, cgwr.Path)
 	if err != nil {
 		level.Error(l).Log("message", "error loading workflow data from git", "error", err)
-		h.errorResponse(w, "error loading workflow data from git", http.StatusBadRequest)
+		h.errorResponse(w, "error loading workflow data from git", http.StatusInternalServerError)
 		return
 	}
 
@@ -224,7 +221,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading workflow request data", "error", err)
-		h.errorResponse(w, "error reading workflow request data", http.StatusBadRequest)
+		h.errorResponse(w, "error reading workflow request data", http.StatusInternalServerError)
 		return
 	}
 
@@ -245,8 +242,8 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflow, l log.Logger) {
 	types, err := h.config.listTypes(cwr.Framework)
 	if err != nil {
-		level.Error(l).Log("message", "error reading types from config", "error", err)
-		h.errorResponse(w, "error reading types from config", http.StatusBadRequest)
+		level.Error(l).Log("message", "error invalid framework", "error", err)
+		h.errorResponse(w, "error invalid framework", http.StatusBadRequest)
 		return
 	}
 
@@ -256,7 +253,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		cwr.ValidateType(types),
 	); err != nil {
 		level.Error(l).Log("message", "error validating request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("error validating request, %s", err), http.StatusBadRequest)
+		h.errorResponse(w, fmt.Sprintf("error invalid request, %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -268,25 +265,18 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	commandDefinition, err := h.config.getCommandDefinition(cwr.Framework, cwr.Type)
 	if err != nil {
 		level.Error(l).Log("message", "unable to get command definition", "error", err)
-		h.errorResponse(w, "unable to get command definition", http.StatusBadRequest)
+		h.errorResponse(w, "unable to retrieve command definition", http.StatusInternalServerError)
 		return
 	}
 	executeCommand, err := generateExecuteCommand(commandDefinition, environmentVariablesString, cwr.Arguments)
 	if err != nil {
 		level.Error(l).Log("message", "unable to generate command", "error", err)
-		h.errorResponse(w, "unable to generate command", http.StatusBadRequest)
-		return
-	}
-
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
+		h.errorResponse(w, "unable to generate command", http.StatusInternalServerError)
 		return
 	}
 
 	level.Debug(l).Log("message", "creating new credentials provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "bad or unknown credentials provider", "error", err)
 		h.errorResponse(w, "bad or unknown credentials provider", http.StatusInternalServerError)
@@ -297,7 +287,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	credentialsToken, err := cp.GetToken()
 	if err != nil {
 		level.Error(l).Log("message", "error getting credentials provider token", "error", err)
-		h.errorResponse(w, "error getting credentials provider token", http.StatusInternalServerError)
+		h.errorResponse(w, "error retrieving credentials provider token", http.StatusInternalServerError)
 		return
 	}
 
@@ -317,7 +307,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	targetExists, err := cp.TargetExists(cwr.ProjectName, cwr.TargetName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving target", "error", err)
-		h.errorResponse(w, "error retrieving target", http.StatusBadRequest)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
 		return
 	}
 	if !targetExists {
@@ -346,7 +336,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	jsonData, err := json.Marshal(cwresp)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow response", "error", err)
-		h.errorResponse(w, "error serializing workflow response", http.StatusBadRequest)
+		h.errorResponse(w, "error serializing workflow response", http.StatusInternalServerError)
 		return
 	}
 	fmt.Fprintln(w, string(jsonData))
@@ -362,15 +352,15 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	status, err := h.argo.Status(h.argoCtx, workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow", "error", err)
-		h.errorResponse(w, "error getting workflow", http.StatusBadRequest)
+		h.errorResponse(w, "error getting workflow", http.StatusInternalServerError)
 		return
 	}
 
 	level.Debug(l).Log("message", "decoding get workflow response")
-	jsonData, err := json.Marshal(status) // TODO handle error in http resp
+	jsonData, err := json.Marshal(status)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing workflow", "error", err)
-		h.errorResponse(w, "error serializing workflow", http.StatusBadRequest)
+		h.errorResponse(w, "error serializing workflow", http.StatusInternalServerError)
 		return
 	}
 
@@ -393,18 +383,11 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -412,7 +395,7 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	targetInfo, err := cp.GetTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving target information", "error", err)
-		h.errorResponse(w, "error retrieving target information", http.StatusBadRequest)
+		h.errorResponse(w, "error retrieving target information", http.StatusInternalServerError)
 		return
 	}
 
@@ -437,7 +420,7 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	argoWorkflowLogs, err := h.argo.Logs(h.argoCtx, workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logs", "error", err)
-		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest)
+		h.errorResponse(w, "error getting workflow logs", http.StatusInternalServerError)
 		return
 	}
 
@@ -462,7 +445,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	err := h.argo.LogStream(h.argoCtx, workflowName, w)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logstream", "error", err)
-		h.errorResponse(w, "error getting workflow logs", http.StatusBadRequest)
+		h.errorResponse(w, "error getting workflow logs", http.StatusInternalServerError)
 		return
 	}
 }
@@ -499,25 +482,18 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := capp.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("error validating request, %s", err), http.StatusBadRequest)
+		level.Error(l).Log("message", "error invalid request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
 	}
 
 	l = log.With(l, "project", capp.Name)
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -577,18 +553,11 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -627,18 +596,11 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -673,13 +635,14 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	err = cp.DeleteProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error deleting project", "error", err)
-		h.errorResponse(w, "error deleting project", http.StatusBadRequest)
+		h.errorResponse(w, "error deleting project", http.StatusInternalServerError)
 		return
 	}
 
 	level.Debug(h.logger).Log("message", "deleting from db")
 	if err = h.dbClient.DeleteProjectEntry(ctx, projectName); err != nil {
-		h.errorResponse(w, "error deleting project", http.StatusBadRequest)
+		level.Error(l).Log("message", "error deleting project in database", "error", err)
+		h.errorResponse(w, "error deleting project", http.StatusInternalServerError)
 		return
 	}
 }
@@ -704,7 +667,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
-		h.errorResponse(w, "error reading request data", http.StatusBadRequest)
+		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
 	}
 
 	if err := json.Unmarshal(reqBody, &ctr); err != nil {
@@ -714,22 +677,15 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := ctr.Validate(); err != nil {
-		level.Error(l).Log("message", "error validating request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("error validating request, %v", err), http.StatusBadRequest)
+		level.Error(l).Log("message", "error invalid request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
 	}
 
 	l = log.With(l, "target", ctr.Name)
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
@@ -770,18 +726,11 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusBadRequest)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -789,7 +738,7 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	err = cp.DeleteTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error deleting target", "error", err)
-		h.errorResponse(w, "error deleting target", http.StatusBadRequest)
+		h.errorResponse(w, "error deleting target", http.StatusInternalServerError)
 		return
 	}
 }
@@ -809,15 +758,8 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cpSvc, err := h.newCredsProviderSvc(h.vaultConfig, r.Header)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider service", "error", err)
-		h.errorResponse(w, "error creating credentials provider service", http.StatusBadRequest)
-		return
-	}
-
 	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, cpSvc)
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
@@ -834,6 +776,8 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(targets)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing targets", "error", err)
+		h.errorResponse(w, "error listing targets", http.StatusInternalServerError)
+		return
 	}
 
 	fmt.Fprint(w, string(data))
