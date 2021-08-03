@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -416,12 +415,6 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	workflowName := vars["workflowName"]
 
 	l := h.requestLogger(r, "op", "get-workflow-logs", "workflow", workflowName)
-
-	if err := validations.ValidateVar("workflow name", workflowName, "is_alphanumunderscore"); err != nil {
-		level.Error(l).Log("message", "invalid workflow name", "error", err)
-		h.errorResponse(w, "invalid workflow name", http.StatusBadRequest)
-		return
-	}
 
 	level.Debug(l).Log("message", "retrieving workflow logs")
 	argoWorkflowLogs, err := h.argo.Logs(h.argoCtx, workflowName)

@@ -580,13 +580,6 @@ func TestGetWorkflowLogs(t *testing.T) {
 			url:     "/workflows/WORKFLOW_ALREADY_EXISTS/logs",
 		},
 		{
-			name:    "name must be alphanumunderscore",
-			want:    http.StatusBadRequest,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/%26%28%40%26%24%5E%26%5E%5E%26%25%26YT%25%26IURIHFHYJFKIR/logs",
-		},
-		{
 			name:    "workflow does not exist",
 			want:    http.StatusInternalServerError,
 			asAdmin: true,
