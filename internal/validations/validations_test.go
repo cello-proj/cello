@@ -18,13 +18,13 @@ func TestValidateIsAlphaNumericUnderscore(t *testing.T) {
 		wantErr    error
 	}{
 		{
-			name:       "valid alpha num underscore",
+			name:       "valid alpha numeric underscore",
 			testString: "abcd1234____",
 		},
 		{
-			name:       "invalid alpha num underscore characters",
+			name:       "invalid alpha numeric underscore characters",
 			testString: "--[[]]  ",
-			wantErr:    fmt.Errorf("value '--[[]]  ' is invalid, must only contain alpha numberic underscore characters"),
+			wantErr:    fmt.Errorf("value '--[[]]  ' is invalid, must only contain alpha numeric underscore characters"),
 		},
 	}
 
@@ -267,7 +267,7 @@ func TestValidateVar(t *testing.T) {
 			name:        "invalid var",
 			testString:  "bad",
 			validString: "good",
-			wantErr:     fmt.Errorf("'validate var' 'good'"),
+			wantErr:     fmt.Errorf("validate var 'good'"),
 		},
 	}
 
@@ -318,7 +318,7 @@ func TestValidateStructError(t *testing.T) {
 				TargetName string `validate:"is_alphanumunderscore"`
 			}{"bad-value"},
 			errResult: true,
-			wantErr:   fmt.Errorf("value 'bad-value' is invalid, must only contain alpha numberic underscore characters"),
+			wantErr:   fmt.Errorf("value 'bad-value' is invalid, must only contain alpha numeric underscore characters"),
 		},
 		{
 			name: "bad execute container uri",
@@ -380,7 +380,7 @@ func TestValidateVarErrors(t *testing.T) {
 			name:        "invalid var expected error",
 			testString:  "bad",
 			validString: "good",
-			wantErr:     fmt.Errorf("'validate var' 'good'"),
+			wantErr:     fmt.Errorf("validate var 'good'"),
 		},
 	}
 

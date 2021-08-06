@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -53,6 +54,8 @@ func (c Config) listFrameworks() []string {
 	for k := range c.Commands {
 		keys = append(keys, k)
 	}
+
+	sort.Strings(keys)
 	return keys
 }
 
@@ -65,6 +68,8 @@ func (c Config) listTypes(framework string) ([]string, error) {
 	for k := range c.Commands[framework] {
 		keys = append(keys, k)
 	}
+
+	sort.Strings(keys)
 	return keys, nil
 }
 

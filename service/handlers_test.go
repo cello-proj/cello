@@ -167,20 +167,21 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 }
 
 type test struct {
-	name    string
-	req     interface{}
-	want    int
-	body    string
-	asAdmin bool
-	url     string
-	method  string
+	name     string
+	req      interface{}
+	respFile string
+	want     int
+	body     string
+	asAdmin  bool
+	url      string
+	method   string
 }
 
 func TestCreateProject(t *testing.T) {
 	tests := []test{
 		{
 			name:    "fails to create project when not admin",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/fails_to_create_project_when_not_admin.json"),
+			req:     loadJSON(t, "TestCreateProject/fails_to_create_project_when_not_admin.json"),
 			want:    http.StatusUnauthorized,
 			asAdmin: false,
 			url:     "/projects",
@@ -188,7 +189,7 @@ func TestCreateProject(t *testing.T) {
 		},
 		{
 			name:    "can create project",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/can_create_project.json"),
+			req:     loadJSON(t, "TestCreateProject/can_create_project.json"),
 			want:    http.StatusOK,
 			asAdmin: true,
 			url:     "/projects",
@@ -196,7 +197,7 @@ func TestCreateProject(t *testing.T) {
 		},
 		{
 			name:    "git repo must be valid",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/git_repo_must_be_valid.json"),
+			req:     loadJSON(t, "TestCreateProject/git_repo_must_be_valid.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects",
@@ -204,7 +205,7 @@ func TestCreateProject(t *testing.T) {
 		},
 		{
 			name:    "project name must be alphanumeric",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_must_be_alphanumeric.json"),
+			req:     loadJSON(t, "TestCreateProject/project_name_must_be_alphanumeric.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects",
@@ -212,7 +213,7 @@ func TestCreateProject(t *testing.T) {
 		},
 		{
 			name:    "project name cannot be less than 4 characters",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_be_less_than_4_characters.json"),
+			req:     loadJSON(t, "TestCreateProject/project_name_cannot_be_less_than_4_characters.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects",
@@ -220,7 +221,7 @@ func TestCreateProject(t *testing.T) {
 		},
 		{
 			name:    "project name cannot be greater than 32 characters",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_be_greater_than_32_characters.json"),
+			req:     loadJSON(t, "TestCreateProject/project_name_cannot_be_greater_than_32_characters.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects",
@@ -228,7 +229,7 @@ func TestCreateProject(t *testing.T) {
 		},
 		{
 			name:    "project name cannot already exist",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_already_exist.json"),
+			req:     loadJSON(t, "TestCreateProject/project_name_cannot_already_exist.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects",
@@ -236,7 +237,7 @@ func TestCreateProject(t *testing.T) {
 		},
 		{
 			name:    "project fails to create db entry",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
+			req:     loadJSON(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
 			want:    http.StatusInternalServerError,
 			asAdmin: true,
 			url:     "/projects",
@@ -311,7 +312,7 @@ func TestCreateTarget(t *testing.T) {
 	tests := []test{
 		{
 			name:    "fails to create target when not admin",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/fails_to_create_target_when_not_admin.json"),
+			req:     loadJSON(t, "TestCreateTarget/fails_to_create_target_when_not_admin.json"),
 			want:    http.StatusUnauthorized,
 			asAdmin: false,
 			url:     "/projects/projectalreadyexists/targets",
@@ -319,7 +320,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "can create target",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/can_create_target.json"),
+			req:     loadJSON(t, "TestCreateTarget/can_create_target.json"),
 			want:    http.StatusOK,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -327,7 +328,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "target name must be alphanumeric",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/target_name_must_be_alphanumeric.json"),
+			req:     loadJSON(t, "TestCreateTarget/target_name_must_be_alphanumeric.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -335,7 +336,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "target name cannot be less than 4 characters",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/target_name_cannot_be_less_than_4_characters.json"),
+			req:     loadJSON(t, "TestCreateTarget/target_name_cannot_be_less_than_4_characters.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -343,7 +344,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "target name cannot be greater than 32 characters",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/target_name_cannot_be_greater_than_32_characters.json"),
+			req:     loadJSON(t, "TestCreateTarget/target_name_cannot_be_greater_than_32_characters.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -351,7 +352,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "target name cannot already exist",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/target_name_cannot_already_exist.json"),
+			req:     loadJSON(t, "TestCreateTarget/target_name_cannot_already_exist.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -359,7 +360,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "type must be aws_account",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/type_must_be_aws_account.json"),
+			req:     loadJSON(t, "TestCreateTarget/type_must_be_aws_account.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -367,7 +368,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "policy arns list length cannot be greater than 5",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/policy_arns_list_length_cannot_be_greater_than_5.json"),
+			req:     loadJSON(t, "TestCreateTarget/policy_arns_list_length_cannot_be_greater_than_5.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -375,7 +376,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "policy arns are valid AWS arns",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/policy_arns_are_valid_aws_arns.json"),
+			req:     loadJSON(t, "TestCreateTarget/policy_arns_are_valid_aws_arns.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -383,7 +384,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "role arn is valid AWS arn",
-			req:     loadCreateTargetRequest(t, "TestCreateTarget/role_arn_is_valid_aws_arn.json"),
+			req:     loadJSON(t, "TestCreateTarget/role_arn_is_valid_aws_arn.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/projectalreadyexists/targets",
@@ -391,7 +392,7 @@ func TestCreateTarget(t *testing.T) {
 		},
 		{
 			name:    "project must exist",
-			req:     loadCreateWorkflowRequest(t, "TestCreateTarget/project_must_exist.json"),
+			req:     loadJSON(t, "TestCreateTarget/project_must_exist.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			url:     "/projects/PROJECT_DOES_NOT_EXIST/targets",
@@ -432,7 +433,7 @@ func TestCreateWorkflow(t *testing.T) {
 	tests := []test{
 		{
 			name:    "can create workflows",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/can_create_workflow.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/can_create_workflow.json"),
 			want:    http.StatusOK,
 			body:    "{\"workflow_name\":\"success\"}\n",
 			asAdmin: true,
@@ -441,7 +442,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "execute_container_image_uri must be present",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/execute_container_image_uri_must_be_present.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/execute_container_image_uri_must_be_present.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -449,7 +450,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "execute_container_image_uri must be valid",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/execute_container_image_uri_must_be_valid.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/execute_container_image_uri_must_be_valid.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -457,7 +458,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "framework must be present",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/framework_must_be_present.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/framework_must_be_present.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -465,7 +466,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "framework must be valid",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/framework_must_be_valid.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/framework_must_be_valid.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -473,7 +474,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "parameters must be present",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/parameters_must_be_present.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/parameters_must_be_present.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -481,7 +482,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "project name must be present",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/project_name_must_be_present.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/project_name_must_be_present.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -489,7 +490,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "target name must be present",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/target_name_must_be_present.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/target_name_must_be_present.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -497,23 +498,24 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "type must be present",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/type_must_be_present.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/type_must_be_present.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
 		},
 		{
-			name:    "type must be valid",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/type_must_be_valid.json"),
-			want:    http.StatusBadRequest,
-			asAdmin: true,
-			method:  "POST",
-			url:     "/workflows",
+			name:     "type must be valid",
+			req:      loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
+			respFile: "TestCreateWorkflow/type_must_be_valid_response.json",
+			want:     http.StatusBadRequest,
+			asAdmin:  true,
+			method:   "POST",
+			url:      "/workflows",
 		},
 		{
 			name:    "project must exist",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/project_must_exist.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/project_must_exist.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -521,7 +523,7 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		{
 			name:    "target must exist",
-			req:     loadCreateWorkflowRequest(t, "TestCreateWorkflow/target_must_exist.json"),
+			req:     loadJSON(t, "TestCreateWorkflow/target_must_exist.json"),
 			want:    http.StatusBadRequest,
 			asAdmin: true,
 			method:  "POST",
@@ -727,6 +729,20 @@ func runTests(t *testing.T, tests []test) {
 					t.Errorf("Unexpected body '%s', expected '%s'", bodyBytes, tt.body)
 				}
 			}
+
+			if tt.respFile != "" {
+				wantBody, err := loadFileBytes(tt.respFile)
+				if err != nil {
+					t.Fatalf("unable to read response file '%s', err: '%s'", tt.respFile, err)
+				}
+
+				body, err := io.ReadAll(resp.Body)
+				assert.Nil(t, err)
+
+				defer resp.Body.Close()
+
+				assert.JSONEq(t, string(wantBody), string(body))
+			}
 		})
 	}
 }
@@ -762,51 +778,21 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 	return w.Result()
 }
 
-// Unmarshal a JSON file from the testdata directory into output.
+// loadFileBytes returns the contents of a file in the 'testdata' directory.
 func loadFileBytes(filename string) ([]byte, error) {
 	file := filepath.Join("testdata", filename)
-	fd, err := os.Open(file)
+	return os.ReadFile(file)
+}
+
+// loadJSON unmarshals a JSON file from the testdata directory into output.
+func loadJSON(t *testing.T, filename string) (output interface{}) {
+	data, err := loadFileBytes(filename)
 	if err != nil {
-		return []byte{}, err
+		t.Fatalf("failed to read file %s: %v", filename, err)
 	}
 
-	fileStat, err := fd.Stat()
-	if err != nil {
-		return []byte{}, err
+	if err := json.Unmarshal(data, &output); err != nil {
+		t.Fatalf("failed to decode file %s: %v", filename, err)
 	}
-
-	fileContents := make([]byte, fileStat.Size())
-	_, err = fd.Read(fileContents)
-
-	return fileContents, err
-}
-
-// Unmarshal a JSON file from the testdata directory into output.
-func loadJSON(t *testing.T, filename string, output interface{}) {
-	file := filepath.Join("testdata", filename)
-	fd, err := os.Open(file)
-	if err != nil {
-		t.Fatalf("failed to read file %s: %v", file, err)
-	}
-	if err = json.NewDecoder(fd).Decode(&output); err != nil {
-		t.Fatalf("failed to decode file %s: %v", file, err)
-	}
-}
-
-// Load a createTargetRequest from the testdata directory.
-func loadCreateTargetRequest(t *testing.T, filename string) (r *requests.CreateTarget) {
-	loadJSON(t, filename, &r)
-	return
-}
-
-// Load a createProjectRequest from the testdata directory.
-func loadCreateProjectRequest(t *testing.T, filename string) (r *requests.CreateProject) {
-	loadJSON(t, filename, &r)
-	return
-}
-
-// Load a createWorkflowRequest from the testdata directory.
-func loadCreateWorkflowRequest(t *testing.T, filename string) (r *requests.CreateWorkflow) {
-	loadJSON(t, filename, &r)
-	return
+	return output
 }

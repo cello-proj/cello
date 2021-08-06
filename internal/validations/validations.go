@@ -34,7 +34,7 @@ func NewValidator() (*validator.Validate, error) {
 	return validate, nil
 }
 
-// ValidateStruct Initializes validators and validates struct
+// ValidateStruct initializes validators and validates struct.
 func ValidateStruct(s interface{}) error {
 	validate, err := NewValidator()
 	if err != nil {
@@ -46,21 +46,20 @@ func ValidateStruct(s interface{}) error {
 	return nil
 }
 
-// ValidateVar initalizes validator and validates a var
-func ValidateVar(name string, s interface{}, validation string) error {
+// ValidateVar initializes validator and validates a var.
+func ValidateVar(errorPrefix string, s interface{}, validation string) error {
 	validate, err := NewValidator()
 	if err != nil {
 		return err
 	}
 	if err := validate.Var(s, validation); err != nil {
-		return validationErrorMessage(name, err)
+		return validationErrorMessage(errorPrefix, err)
 	}
 	return nil
 }
 
-// ValidateValuer implements validator.CustomTypeFunc
-// Vault does not allow dashes
 func isAlphaNumericUnderscore(fl validator.FieldLevel) bool {
+	// Vault does not allow dashes
 	return regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString(fl.Field().String())
 }
 
@@ -88,7 +87,7 @@ func isValidTargetType(fl validator.FieldLevel) bool {
 }
 
 // TODO long term, we should evaluate if hard coding in code is the right approach to
-// specifying different argument types vs allowing dynmaic specification and
+// specifying different argument types vs allowing dynamic specification and
 // interpolation in service/config.yaml
 func isValidArgument(fl validator.FieldLevel) bool {
 	for _, key := range fl.Field().MapKeys() {
@@ -117,7 +116,7 @@ func isValidGitRepository(fl validator.FieldLevel) bool {
 }
 
 // Custom error messages
-func validationErrorMessage(name string, err error) error {
+func validationErrorMessage(prefix string, err error) error {
 	var validationErrors validator.ValidationErrors
 	if ok := errors.As(err, &validationErrors); ok {
 		validationError := validationErrors[0]
@@ -127,7 +126,7 @@ func validationErrorMessage(name string, err error) error {
 		case "is_valid_target_type":
 			return fmt.Errorf("'%s' value '%v' is invalid, types supported:'aws_account'", validationError.Field(), validationError.Value())
 		case "is_alphanumunderscore":
-			return fmt.Errorf("value '%v' is invalid, must only contain alpha numberic underscore characters", validationError.Value())
+			return fmt.Errorf("value '%v' is invalid, must only contain alpha numeric underscore characters", validationError.Value())
 		case "is_valid_execute_container_image", "is_valid_precontainer_image":
 			return fmt.Errorf("'%s' value '%v' is an invalid container uri", validationError.Field(), validationError.Value())
 		case "is_valid_argument":
@@ -136,7 +135,7 @@ func validationErrorMessage(name string, err error) error {
 			return fmt.Errorf("'%s' value '%v' is an invalid git repository name, repo name must be in the format of 'git@url.com:owner/repo.git'", validationError.Field(), validationError.Value())
 		default:
 			if validationError.Field() == "" {
-				return fmt.Errorf("'%s' '%v'", name, validationError.Param())
+				return fmt.Errorf("%s '%v'", prefix, validationError.Param())
 			}
 			return fmt.Errorf("'%s' '%v'", validationError.Field(), validationError.Field())
 		}

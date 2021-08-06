@@ -30,7 +30,12 @@ func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
 // ValidateType is an optional validation should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateType(types []string) func() error {
 	return func() error {
-		return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))
+		validItems := strings.Join(types, " ")
+		return validations.ValidateVar(
+			"'type' must be one of",
+			req.Type,
+			fmt.Sprintf("oneof=%s", validItems),
+		)
 	}
 }
 
