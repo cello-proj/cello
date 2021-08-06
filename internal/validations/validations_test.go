@@ -59,16 +59,16 @@ func TestValidateContainerImages(t *testing.T) {
 		{
 			name:       "invalid execute container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			wantErr:    fmt.Errorf("'Parameters' value 'map[execute_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
+			wantErr:    fmt.Errorf("parameters 'execute_container_image_uri' is an invalid container uri"),
 		},
 		{
 			name:    "no image provided",
-			wantErr: fmt.Errorf("'Parameters' value 'map[execute_container_image_uri:]' is an invalid container uri"),
+			wantErr: fmt.Errorf("parameters 'execute_container_image_uri' is an invalid container uri"),
 		},
 		{
 			name:                  "no execute container key",
 			noExecuteContainerKey: true,
-			wantErr:               fmt.Errorf("'Parameters' value 'map[]' is an invalid container uri"),
+			wantErr:               fmt.Errorf("parameters 'execute_container_image_uri' is required"),
 		},
 	}
 
@@ -107,11 +107,11 @@ func TestPreContainerImages(t *testing.T) {
 		{
 			name:       "invalid pre container image",
 			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
-			wantErr:    fmt.Errorf("'Parameters' value 'map[pre_container_image_uri:()argocloudops  -- /argo-cloudops-cdk:1.87.1]' is an invalid container uri"),
+			wantErr:    fmt.Errorf("parameters 'pre_container_image_uri' is an invalid container uri"),
 		},
 		{
 			name:    "no image provided",
-			wantErr: fmt.Errorf("'Parameters' value 'map[pre_container_image_uri:]' is an invalid container uri"),
+			wantErr: fmt.Errorf("parameters 'pre_container_image_uri' is an invalid container uri"),
 		},
 		{
 			name:              "no provided precontainer key, optional no error",
@@ -328,7 +328,7 @@ func TestValidateStructError(t *testing.T) {
 				"execute_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'Parameters' value 'map[execute_container_image_uri:bad()]' is an invalid container uri"),
+			wantErr:   fmt.Errorf("parameters 'execute_container_image_uri' is an invalid container uri"),
 		},
 		{
 			name: "bad pre container uri",
@@ -338,7 +338,7 @@ func TestValidateStructError(t *testing.T) {
 				"pre_container_image_uri": "bad()",
 			}},
 			errResult: true,
-			wantErr:   fmt.Errorf("'Parameters' value 'map[pre_container_image_uri:bad()]' is an invalid container uri"),
+			wantErr:   fmt.Errorf("parameters 'pre_container_image_uri' is an invalid container uri"),
 		},
 		{
 			name: "invalid argument",

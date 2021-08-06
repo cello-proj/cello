@@ -5,24 +5,36 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
 	"github.com/go-playground/validator"
 )
 
+const (
+	tagIsAlphaNumericUnderscore     = "is_alphanumunderscore"
+	tagIsValidTargetType            = "is_valid_target_type"
+	tagIsValidExecuteContainerImage = "is_valid_execute_container_image"
+	tagIsValidPrecontainerImage     = "is_valid_precontainer_image"
+	tagIsValidArgument              = "is_valid_argument"
+	tagIsValidGitRepository         = "is_valid_git_repository"
+	tagIsARN                        = "is_arn"
+)
+
+// NewValidator returns a validator.
 func NewValidator() (*validator.Validate, error) {
 	validate := validator.New()
 
 	//add custom validations
 	customValidations := map[string]func(fl validator.FieldLevel) bool{
-		"is_alphanumunderscore":            isAlphaNumericUnderscore,
-		"is_arn":                           isValidARN,
-		"is_valid_target_type":             isValidTargetType,
-		"is_valid_execute_container_image": isValidExecuteContainerImage,
-		"is_valid_precontainer_image":      isValidPreContainerImage,
-		"is_valid_argument":                isValidArgument,
-		"is_valid_git_repository":          isValidGitRepository,
+		tagIsAlphaNumericUnderscore:     isAlphaNumericUnderscore,
+		tagIsARN:                        isValidARN,
+		tagIsValidTargetType:            isValidTargetType,
+		tagIsValidExecuteContainerImage: isValidExecuteContainerImage,
+		tagIsValidPrecontainerImage:     isValidPreContainerImage,
+		tagIsValidArgument:              isValidArgument,
+		tagIsValidGitRepository:         isValidGitRepository,
 	}
 
 	for jsonTag, fnName := range customValidations {
@@ -121,18 +133,33 @@ func validationErrorMessage(prefix string, err error) error {
 	if ok := errors.As(err, &validationErrors); ok {
 		validationError := validationErrors[0]
 		switch validationError.Tag() {
-		case "is_arn":
+
+		case tagIsARN:
 			return fmt.Errorf("'%s' value '%v' is not a valid arn", validationError.Field(), validationError.Value())
-		case "is_valid_target_type":
+
+		case tagIsValidTargetType:
 			return fmt.Errorf("'%s' value '%v' is invalid, types supported:'aws_account'", validationError.Field(), validationError.Value())
-		case "is_alphanumunderscore":
+
+		case tagIsAlphaNumericUnderscore:
 			return fmt.Errorf("value '%v' is invalid, must only contain alpha numeric underscore characters", validationError.Value())
-		case "is_valid_execute_container_image", "is_valid_precontainer_image":
-			return fmt.Errorf("'%s' value '%v' is an invalid container uri", validationError.Field(), validationError.Value())
-		case "is_valid_argument":
+
+		case tagIsValidExecuteContainerImage:
+			message := "an invalid container uri"
+			if _, exist := validationError.Value().(map[string]string)["execute_container_image_uri"]; !exist {
+				message = "required"
+			}
+
+			return fmt.Errorf("%s 'execute_container_image_uri' is %s", strings.ToLower(validationError.Field()), message)
+
+		case tagIsValidPrecontainerImage:
+			return fmt.Errorf("%s 'pre_container_image_uri' is an invalid container uri", strings.ToLower(validationError.Field()))
+
+		case tagIsValidArgument:
 			return fmt.Errorf("'%s' value '%v' is an invalid argument", validationError.Field(), validationError.Value())
-		case "is_valid_git_repository":
+
+		case tagIsValidGitRepository:
 			return fmt.Errorf("'%s' value '%v' is an invalid git repository name, repo name must be in the format of 'git@url.com:owner/repo.git'", validationError.Field(), validationError.Value())
+
 		default:
 			if validationError.Field() == "" {
 				return fmt.Errorf("%s '%v'", prefix, validationError.Param())
