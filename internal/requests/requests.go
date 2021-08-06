@@ -20,13 +20,6 @@ type CreateWorkflow struct {
 	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
 }
 
-// ValidateFramework is an optional validation that should be passed as parameter to Validate().
-func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
-	return func() error {
-		return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))
-	}
-}
-
 // ValidateType is an optional validation should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateType(types []string) func() error {
 	return func() error {
