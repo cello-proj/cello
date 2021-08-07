@@ -470,8 +470,10 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a := credentials.NewAuthorization(ah)
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
-		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		h.errorResponse(w, "unauthorized", http.StatusUnauthorized)
+		return
 	}
+
 	ctx := r.Context()
 
 	var capp requests.CreateProject
@@ -488,7 +490,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := capp.Validate(); err != nil {
 		level.Error(l).Log("message", "error invalid request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 

@@ -158,13 +158,15 @@ func validationErrorMessage(prefix string, err error) error {
 			return fmt.Errorf("'%s' value '%v' is an invalid argument", validationError.Field(), validationError.Value())
 
 		case tagIsValidGitRepository:
-			return fmt.Errorf("'%s' value '%v' is an invalid git repository name, repo name must be in the format of 'git@url.com:owner/repo.git'", validationError.Field(), validationError.Value())
+			return fmt.Errorf("%s is an invalid git uri", strings.ToLower(validationError.Field()))
 
 		default:
 			if validationError.Field() == "" {
 				return fmt.Errorf("%s '%v'", prefix, validationError.Param())
 			}
-			return fmt.Errorf("'%s' '%v'", validationError.Field(), validationError.Field())
+			return fmt.Errorf("%s is invalid", strings.ToLower(validationError.Field()))
+			// return fmt.Errorf("blah 2 %s is invalid | %+v | LIST %+v | %+v |", strings.ToLower(validationError.Field()), validationError, []string{validationError.Tag(), validationError.ActualTag()}, err.Error())
+			// return fmt.Errorf("'%s' '%v'", validationError.Field(), validationError.Field())
 		}
 
 	}
