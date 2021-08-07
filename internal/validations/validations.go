@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/distribution/distribution/reference"
 	"github.com/go-playground/validator"
@@ -44,6 +45,15 @@ func NewValidator() (*validator.Validate, error) {
 	}
 
 	return validate, nil
+}
+
+func ValidateStruct2(input interface{}) error {
+	if _, exists := govalidator.CustomTypeTagMap.Get("gitURI"); !exists {
+		govalidator.CustomTypeTagMap.Set("gitURI", isValidGitRepository2)
+	}
+
+	_, err := govalidator.ValidateStruct(input)
+	return err
 }
 
 // ValidateStruct initializes validators and validates struct.
@@ -121,6 +131,18 @@ func isValidARN(fl validator.FieldLevel) bool {
 func isValidImageURI(imageURI string) bool {
 	_, err := reference.ParseAnyReference(imageURI)
 	return err == nil
+}
+
+// isValidGitRepository2
+func isValidGitRepository2(field interface{}, kind interface{}) bool {
+	// only handle strings
+	switch s := field.(type) {
+	case string:
+		pattern := `((git|ssh|https)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?`
+		return regexp.MustCompile(pattern).MatchString(s)
+	default:
+		panic("unsupported field type for isValidGitRepository")
+	}
 }
 
 func isValidGitRepository(fl validator.FieldLevel) bool {

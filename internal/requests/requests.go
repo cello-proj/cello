@@ -68,13 +68,13 @@ func (req CreateTarget) Validate() error {
 
 // CreateProject request.
 type CreateProject struct {
-	Name       string `validate:"min=4,max=32,alphanum" json:"name"`
-	Repository string `validate:"required,is_valid_git_repository" json:"repository"`
+	Name       string `json:"name" valid:"alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
+	Repository string `json:"repository" valid:"required,gitURI~repository must be a git uri" validate:"required,is_valid_git_repository"`
 }
 
 // Validate validates CreateProject.
 func (req CreateProject) Validate() error {
-	return validations.ValidateStruct(req)
+	return validations.ValidateStruct2(req)
 }
 
 // TargetProperties for target requests.
