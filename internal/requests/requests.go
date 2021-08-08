@@ -152,6 +152,7 @@ func (req CreateTarget) validateTargetProperties() error {
 }
 
 // CreateProject request.
+// TODO add required tests/validations
 type CreateProject struct {
 	Name       string `json:"name" valid:"alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
 	Repository string `json:"repository" valid:"required,gitURI~repository must be a git uri"`
@@ -165,9 +166,9 @@ func (req CreateProject) Validate() error {
 // TargetProperties for target requests.
 type TargetProperties struct {
 	CredentialType string   `json:"credential_type"`
-	PolicyArns     []string `validate:"max=5,dive,is_arn" json:"policy_arns"`
+	PolicyArns     []string `json:"policy_arns"`
 	PolicyDocument string   `json:"policy_document"`
-	RoleArn        string   `validate:"is_arn" json:"role_arn"`
+	RoleArn        string   `json:"role_arn"`
 }
 
 // TargetOperation represents a target operation request.
