@@ -152,6 +152,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "validating authorization header for create workflow from git")
 	ah := r.Header.Get("Authorization")
 	a := credentials.NewAuthorization(ah)
+	// TODO we need to ensure this _isn't an admin...
 	if err := a.Validate(); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return

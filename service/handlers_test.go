@@ -91,7 +91,7 @@ func (m mockWorkflowSvc) List(ctx context.Context) ([]string, error) {
 }
 
 func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map[string]string) (string, error) {
-	return "success", nil
+	return "wf-123456", nil
 }
 
 func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
@@ -440,7 +440,7 @@ func TestCreateWorkflow(t *testing.T) {
 			name:    "can create workflows",
 			req:     loadJSON(t, "TestCreateWorkflow/can_create_workflow.json"),
 			want:    http.StatusOK,
-			body:    "{\"workflow_name\":\"success\"}\n",
+			body:    "{\"workflow_name\":\"wf-123456\"}\n",
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -544,18 +544,38 @@ func TestCreateWorkflow(t *testing.T) {
 func TestCreateWorkflowFromGit(t *testing.T) {
 	tests := []test{
 		{
-			name: "can create workflows",
-			req: requests.CreateGitWorkflow{
-				CommitHash: "sha123",
-				Path:       "path/to/manifest.yaml",
-				Type:       "sync",
-			},
-			want:    http.StatusOK,
-			body:    "{\"workflow_name\":\"success\"}\n",
-			asAdmin: true,
-			method:  "POST",
-			url:     "/projects/project1/targets/target1/operations",
+			name:     "can create workflows",
+			req:      loadJSON(t, "TestCreateWorkflowFromGit/good_request.json"),
+			want:     http.StatusOK,
+			respFile: "TestCreateWorkflowFromGit/good_response.json",
+			method:   "POST",
+			url:      "/projects/project1/targets/target1/operations",
 		},
+		{
+			name:     "missing sha",
+			req:      loadJSON(t, "TestCreateWorkflowFromGit/missing_sha_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestCreateWorkflowFromGit/missing_sha_response.json",
+			method:   "POST",
+			url:      "/projects/project1/targets/target1/operations",
+		},
+		{
+			name:     "missing path",
+			req:      loadJSON(t, "TestCreateWorkflowFromGit/missing_path_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestCreateWorkflowFromGit/missing_path_response.json",
+			method:   "POST",
+			url:      "/projects/project1/targets/target1/operations",
+		},
+		{
+			name:     "missing type",
+			req:      loadJSON(t, "TestCreateWorkflowFromGit/missing_type_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestCreateWorkflowFromGit/missing_type_response.json",
+			method:   "POST",
+			url:      "/projects/project1/targets/target1/operations",
+		},
+		// TODO admin creds should fail
 	}
 	runTests(t, tests)
 }

@@ -10,6 +10,7 @@ import (
 
 // CreateWorkflow request.
 // TODO: diff and sync should have separate validations/structs for validations
+// TODO add required items
 type CreateWorkflow struct {
 	Arguments            map[string][]string `json:"arguments" yaml:"arguments"`
 	EnvironmentVariables map[string]string   `json:"environment_variables" yaml:"environment_variables"`
@@ -96,14 +97,15 @@ func (req CreateWorkflow) validateArguments() error {
 
 // CreateGitWorkflow from git manifest request
 type CreateGitWorkflow struct {
-	CommitHash string `validate:"required,alphanum" json:"sha"`
-	Path       string `validate:"required" json:"path"`
-	Type       string `validate:"required" json:"type"`
+	CommitHash string `json:"sha" valid:"required~sha is required,alphanum~sha must be alphanumeric"`
+	Path       string `json:"path" valid:"required~path is required"`
+	// TODO are the specifics validated elsewhere?
+	Type string `json:"type" valid:"required~type is required"`
 }
 
 // Validate validates CreateGitWorkflow.
 func (req CreateGitWorkflow) Validate() error {
-	return validations.ValidateStruct(req)
+	return validations.ValidateStruct2(req)
 }
 
 // CreateTarget request.
