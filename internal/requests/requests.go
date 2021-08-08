@@ -110,20 +110,51 @@ func (req CreateGitWorkflow) Validate() error {
 
 // CreateTarget request.
 type CreateTarget struct {
-	Name       string           `validate:"min=4,max=32,is_alphanumunderscore" json:"name"`
+	Name       string           `json:"name" valid:"required~name is required,alphanumericunderscore2~name must be alphanumeric underscore,stringlength(4|32)~name must be between 4 and 32 characters"`
 	Properties TargetProperties `json:"properties"`
-	Type       string           `validate:"is_valid_target_type" json:"type"`
+	Type       string           `json:"type"`
 }
 
 // Validate validates CreateTarget.
 func (req CreateTarget) Validate() error {
-	return validations.ValidateStruct(req)
+	if req.Type != "aws_account" {
+		return errors.New("type must be one of 'aws_account'")
+	}
+
+	v := []func() error{
+		func() error { return validations.ValidateStruct2(req) },
+		req.validateTargetProperties,
+	}
+
+	return validations.Validate(v...)
+}
+
+func (req CreateTarget) validateTargetProperties() error {
+	if req.Properties.CredentialType != "vault" {
+		return errors.New("credential_type must be one of 'vault'")
+	}
+
+	if !validations.IsValidARN(req.Properties.RoleArn) {
+		return errors.New("role_arn must be a valid arn")
+	}
+
+	if len(req.Properties.PolicyArns) > 5 {
+		return errors.New("policy_arns cannot be more than 5")
+	}
+
+	for _, arn := range req.Properties.PolicyArns {
+		if !validations.IsValidARN(arn) {
+			return errors.New("policy_arns contains an invalid arn")
+		}
+	}
+
+	return nil
 }
 
 // CreateProject request.
 type CreateProject struct {
 	Name       string `json:"name" valid:"alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
-	Repository string `json:"repository" valid:"required,gitURI~repository must be a git uri" validate:"required,is_valid_git_repository"`
+	Repository string `json:"repository" valid:"required,gitURI~repository must be a git uri"`
 }
 
 // Validate validates CreateProject.

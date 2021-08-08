@@ -666,7 +666,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a := credentials.NewAuthorization(ah)
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
-		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		h.errorResponse(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 	level.Debug(l).Log("message", "reading request body")
@@ -697,6 +697,17 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error determining if project exists", "error", err)
+	}
+
+	if !projectExists {
+		level.Error(l).Log("message", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusBadRequest)
 		return
 	}
 

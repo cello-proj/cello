@@ -107,7 +107,7 @@ func isAlphaNumbericUnderscore2(field interface{}, kind interface{}) bool {
 	// only handle strings
 	switch s := field.(type) {
 	case string:
-		// Vault does not allow dashes
+		// Vault does not allow dashes and must start with alpha.
 		pattern := `^([a-zA-Z])[a-zA-Z0-9_]*$`
 		return regexp.MustCompile(pattern).MatchString(s)
 	default:
@@ -151,6 +151,11 @@ func isValidArgument(fl validator.FieldLevel) bool {
 		}
 	}
 	return true
+}
+
+// IsValidARN determines if the string is a valid AWS ARN.
+func IsValidARN(s string) bool {
+	return arn.IsARN(s)
 }
 
 func isValidARN(fl validator.FieldLevel) bool {

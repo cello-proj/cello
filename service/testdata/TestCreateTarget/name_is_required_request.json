@@ -1,5 +1,4 @@
 {
-  "name": "0123456789012345678901234567890123456789",
   "type": "aws_account",
   "properties": {
     "credential_type": "vault",

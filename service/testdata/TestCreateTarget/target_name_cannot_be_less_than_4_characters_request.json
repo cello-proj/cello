@@ -1,0 +1,11 @@
+{
+  "name": "a02",
+  "type": "aws_account",
+  "properties": {
+    "credential_type": "vault",
+    "policy_arns": [
+      "arn:aws:iam::012345678901:policy/test-policy"
+    ],
+    "role_arn": "arn:aws:iam::012345678901:policy/test-role"
+  }
+}
