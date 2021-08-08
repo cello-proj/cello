@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -10,36 +11,87 @@ import (
 // CreateWorkflow request.
 // TODO: diff and sync should have separate validations/structs for validations
 type CreateWorkflow struct {
-	Arguments            map[string][]string `validate:"is_valid_argument" yaml:"arguments" json:"arguments"`
-	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
-	Framework            string              `yaml:"framework" json:"framework"`
-	Parameters           map[string]string   `validate:"is_valid_execute_container_image,is_valid_precontainer_image" yaml:"parameters" json:"parameters"`
-	ProjectName          string              `validate:"min=4,max=32,alphanum" yaml:"project_name" json:"project_name"`
-	TargetName           string              `validate:"min=4,max=32,is_alphanumunderscore" yaml:"target_name" json:"target_name"`
-	Type                 string              `yaml:"type" json:"type"`
-	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
+	Arguments            map[string][]string `json:"arguments" yaml:"arguments"`
+	EnvironmentVariables map[string]string   `json:"environment_variables" yaml:"environment_variables"`
+	Framework            string              `json:"framework" yaml:"framework"`
+	Parameters           map[string]string   `json:"parameters" yaml:"parameters"`
+	// TODO do we need to validate this as we've already done so on project creation? won't we return a project not found if it's invalid?
+	ProjectName string `json:"project_name" yaml:"project_name" valid:"alphanum~project_name must be alphanumeric,stringlength(4|32)~project_name must be between 4 and 32 characters"`
+	// TODO do we need to validate this as we've already done so on project creation? won't we return a project not found if it's invalid?
+	TargetName           string `json:"target_name" yaml:"target_name" valid:"alphanumericunderscore2~target_name must be alphanumericunderscore,stringlength(4|32)~target_name must be between 4 and 32 characters"`
+	Type                 string `json:"type" yaml:"type"`
+	WorkflowTemplateName string `json:"workflow_template_name" yaml:"workflow_template_name"`
+}
+
+// Validate validates CreateWorkflow.
+func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
+	v := []func() error{
+		func() error { return validations.ValidateStruct2(req) },
+		req.validateArguments,
+		req.validateParameters,
+	}
+	v = append(v, optionalValidations...)
+
+	return validations.Validate(v...)
 }
 
 // ValidateType is an optional validation should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateType(types []string) func() error {
 	return func() error {
-		validItems := strings.Join(types, " ")
-		return validations.ValidateVar(
-			"'type' must be one of",
-			req.Type,
-			fmt.Sprintf("oneof=%s", validItems),
-		)
+		for _, t := range types {
+			if req.Type == t {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("type must be one of '%s'", strings.Join(types, " "))
 	}
 }
 
-// Validate validates CreateWorkflow.
-func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
-	for _, validation := range optionalValidations {
-		if err := validation(); err != nil {
-			return err
+// validateParameters validates the Parameters.
+// 'execute_container_image_uri' is required and the URI format will be
+// validated.
+// 'pre_container_image_uri' is optional. If it's provided, the URI format will
+// be validated.
+func (req CreateWorkflow) validateParameters() error {
+	val, ok := req.Parameters["execute_container_image_uri"]
+	if !ok {
+		return errors.New("parameter execute_container_image_uri is required")
+	}
+
+	if !validations.IsValidImageURI(val) {
+		return errors.New("parameter execute_container_image_uri must be a valid container uri")
+	}
+
+	if val, ok := req.Parameters["pre_container_image_uri"]; ok {
+		if !validations.IsValidImageURI(val) {
+			return errors.New("parameter pre_container_image_uri must be a valid container uri")
 		}
 	}
-	return validations.ValidateStruct(req)
+
+	return nil
+}
+
+// validateArguments validates the Arguments.
+// The valid Arguments cases are:
+// * no arguments
+// * both 'execute' and 'init'
+func (req CreateWorkflow) validateArguments() error {
+	if len(req.Arguments) == 0 {
+		return nil
+	}
+
+	if len(req.Arguments) > 2 {
+		return fmt.Errorf("arguments must be one of 'execute init'")
+	}
+
+	for k := range req.Arguments {
+		if k != "execute" && k != "init" {
+			return fmt.Errorf("arguments must be one of 'execute init'")
+		}
+	}
+
+	return nil
 }
 
 // CreateGitWorkflow from git manifest request

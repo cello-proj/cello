@@ -47,9 +47,26 @@ func NewValidator() (*validator.Validate, error) {
 	return validate, nil
 }
 
+func Validate(validations ...func() error) error {
+	for _, v := range validations {
+		if err := v(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func ValidateStruct2(input interface{}) error {
-	if _, exists := govalidator.CustomTypeTagMap.Get("gitURI"); !exists {
-		govalidator.CustomTypeTagMap.Set("gitURI", isValidGitRepository2)
+	customValidators := map[string]govalidator.CustomTypeValidator{
+		"alphanumericunderscore2": isAlphaNumbericUnderscore2,
+		"gitURI":                  isValidGitRepository2,
+	}
+
+	for k, v := range customValidators {
+		if _, exists := govalidator.CustomTypeTagMap.Get(k); !exists {
+			govalidator.CustomTypeTagMap.Set(k, v)
+		}
 	}
 
 	_, err := govalidator.ValidateStruct(input)
@@ -85,10 +102,23 @@ func isAlphaNumericUnderscore(fl validator.FieldLevel) bool {
 	return regexp.MustCompile(`^([a-zA-Z])[a-zA-Z0-9_]*$`).MatchString(fl.Field().String())
 }
 
+// isAlphaNumbericUnderscore2
+func isAlphaNumbericUnderscore2(field interface{}, kind interface{}) bool {
+	// only handle strings
+	switch s := field.(type) {
+	case string:
+		// Vault does not allow dashes
+		pattern := `^([a-zA-Z])[a-zA-Z0-9_]*$`
+		return regexp.MustCompile(pattern).MatchString(s)
+	default:
+		panic("unsupported field type for isAlphaNumbericUnderscore2")
+	}
+}
+
 func isValidExecuteContainerImage(fl validator.FieldLevel) bool {
 	image := fl.Field().MapIndex(reflect.ValueOf("execute_container_image_uri"))
 	if image.IsValid() {
-		return isValidImageURI(image.String())
+		return IsValidImageURI(image.String())
 	}
 	// execute_container_image_uri key missing
 	return false
@@ -97,7 +127,7 @@ func isValidExecuteContainerImage(fl validator.FieldLevel) bool {
 func isValidPreContainerImage(fl validator.FieldLevel) bool {
 	image := fl.Field().MapIndex(reflect.ValueOf("pre_container_image_uri"))
 	if image.IsValid() {
-		return isValidImageURI(image.String())
+		return IsValidImageURI(image.String())
 	}
 
 	// pre_container_image_uri is not required
@@ -127,8 +157,9 @@ func isValidARN(fl validator.FieldLevel) bool {
 	return arn.IsARN(fl.Field().String())
 }
 
-// Returns true, if the image uri is a valid container image uri
-func isValidImageURI(imageURI string) bool {
+// IsValidImageURI determines if the image URI is a valid container image URI
+// format.
+func IsValidImageURI(imageURI string) bool {
 	_, err := reference.ParseAnyReference(imageURI)
 	return err == nil
 }
@@ -187,8 +218,6 @@ func validationErrorMessage(prefix string, err error) error {
 				return fmt.Errorf("%s '%v'", prefix, validationError.Param())
 			}
 			return fmt.Errorf("%s is invalid", strings.ToLower(validationError.Field()))
-			// return fmt.Errorf("blah 2 %s is invalid | %+v | LIST %+v | %+v |", strings.ToLower(validationError.Field()), validationError, []string{validationError.Tag(), validationError.ActualTag()}, err.Error())
-			// return fmt.Errorf("'%s' '%v'", validationError.Field(), validationError.Field())
 		}
 
 	}
