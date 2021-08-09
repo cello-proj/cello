@@ -15,7 +15,7 @@ export TARGET_NAME=$3
 usage() {
     echo
     echo "$0 VAULT_TOKEN PROJECT_NAME TARGET_NAME"
-    echo 
+    echo
     echo "CODE_URI env variable must be set with S3 uri for zip archive "
     echo "VAULT_ADDR env variable must have valid vault endpoint"
     echo
@@ -51,7 +51,7 @@ if [ -z $VAULT_TOKEN ]; then
     exit 1
 fi
 
-set -e
+set -euo pipefail
 
 echo "Starting setup."
 echo "CODE_URI: $CODE_URI"
@@ -68,16 +68,15 @@ target="${vault_project_prefix}-projects-${PROJECT_NAME}-target-${TARGET_NAME}"
 token_head=`echo $VAULT_TOKEN |cut -b1-8`
 echo "Exchanging token '${token_head}...' via '$VAULT_ADDR' for target '$target'"
 
-# TODO: handle errors excahngeing token
-read AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN < <(echo $(vault read --format json $target | jq -r '.data.access_key, .data.secret_key, .data.security_token'))
-echo "Exchanging token succesful."
+creds=$(vault read --format json $target | \
+    jq -r '"aws_access_key_id=\(.data.access_key)\naws_secret_access_key=\(.data.secret_key)\naws_session_token=\(.data.security_token)"')
+
+echo "Exchanging token successful."
 
 echo "Writing credentials to '$credentials_file'."
 cat > $credentials_file <<EOF
 [default]
-aws_access_key_id=$AWS_ACCESS_KEY_ID
-aws_secret_access_key=$AWS_SECRET_ACCESS_KEY
-aws_session_token=$AWS_SESSION_TOKEN
+$creds
 EOF
 
 arn=`aws sts get-caller-identity --output text --query Arn`
