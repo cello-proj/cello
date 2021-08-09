@@ -10,18 +10,19 @@ import (
 
 // CreateWorkflow request.
 // TODO: diff and sync should have separate validations/structs for validations
-// TODO add required items
 type CreateWorkflow struct {
 	Arguments            map[string][]string `json:"arguments" yaml:"arguments"`
 	EnvironmentVariables map[string]string   `json:"environment_variables" yaml:"environment_variables"`
-	Framework            string              `json:"framework" yaml:"framework"`
-	Parameters           map[string]string   `json:"parameters" yaml:"parameters"`
-	// TODO do we need to validate this as we've already done so on project creation? won't we return a project not found if it's invalid?
-	ProjectName string `json:"project_name" yaml:"project_name" valid:"alphanum~project_name must be alphanumeric,stringlength(4|32)~project_name must be between 4 and 32 characters"`
-	// TODO do we need to validate this as we've already done so on project creation? won't we return a project not found if it's invalid?
-	TargetName           string `json:"target_name" yaml:"target_name" valid:"alphanumunderscore~target_name must be alphanumericunderscore,stringlength(4|32)~target_name must be between 4 and 32 characters"`
-	Type                 string `json:"type" yaml:"type"`
-	WorkflowTemplateName string `json:"workflow_template_name" yaml:"workflow_template_name"`
+	// We don't validate the specific framework as it's dynamic and can only be
+	// done server side.
+	Framework   string            `json:"framework" yaml:"framework" valid:"required~framework is required"`
+	Parameters  map[string]string `json:"parameters" yaml:"parameters"`
+	ProjectName string            `json:"project_name" yaml:"project_name" valid:"required~project_name is required,alphanum~project_name must be alphanumeric,stringlength(4|32)~project_name must be between 4 and 32 characters"`
+	TargetName  string            `json:"target_name" yaml:"target_name" valid:"required~target_name is required,alphanumunderscore~target_name must be alphanumeric underscore,stringlength(4|32)~target_name must be between 4 and 32 characters"`
+	// We don't validate the specific type as it's dynamic and can only be done
+	// server side.
+	Type                 string `json:"type" yaml:"type" valid:"required~type is required"`
+	WorkflowTemplateName string `json:"workflow_template_name" yaml:"workflow_template_name" valid:"required~workflow_template_name is required"`
 }
 
 // Validate validates CreateWorkflow.
