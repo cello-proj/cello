@@ -169,9 +169,9 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 type test struct {
 	name     string
 	req      interface{}
-	respFile string
 	want     int
 	body     string
+	respFile string
 	asAdmin  bool
 	url      string
 	method   string
