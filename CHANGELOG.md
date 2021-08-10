@@ -6,11 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-* Improved error message for invalid 'type'.
+* Refactored validations.
 
 ### Fixed
-* Vault token exchange logic for examples when there's a failure.
 * Request logger didn't log all key/value pairs.
+* config.listFrameworks() was returning additional empty items.
+* Vault token exchange logic for examples when there's a failure.
 
 ## [0.6.3] - 2021-08-03
 ### Fixed

@@ -11,12 +11,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// CommandVariables respresents the config items for a command.
 type CommandVariables struct {
 	EnvironmentVariables string
 	InitArguments        string
 	ExecuteArguments     string
 }
 
+// Config represents the configuration.
 type Config struct {
 	Version  string
 	Commands map[string]map[string]string `yaml:"commands"`
@@ -37,7 +39,7 @@ func loadConfig(configFilePath string) (*Config, error) {
 	return &config, nil
 }
 
-func (c *Config) getCommandDefinition(framework, commandType string) (string, error) {
+func (c Config) getCommandDefinition(framework, commandType string) (string, error) {
 	if _, ok := c.Commands[framework]; !ok {
 		return "", fmt.Errorf("unknown framework '%s'", framework)
 	}
@@ -49,7 +51,7 @@ func (c *Config) getCommandDefinition(framework, commandType string) (string, er
 	return c.Commands[framework][commandType], nil
 }
 
-func (c *Config) listFrameworks() []string {
+func (c Config) listFrameworks() []string {
 	keys := []string{}
 	for k := range c.Commands {
 		keys = append(keys, k)
@@ -59,7 +61,7 @@ func (c *Config) listFrameworks() []string {
 	return keys
 }
 
-func (c *Config) listTypes(framework string) ([]string, error) {
+func (c Config) listTypes(framework string) ([]string, error) {
 	if _, ok := c.Commands[framework]; !ok {
 		return []string{}, fmt.Errorf("unknown framework '%s'", framework)
 	}
