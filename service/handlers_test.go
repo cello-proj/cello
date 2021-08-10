@@ -63,7 +63,7 @@ func newMockGitClient() git.Client {
 }
 
 func (g mockGitClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
-	return loadFileBytes("TestCreateWorkflow/can_create_workflow.json")
+	return loadFileBytes("TestCreateWorkflow/can_create_workflow_request.json")
 }
 
 type mockWorkflowSvc struct{}
@@ -466,18 +466,20 @@ func TestDeleteTarget(t *testing.T) {
 func TestCreateWorkflow(t *testing.T) {
 	tests := []test{
 		{
-			name:    "can create workflows",
-			req:     loadJSON(t, "TestCreateWorkflow/can_create_workflow.json"),
-			want:    http.StatusOK,
-			body:    "{\"workflow_name\":\"wf-123456\"}\n",
+			name:     "can create workflows",
+			req:      loadJSON(t, "TestCreateWorkflow/can_create_workflow_request.json"),
+			want:     http.StatusOK,
+			respFile: "TestCreateWorkflow/can_create_workflow_response.json",
+			// TODO this should not be admin. is the test busted or the handler?
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
 		},
 		{
-			name:    "framework must be valid",
-			req:     loadJSON(t, "TestCreateWorkflow/framework_must_be_valid.json"),
-			want:    http.StatusBadRequest,
+			name: "framework must be valid",
+			req:  loadJSON(t, "TestCreateWorkflow/framework_must_be_valid.json"),
+			want: http.StatusBadRequest,
+			// TODO this should not be admin. is the test busted or the handler?
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
@@ -487,22 +489,25 @@ func TestCreateWorkflow(t *testing.T) {
 			req:      loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
 			respFile: "TestCreateWorkflow/type_must_be_valid_response.json",
 			want:     http.StatusBadRequest,
-			asAdmin:  true,
-			method:   "POST",
-			url:      "/workflows",
-		},
-		{
-			name:    "project must exist",
-			req:     loadJSON(t, "TestCreateWorkflow/project_must_exist.json"),
-			want:    http.StatusBadRequest,
+			// TODO this should not be admin. is the test busted or the handler?
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
 		},
 		{
-			name:    "target must exist",
-			req:     loadJSON(t, "TestCreateWorkflow/target_must_exist.json"),
-			want:    http.StatusBadRequest,
+			name: "project must exist",
+			req:  loadJSON(t, "TestCreateWorkflow/project_must_exist.json"),
+			want: http.StatusBadRequest,
+			// TODO this should not be admin. is the test busted or the handler?
+			asAdmin: true,
+			method:  "POST",
+			url:     "/workflows",
+		},
+		{
+			name: "target must exist",
+			req:  loadJSON(t, "TestCreateWorkflow/target_must_exist.json"),
+			want: http.StatusBadRequest,
+			// TODO this should not be admin. is the test busted or the handler?
 			asAdmin: true,
 			method:  "POST",
 			url:     "/workflows",
