@@ -167,24 +167,25 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 }
 
 type test struct {
-	name    string
-	req     interface{}
-	want    int
-	body    string
-	asAdmin bool
-	url     string
-	method  string
+	name     string
+	req      interface{}
+	want     int
+	body     string
+	respFile string
+	asAdmin  bool
+	url      string
+	method   string
 }
 
 func TestCreateProject(t *testing.T) {
 	tests := []test{
 		{
-			name:    "fails to create project when not admin",
-			req:     loadCreateProjectRequest(t, "TestCreateProject/fails_to_create_project_when_not_admin.json"),
-			want:    http.StatusUnauthorized,
-			asAdmin: false,
-			url:     "/projects",
-			method:  "POST",
+			name:     "fails to create project when not admin",
+			req:      loadCreateProjectRequest(t, "TestCreateProject/fails_to_create_project_when_not_admin.json"),
+			want:     http.StatusUnauthorized,
+			respFile: "TestCreateProject/fails_to_create_project_when_not_admin_response.json",
+			url:      "/projects",
+			method:   "POST",
 		},
 		{
 			name:    "can create project",
@@ -726,6 +727,20 @@ func runTests(t *testing.T, tests []test) {
 				if tt.body != string(bodyBytes) {
 					t.Errorf("Unexpected body '%s', expected '%s'", bodyBytes, tt.body)
 				}
+			}
+
+			if tt.respFile != "" {
+				wantBody, err := loadFileBytes(tt.respFile)
+				if err != nil {
+					t.Fatalf("unable to read response file '%s', err: '%s'", tt.respFile, err)
+				}
+
+				body, err := io.ReadAll(resp.Body)
+				assert.Nil(t, err)
+
+				defer resp.Body.Close()
+
+				assert.JSONEq(t, string(wantBody), string(body))
 			}
 		})
 	}

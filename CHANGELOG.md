@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * config.listFrameworks() are now sorted (helps avoid flaky tests).
 
 ### Fixed
-* Request logger didn't log all key/value pairs.
 * config.listFrameworks() was returning additional empty items.
+* Invalid json response when creating a project with invalid admin credentials.
+* Request logger didn't log all key/value pairs.
 * Vault token exchange logic for examples when there's a failure.
 
 ## [0.6.3] - 2021-08-03
