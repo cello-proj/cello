@@ -283,6 +283,7 @@ func TestGetProject(t *testing.T) {
 			url:     "/projects/projectdoesnotexist",
 		},
 	}
+	// TODO not as admin
 	runTests(t, tests)
 }
 
@@ -374,6 +375,7 @@ func TestCreateWorkflow(t *testing.T) {
 			method:   "POST",
 			url:      "/workflows",
 		},
+		// We test this specific validation as it's server side only.
 		{
 			name:   "framework must be valid",
 			req:    loadJSON(t, "TestCreateWorkflow/framework_must_be_valid.json"),
@@ -381,6 +383,7 @@ func TestCreateWorkflow(t *testing.T) {
 			method: "POST",
 			url:    "/workflows",
 		},
+		// We test this specific validation as it's server side only.
 		{
 			name:     "type must be valid",
 			req:      loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
@@ -419,10 +422,10 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 			url:      "/projects/project1/targets/target1/operations",
 		},
 		{
-			name:     "missing sha",
-			req:      loadJSON(t, "TestCreateWorkflowFromGit/missing_sha_request.json"),
+			name:     "bad request",
+			req:      loadJSON(t, "TestCreateWorkflowFromGit/bad_request.json"),
 			want:     http.StatusBadRequest,
-			respFile: "TestCreateWorkflowFromGit/missing_sha_response.json",
+			respFile: "TestCreateWorkflowFromGit/bad_response.json",
 			method:   "POST",
 			url:      "/projects/project1/targets/target1/operations",
 		},
