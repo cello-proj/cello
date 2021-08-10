@@ -183,10 +183,10 @@ type TargetProperties struct {
 }
 
 // TargetOperation represents a target operation request.
-// TODO add tests for this
+// TODO evaluate this vs. CreateGitWorkflow.
 type TargetOperation struct {
 	Path string `json:"path" valid:"required~path is required"`
-	SHA  string `json:"sha" valid:"required~sha is required,alphanum"`
+	SHA  string `json:"sha" valid:"required~sha is required,alphanum~sha must be alphanumeric"`
 	// TODO does this need to be dynamic?
 	Type string `json:"type" valid:"required~type is required"`
 }

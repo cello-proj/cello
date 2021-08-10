@@ -605,6 +605,67 @@ func TestCreateTargetValidate(t *testing.T) {
 	}
 }
 
+func TestTargetOperationValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     TargetOperation
+		types   []string
+		wantErr error
+	}{
+		{
+			name: "valid",
+			req: TargetOperation{
+				Path: "./manifest.yaml",
+				SHA:  "8458fd753f9fde51882414564c20df6d4c34a90e",
+				Type: "diff",
+			},
+		},
+		{
+			name: "missing commit hash",
+			req: TargetOperation{
+				Path: "./manifest.yaml",
+				Type: "diff",
+			},
+			wantErr: errors.New("sha is required"),
+		},
+		{
+			name: "commit hash must be alphanumeric",
+			req: TargetOperation{
+				SHA:  "8--",
+				Path: "./manifest.yaml",
+				Type: "diff",
+			},
+			wantErr: errors.New("sha must be alphanumeric"),
+		},
+		{
+			name: "missing path",
+			req: TargetOperation{
+				SHA:  "8458fd753f9fde51882414564c20df6d4c34a90e",
+				Type: "diff",
+			},
+			wantErr: errors.New("path is required"),
+		},
+		{
+			name: "missing type",
+			req: TargetOperation{
+				SHA:  "8458fd753f9fde51882414564c20df6d4c34a90e",
+				Path: "./manifest.yaml",
+			},
+			wantErr: errors.New("type is required"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantErr != nil {
+				assert.EqualError(t, tt.req.Validate(), tt.wantErr.Error())
+			} else {
+				assert.Equal(t, tt.wantErr, tt.req.Validate())
+			}
+		})
+	}
+}
+
 func TestCreateProjectValidate(t *testing.T) {
 	tests := []struct {
 		name    string
