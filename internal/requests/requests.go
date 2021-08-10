@@ -117,17 +117,19 @@ func (req CreateGitWorkflow) Validate() error {
 type CreateTarget struct {
 	Name       string           `json:"name" valid:"required~name is required,alphanumunderscore~name must be alphanumeric underscore,stringlength(4|32)~name must be between 4 and 32 characters"`
 	Properties TargetProperties `json:"properties"`
-	Type       string           `json:"type"`
+	Type       string           `json:"type" valid:"required~type is required"`
 }
 
 // Validate validates CreateTarget.
 func (req CreateTarget) Validate() error {
-	if req.Type != "aws_account" {
-		return errors.New("type must be one of 'aws_account'")
-	}
-
 	v := []func() error{
 		func() error { return validations.ValidateStruct(req) },
+		func() error {
+			if req.Type != "aws_account" {
+				return errors.New("type must be one of 'aws_account'")
+			}
+			return nil
+		},
 		req.validateTargetProperties,
 	}
 
@@ -135,6 +137,10 @@ func (req CreateTarget) Validate() error {
 }
 
 func (req CreateTarget) validateTargetProperties() error {
+	if err := validations.ValidateStruct(req.Properties); err != nil {
+		return err
+	}
+
 	if req.Properties.CredentialType != "vault" {
 		return errors.New("credential_type must be one of 'vault'")
 	}
@@ -170,10 +176,10 @@ func (req CreateProject) Validate() error {
 
 // TargetProperties for target requests.
 type TargetProperties struct {
-	CredentialType string   `json:"credential_type"`
+	CredentialType string   `json:"credential_type" valid:"required~credential_type is required"`
 	PolicyArns     []string `json:"policy_arns"`
 	PolicyDocument string   `json:"policy_document"`
-	RoleArn        string   `json:"role_arn"`
+	RoleArn        string   `json:"role_arn" valid:"required~role_arn is required"`
 }
 
 // TargetOperation represents a target operation request.
