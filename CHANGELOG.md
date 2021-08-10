@@ -5,9 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+* config.listFrameworks() are now sorted (helps avoid flaky tests).
+
 ### Fixed
-* Vault token exchange logic for examples when there's a failure.
 * Request logger didn't log all key/value pairs.
+* config.listFrameworks() was returning additional empty items.
+* Vault token exchange logic for examples when there's a failure.
 
 ## [0.6.3] - 2021-08-03
 ### Fixed

@@ -2,12 +2,15 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
 	testConfigPath = "../service/testdata/argo-cloudops.yaml"
 )
 
+// TODO refactor to table driven tests
 func TestGenerateExecuteCommand(t *testing.T) {
 	arguments := map[string][]string{}
 	arguments["init"] = []string{"--initialize", "--debug"}
@@ -47,6 +50,7 @@ func TestGenerateExecuteCommand(t *testing.T) {
 	}
 }
 
+// TODO refactor to table driven tests
 func TestGetCommandDefinition(t *testing.T) {
 	config, err := loadConfig(testConfigPath)
 	if err != nil {
@@ -64,4 +68,13 @@ func TestGetCommandDefinition(t *testing.T) {
 	if err.Error() != "unknown command type 'razzle-dazzle'" {
 		t.Errorf("expected error for unknown type")
 	}
+}
+
+func TestListFrameworks(t *testing.T) {
+	config, err := loadConfig(testConfigPath)
+	if err != nil {
+		t.Errorf("Unable to load config %s", err)
+	}
+
+	assert.Equal(t, []string{"cdk", "cool-new-framework", "terraform"}, config.listFrameworks())
 }

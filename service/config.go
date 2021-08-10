@@ -4,18 +4,21 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"strings"
 	"text/template"
 
 	"gopkg.in/yaml.v2"
 )
 
+// CommandVariables respresents the config items for a command.
 type CommandVariables struct {
 	EnvironmentVariables string
 	InitArguments        string
 	ExecuteArguments     string
 }
 
+// Config represents the configuration.
 type Config struct {
 	Version  string
 	Commands map[string]map[string]string `yaml:"commands"`
@@ -49,10 +52,12 @@ func (c Config) getCommandDefinition(framework, commandType string) (string, err
 }
 
 func (c Config) listFrameworks() []string {
-	keys := make([]string, len(c.Commands))
+	keys := []string{}
 	for k := range c.Commands {
 		keys = append(keys, k)
 	}
+
+	sort.Strings(keys)
 	return keys
 }
 
@@ -61,10 +66,12 @@ func (c Config) listTypes(framework string) ([]string, error) {
 		return []string{}, fmt.Errorf("unknown framework '%s'", framework)
 	}
 
-	keys := make([]string, 0, len(c.Commands[framework]))
+	keys := []string{}
 	for k := range c.Commands[framework] {
 		keys = append(keys, k)
 	}
+
+	sort.Strings(keys)
 	return keys, nil
 }
 
