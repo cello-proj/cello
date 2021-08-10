@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Improved error message for invalid 'type'.
 
 ### Fixed
+* Vault token exchange logic for examples when there's a failure.
 * Request logger didn't log all key/value pairs.
 
 ## [0.6.3] - 2021-08-03
