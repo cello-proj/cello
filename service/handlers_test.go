@@ -470,48 +470,39 @@ func TestCreateWorkflow(t *testing.T) {
 			req:      loadJSON(t, "TestCreateWorkflow/can_create_workflow_request.json"),
 			want:     http.StatusOK,
 			respFile: "TestCreateWorkflow/can_create_workflow_response.json",
-			// TODO this should not be admin. is the test busted or the handler?
-			asAdmin: true,
-			method:  "POST",
-			url:     "/workflows",
+			method:   "POST",
+			url:      "/workflows",
 		},
 		{
-			name: "framework must be valid",
-			req:  loadJSON(t, "TestCreateWorkflow/framework_must_be_valid.json"),
-			want: http.StatusBadRequest,
-			// TODO this should not be admin. is the test busted or the handler?
-			asAdmin: true,
-			method:  "POST",
-			url:     "/workflows",
+			name:   "framework must be valid",
+			req:    loadJSON(t, "TestCreateWorkflow/framework_must_be_valid.json"),
+			want:   http.StatusBadRequest,
+			method: "POST",
+			url:    "/workflows",
 		},
 		{
 			name:     "type must be valid",
 			req:      loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
 			respFile: "TestCreateWorkflow/type_must_be_valid_response.json",
 			want:     http.StatusBadRequest,
-			// TODO this should not be admin. is the test busted or the handler?
-			asAdmin: true,
-			method:  "POST",
-			url:     "/workflows",
+			method:   "POST",
+			url:      "/workflows",
 		},
 		{
-			name: "project must exist",
-			req:  loadJSON(t, "TestCreateWorkflow/project_must_exist.json"),
-			want: http.StatusBadRequest,
-			// TODO this should not be admin. is the test busted or the handler?
-			asAdmin: true,
-			method:  "POST",
-			url:     "/workflows",
+			name:   "project must exist",
+			req:    loadJSON(t, "TestCreateWorkflow/project_must_exist.json"),
+			want:   http.StatusBadRequest,
+			method: "POST",
+			url:    "/workflows",
 		},
 		{
-			name: "target must exist",
-			req:  loadJSON(t, "TestCreateWorkflow/target_must_exist.json"),
-			want: http.StatusBadRequest,
-			// TODO this should not be admin. is the test busted or the handler?
-			asAdmin: true,
-			method:  "POST",
-			url:     "/workflows",
+			name:   "target must exist",
+			req:    loadJSON(t, "TestCreateWorkflow/target_must_exist.json"),
+			want:   http.StatusBadRequest,
+			method: "POST",
+			url:    "/workflows",
 		},
+		// TODO with admin credentials should fail
 	}
 	runTests(t, tests)
 }
@@ -534,23 +525,7 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 			method:   "POST",
 			url:      "/projects/project1/targets/target1/operations",
 		},
-		{
-			name:     "missing path",
-			req:      loadJSON(t, "TestCreateWorkflowFromGit/missing_path_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateWorkflowFromGit/missing_path_response.json",
-			method:   "POST",
-			url:      "/projects/project1/targets/target1/operations",
-		},
-		{
-			name:     "missing type",
-			req:      loadJSON(t, "TestCreateWorkflowFromGit/missing_type_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateWorkflowFromGit/missing_type_response.json",
-			method:   "POST",
-			url:      "/projects/project1/targets/target1/operations",
-		},
-		// TODO admin creds should fail
+		// TODO with admin credentials should fail
 	}
 	runTests(t, tests)
 }
