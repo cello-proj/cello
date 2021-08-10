@@ -248,7 +248,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		level.Error(l).Log("message", "error invalid framework", "error", err)
 		h.errorResponse(
 			w,
-			fmt.Sprintf("invalid request, 'framework' must be one of '%s'", strings.Join(frameworks, " ")),
+			fmt.Sprintf("invalid request, framework must be one of '%s'", strings.Join(frameworks, " ")),
 			http.StatusBadRequest,
 		)
 		return

@@ -377,17 +377,18 @@ func TestCreateWorkflow(t *testing.T) {
 		},
 		// We test this specific validation as it's server side only.
 		{
-			name:   "framework must be valid",
-			req:    loadJSON(t, "TestCreateWorkflow/framework_must_be_valid.json"),
-			want:   http.StatusBadRequest,
-			method: "POST",
-			url:    "/workflows",
+			name:     "framework must be valid",
+			req:      loadJSON(t, "TestCreateWorkflow/framework_must_be_valid_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestCreateWorkflow/framework_must_be_valid_response.json",
+			method:   "POST",
+			url:      "/workflows",
 		},
 		// We test this specific validation as it's server side only.
 		{
 			name:     "type must be valid",
-			req:      loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
 			respFile: "TestCreateWorkflow/type_must_be_valid_response.json",
+			req:      loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
 			want:     http.StatusBadRequest,
 			method:   "POST",
 			url:      "/workflows",
