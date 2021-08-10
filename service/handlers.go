@@ -466,7 +466,9 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	a := credentials.NewAuthorization(ah)
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
 	}
+
 	ctx := r.Context()
 
 	var capp requests.CreateProject
