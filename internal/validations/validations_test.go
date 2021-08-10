@@ -86,36 +86,32 @@ func TestIsValidGitURI(t *testing.T) {
 	tests := []struct {
 		name       string
 		testString string
-		wantErr    error
+		want       bool
 	}{
 		{
 			name:       "valid https",
 			testString: "https://github.com/argoproj-labs/argo-cloudops.git",
+			want:       true,
 		},
 		{
 			name:       "valid git",
 			testString: "git@github.com:argoproj-labs/argo-cloudops.git",
+			want:       true,
 		},
 		{
-			name:       "valid ",
+			name:       "valid ssh",
 			testString: "ssh://bob@example.com:22/path/to/repo.git/",
+			want:       true,
 		},
 		{
 			name:       "invalid shorthand",
 			testString: "argoproj-labs/argo-cloudops",
-			wantErr:    fmt.Errorf("Test: argoproj-labs/argo-cloudops does not validate as gitURI"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testValidationStruct := testStruct{Test: tt.testString}
-			err := ValidateStruct(&testValidationStruct)
-			if tt.wantErr != nil {
-				assert.EqualError(t, err, tt.wantErr.Error())
-			} else {
-				assert.Nil(t, err)
-			}
+			assert.Equal(t, tt.want, IsValidGitURI(tt.testString))
 		})
 	}
 }

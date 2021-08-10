@@ -241,14 +241,12 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 // Context is not currently used as Argo has its own and Vault doesn't
 // currently support it.
 func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWriter, r *http.Request, a *credentials.Authorization, cwr requests.CreateWorkflow, l log.Logger) {
-	frameworks := h.config.listFrameworks()
-
 	types, err := h.config.listTypes(cwr.Framework)
 	if err != nil {
 		level.Error(l).Log("message", "error invalid framework", "error", err)
 		h.errorResponse(
 			w,
-			fmt.Sprintf("invalid request, framework must be one of '%s'", strings.Join(frameworks, " ")),
+			fmt.Sprintf("invalid request, framework must be one of '%s'", strings.Join(h.config.listFrameworks(), " ")),
 			http.StatusBadRequest,
 		)
 		return
@@ -705,6 +703,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		level.Error(l).Log("message", "error determining if project exists", "error", err)
 	}
 
+	// TODO Perhaps this should be 404
 	if !projectExists {
 		level.Error(l).Log("message", "project does not exist")
 		h.errorResponse(w, "project does not exist", http.StatusBadRequest)

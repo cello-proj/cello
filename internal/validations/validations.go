@@ -23,7 +23,6 @@ func Validate(validations ...func() error) error {
 func ValidateStruct(input interface{}) error {
 	customValidators := map[string]govalidator.CustomTypeValidator{
 		"alphanumunderscore": isAlphaNumbericUnderscore,
-		"gitURI":             isValidGitURI,
 	}
 
 	for k, v := range customValidators {
@@ -61,14 +60,8 @@ func IsValidImageURI(imageURI string) bool {
 	return err == nil
 }
 
-// isValidGitURI
-func isValidGitURI(field interface{}, kind interface{}) bool {
-	// only handle strings
-	switch s := field.(type) {
-	case string:
-		pattern := `((git|ssh|https)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?`
-		return regexp.MustCompile(pattern).MatchString(s)
-	default:
-		panic("unsupported field type for isValidGitRepository")
-	}
+// IsValidGitURI determines if the provided string is a valid git URI.
+func IsValidGitURI(s string) bool {
+	pattern := `((git|ssh|https)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?`
+	return regexp.MustCompile(pattern).MatchString(s)
 }

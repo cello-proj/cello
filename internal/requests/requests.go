@@ -163,15 +163,24 @@ func (req CreateTarget) validateTargetProperties() error {
 }
 
 // CreateProject request.
-// TODO add required tests/validations
 type CreateProject struct {
 	Name       string `json:"name" valid:"required~name is required,alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
-	Repository string `json:"repository" valid:"required~repository is required,gitURI~repository must be a git uri"`
+	Repository string `json:"repository" valid:"required~repository is required"`
 }
 
 // Validate validates CreateProject.
 func (req CreateProject) Validate() error {
-	return validations.ValidateStruct(req)
+	v := []func() error{
+		func() error { return validations.ValidateStruct(req) },
+		func() error {
+			if !validations.IsValidGitURI(req.Repository) {
+				return errors.New("repository must be a git uri")
+			}
+			return nil
+		},
+	}
+
+	return validations.Validate(v...)
 }
 
 // TargetProperties for target requests.
@@ -187,7 +196,8 @@ type TargetProperties struct {
 type TargetOperation struct {
 	Path string `json:"path" valid:"required~path is required"`
 	SHA  string `json:"sha" valid:"required~sha is required,alphanum~sha must be alphanumeric"`
-	// TODO does this need to be dynamic?
+	// We don't validate the specific type as it's dynamic and can only be done
+	// server side.
 	Type string `json:"type" valid:"required~type is required"`
 }
 
