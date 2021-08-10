@@ -165,8 +165,8 @@ func (req CreateTarget) validateTargetProperties() error {
 // CreateProject request.
 // TODO add required tests/validations
 type CreateProject struct {
-	Name       string `json:"name" valid:"alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
-	Repository string `json:"repository" valid:"required,gitURI~repository must be a git uri"`
+	Name       string `json:"name" valid:"required~name is required,alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
+	Repository string `json:"repository" valid:"required~repository is required,gitURI~repository must be a git uri"`
 }
 
 // Validate validates CreateProject.

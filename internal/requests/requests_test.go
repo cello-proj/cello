@@ -403,7 +403,7 @@ func TestCreateWorkflowValidateType(t *testing.T) {
 	}
 }
 
-func TestCreateTargetwValidate(t *testing.T) {
+func TestCreateTargetValidate(t *testing.T) {
 	tests := []struct {
 		name    string
 		req     CreateTarget
@@ -440,7 +440,6 @@ func TestCreateTargetwValidate(t *testing.T) {
 				Type: "aws_account",
 			},
 		},
-		// name is required
 		{
 			name: "missing name",
 			req: CreateTarget{
@@ -452,7 +451,6 @@ func TestCreateTargetwValidate(t *testing.T) {
 			},
 			wantErr: errors.New("name is required"),
 		},
-		// name must be alphanumeric underscore
 		{
 			name: "name must be alphanumeric underscore",
 			req: CreateTarget{
@@ -593,6 +591,79 @@ func TestCreateTargetwValidate(t *testing.T) {
 				Type: "aws_account",
 			},
 			wantErr: errors.New("policy_arns contains an invalid arn"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantErr != nil {
+				assert.EqualError(t, tt.req.Validate(), tt.wantErr.Error())
+			} else {
+				assert.Equal(t, tt.wantErr, tt.req.Validate())
+			}
+		})
+	}
+}
+
+func TestCreateProjectValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     CreateProject
+		types   []string
+		wantErr error
+	}{
+		{
+			name: "valid",
+			req: CreateProject{
+				Name:       "project1",
+				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+			},
+		},
+		{
+			name: "missing name",
+			req: CreateProject{
+				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+			},
+			wantErr: errors.New("name is required"),
+		},
+		{
+			name: "name must be alphanumeric",
+			req: CreateProject{
+				Name:       "this-is-invalid",
+				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+			},
+			wantErr: errors.New("name must be alphanumeric"),
+		},
+		{
+			name: "too short name",
+			req: CreateProject{
+				Name:       "abc",
+				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+			},
+			wantErr: errors.New("name must be between 4 and 32 characters"),
+		},
+		{
+			name: "too long name",
+			req: CreateProject{
+				Name:       "a12345678901234567890123456789012",
+				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+			},
+			wantErr: errors.New("name must be between 4 and 32 characters"),
+		},
+		{
+			name: "missing repository",
+			req: CreateProject{
+				Name: "project1",
+			},
+			wantErr: errors.New("repository is required"),
+		},
+		{
+			name: "invalid repository",
+			req: CreateProject{
+				Name:       "project1",
+				Repository: "invalid-repo",
+			},
+			wantErr: errors.New("repository must be a git uri"),
 		},
 	}
 
