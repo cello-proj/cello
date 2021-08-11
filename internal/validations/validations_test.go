@@ -79,10 +79,6 @@ func TestIsAlphaNumericUnderscore(t *testing.T) {
 }
 
 func TestIsValidGitURI(t *testing.T) {
-	type testStruct struct {
-		Test string `valid:"gitURI"`
-	}
-
 	tests := []struct {
 		name       string
 		testString string
