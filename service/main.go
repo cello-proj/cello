@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -76,13 +77,14 @@ func main() {
 		logger:                 logger,
 		newCredentialsProvider: credentials.NewVaultProvider,
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
-		argoCtx:                argoCtx,
-		config:                 config,
-		gitClient:              gitClient,
-		env:                    env,
-		dbClient:               dbClient,
+		argoCtx: func(txID string) context.Context {
+			return context.WithValue(argoCtx, "X-B3-TraceId", txID)
+		},
+		config:    config,
+		gitClient: gitClient,
+		env:       env,
+		dbClient:  dbClient,
 	}
-
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
 
 	r := setupRouter(h)
