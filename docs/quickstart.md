@@ -91,7 +91,7 @@ the Argo CloudOps service.
 * To run in debug mode set log level DEBUG before running
 
     ```
-    export ARGO_CLOUD_OPS_LOG_LEVEL=DEBUG
+    export ARGO_CLOUDOPS_LOG_LEVEL=DEBUG
     make ; make up
     ```
 

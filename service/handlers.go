@@ -62,7 +62,7 @@ func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	// #nosec
 	response, err := http.Get(vaultEndpoint)
 	if err != nil {
-		level.Error(h.logger).Log("message", "received error connecting to vault", "error", err)
+		level.Error(l).Log("message", "received error connecting to vault", "error", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		fmt.Fprintln(w, "Health check failed")
 		return
@@ -74,12 +74,12 @@ func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	defer response.Body.Close()
 	_, err = ioutil.ReadAll(response.Body)
 	if err != nil {
-		level.Warn(h.logger).Log("message", "unable to read vault body; continuing", "error", err)
+		level.Warn(l).Log("message", "unable to read vault body; continuing", "error", err)
 		// Continue on and handle the actual response code from Vault accordingly.
 	}
 
 	if response.StatusCode != 200 && response.StatusCode != 429 {
-		level.Error(h.logger).Log("message", fmt.Sprintf("received code %d which is not 200 (initialized, unsealed, and active) or 429 (unsealed and standby) when connecting to vault", response.StatusCode))
+		level.Error(l).Log("message", fmt.Sprintf("received code %d which is not 200 (initialized, unsealed, and active) or 429 (unsealed and standby) when connecting to vault", response.StatusCode))
 		w.WriteHeader(http.StatusServiceUnavailable)
 		fmt.Fprintln(w, "Health check failed")
 		return
@@ -469,7 +469,9 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	a := credentials.NewAuthorization(ah)
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
 	}
+
 	ctx := r.Context()
 
 	var capp requests.CreateProject
@@ -806,6 +808,9 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 	return r
 }
 
-func (h handler) requestLogger(r *http.Request, fields ...string) log.Logger {
-	return log.With(h.logger, "txid", r.Header.Get(txIDHeader), fields)
+func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logger {
+	return log.With(
+		h.logger,
+		append([]interface{}{"txid", r.Header.Get(txIDHeader)}, fields...)...,
+	)
 }

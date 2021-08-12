@@ -1,5 +1,6 @@
 # Default Argo CloudOps Config
-# This will work with included examples
+# This will work with included examples.
+# "commands" keys are case-sensitive.
 
 ---
 version: "0.0.1"
