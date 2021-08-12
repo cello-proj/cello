@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"io"
-	"k8s.io/apimachinery/pkg/labels"
 	"net/http"
 	"strings"
 
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	argoWorkflowAPISpec "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const mainContainer = "main"
@@ -194,7 +194,7 @@ func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[st
 		SubmitOptions: &argoWorkflowAPISpec.SubmitOpts{
 			GenerateName: generateNamePrefix,
 			Parameters:   parameterStrings,
-			Labels:       labels.FormatLabels(labels.Set{"X-B3-TraceId":  fmt.Sprintf("%s", ctx.Value("X-B3-TraceId"))}),
+			Labels:       labels.FormatLabels(labels.Set{"X-B3-TraceId": fmt.Sprintf("%s", ctx.Value("X-B3-TraceId"))}),
 		},
 	}, txIDGrpcHeader(ctx))
 
