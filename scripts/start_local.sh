@@ -25,17 +25,18 @@ if [ -z "$ARGO_CLOUDOPS_GIT_AUTH_METHOD" ]; then
     export ARGO_CLOUDOPS_GIT_AUTH_METHOD=https
 fi
 
+# get account ID first
+export ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`
+if [ -z "$ACCOUNT_ID" ]; then
+    echo "Account ID not found!"
+    exit 1
+fi
+
 # Vault was not loading credentials from the default chain, try to fetch from profile
 if [ -n "${AWS_PROFILE}" ]; then
     CREDS_PROCESS_VALUE=`aws configure get $AWS_PROFILE.credential_process`
-    # export AWS_DEFAULT_REGION=`aws configure get $AWS_PROFILE.region`
     if [ -n "$CREDS_PROCESS_VALUE" ]; then
-        # profile is using credential_process
-
-        # git account ID first
-        export ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`
-
-        # parse json from credential_process
+        # profile is using credential_process - parse json from it
         CREDS_JSON=`$CREDS_PROCESS_VALUE`
         export AWS_ACCESS_KEY_ID=`echo "$CREDS_JSON" | jq ."AccessKeyId"`
         export AWS_SECRET_ACCESS_KEY=`echo "$CREDS_JSON" | jq ."SecretAccessKey"`
@@ -65,14 +66,6 @@ fi
 
 if [ -z "$AWS_SESSION_TOKEN" ]; then
     echo "Error: AWS_SESSION_TOKEN was not set and could not be loaded from AWS_PROFILE"
-    exit 1
-fi
-
-if [ -z "$ACCOUNT_ID" ]; then
-    export ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`
-fi
-if [ -z "$ACCOUNT_ID" ]; then
-    echo "Account ID not found!"
     exit 1
 fi
 
