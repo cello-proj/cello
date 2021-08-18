@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"io"
 	"net/http"
 	"strings"
@@ -194,7 +195,7 @@ func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[st
 		SubmitOptions: &argoWorkflowAPISpec.SubmitOpts{
 			GenerateName: generateNamePrefix,
 			Parameters:   parameterStrings,
-			Labels:       labels.FormatLabels(labels.Set{"X-B3-TraceId": fmt.Sprintf("%s", ctx.Value("X-B3-TraceId"))}),
+			Labels:       labels.FormatLabels(labels.Set{"X-B3-TraceId": fmt.Sprintf("%s", ctx.Value(requests.TxIDHeader))}),
 		},
 	}, txIDGrpcHeader(ctx))
 
@@ -240,5 +241,5 @@ type CreateWorkflowResponse struct {
 }
 
 func txIDGrpcHeader(ctx context.Context) grpc.HeaderCallOption {
-	return grpc.HeaderCallOption{HeaderAddr: &metadata.MD{"X-B3-TraceId=%s": []string{fmt.Sprintf("%s", ctx.Value("X-B3-TraceId"))}}}
+	return grpc.HeaderCallOption{HeaderAddr: &metadata.MD{"X-B3-TraceId=%s": []string{fmt.Sprintf("%s", ctx.Value(requests.TxIDHeader))}}}
 }

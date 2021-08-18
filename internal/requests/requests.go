@@ -7,15 +7,15 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 
-type TxIDHeaderType string
+type HeaderKey string
 
 // TxIDHeader is the key used for transaction tracing.
 const (
-	TxIDHeader = TxIDHeaderType("X-B3-TraceId")
+	TxIDHeader = HeaderKey("X-B3-TraceId")
 )
 
-func TxIDHeaderString() string {
-	return string(TxIDHeader)
+func (h HeaderKey) String() string {
+	return string(h)
 }
 
 // CreateWorkflow request.
