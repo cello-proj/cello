@@ -99,6 +99,38 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			wantErr: errors.New("arguments must be one of 'execute init'"),
 		},
 		{
+			name: "only execute argument",
+			req: CreateWorkflow{
+				Arguments: map[string][]string{
+					"execute": {"--foo", "--bar"},
+				},
+				Framework: "cdk",
+				Parameters: map[string]string{
+					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+				},
+				ProjectName:          "project1",
+				TargetName:           "target1",
+				Type:                 "diff",
+				WorkflowTemplateName: "template1",
+			},
+		},
+		{
+			name: "only init argument",
+			req: CreateWorkflow{
+				Arguments: map[string][]string{
+					"init": {"--foo", "--bar"},
+				},
+				Framework: "cdk",
+				Parameters: map[string]string{
+					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+				},
+				ProjectName:          "project1",
+				TargetName:           "target1",
+				Type:                 "diff",
+				WorkflowTemplateName: "template1",
+			},
+		},
+		{
 			name: "missing parameters",
 			req: CreateWorkflow{
 				Framework:            "cdk",
