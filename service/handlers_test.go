@@ -758,7 +758,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 		newCredentialsProvider: newMockProvider,
 		argo:                   mockWorkflowSvc{},
 		argoCtx: func(txID string) context.Context {
-			return context.WithValue(context.Background(), requests.TxIDHeader.String(), txID)
+			return context.WithValue(context.Background(), requests.TxIDHeader, txID)
 		},
 		config:    config,
 		gitClient: newMockGitClient(),

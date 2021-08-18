@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	argoWorkflowAPISpec "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
