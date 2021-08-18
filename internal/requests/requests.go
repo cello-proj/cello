@@ -7,10 +7,16 @@ import (
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 
+type TxIDHeaderType string
+
 // TxIDHeader is the key used for transaction tracing.
 const (
-	TxIDHeader = "X-B3-TraceId"
+	TxIDHeader = TxIDHeaderType("X-B3-TraceId")
 )
+
+func TxIDHeaderString() string {
+	return string(TxIDHeader)
+}
 
 // CreateWorkflow request.
 // TODO: diff and sync should have separate validations/structs for validations

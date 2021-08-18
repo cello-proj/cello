@@ -40,8 +40,8 @@ func commonMiddleware(next http.Handler) http.Handler {
 
 func txIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(requests.TxIDHeader) == "" {
-			r.Header.Set(requests.TxIDHeader, uuid.NewString())
+		if r.Header.Get(requests.TxIDHeaderString()) == "" {
+			r.Header.Set(requests.TxIDHeaderString(), uuid.NewString())
 		}
 		next.ServeHTTP(w, r)
 	})
