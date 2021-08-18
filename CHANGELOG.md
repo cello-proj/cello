@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 * config.listFrameworks() are now sorted (helps avoid flaky tests).
-* Transaction ID's added to argo workflows request headers.
+* Transaction ID added to argo workflows request headers.
 * Transaction ID label added for workflow submissions.
 
 ### Fixed
