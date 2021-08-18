@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -78,7 +79,7 @@ func main() {
 		newCredentialsProvider: credentials.NewVaultProvider,
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
 		argoCtx: func(txID string) context.Context {
-			return context.WithValue(argoCtx, "X-B3-TraceId", txID)
+			return context.WithValue(argoCtx, requests.TxIDHeader, txID)
 		},
 		config:    config,
 		gitClient: gitClient,

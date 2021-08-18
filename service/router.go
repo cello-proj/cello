@@ -3,12 +3,10 @@ package main
 import (
 	"net/http"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-)
-
-const (
-	txIDHeader = "X-B3-TraceId"
 )
 
 func setupRouter(h handler) *mux.Router {
@@ -42,8 +40,8 @@ func commonMiddleware(next http.Handler) http.Handler {
 
 func txIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(txIDHeader) == "" {
-			r.Header.Set(txIDHeader, uuid.NewString())
+		if r.Header.Get(requests.TxIDHeader) == "" {
+			r.Header.Set(requests.TxIDHeader, uuid.NewString())
 		}
 		next.ServeHTTP(w, r)
 	})

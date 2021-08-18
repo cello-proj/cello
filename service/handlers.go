@@ -100,7 +100,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "listing workflows")
 
-	workflowIDs, err := h.argo.List(h.argoCtx(r.Header.Get(txIDHeader)))
+	workflowIDs, err := h.argo.List(h.argoCtx(r.Header.Get(requests.TxIDHeader)))
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
 		h.errorResponse(w, "error listing workflows", http.StatusInternalServerError)
@@ -112,7 +112,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	prefix := fmt.Sprintf("%s-%s", projectName, targetName)
 	for _, workflowID := range workflowIDs {
 		if strings.HasPrefix(workflowID, prefix) {
-			workflow, err := h.argo.Status(h.argoCtx(r.Header.Get(txIDHeader)), workflowID)
+			workflow, err := h.argo.Status(h.argoCtx(r.Header.Get(requests.TxIDHeader)), workflowID)
 			if err != nil {
 				level.Error(l).Log("message", "error retrieving workflows", "error", err)
 				h.errorResponse(w, "error retrieving workflows", http.StatusInternalServerError)
@@ -319,9 +319,8 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	level.Debug(l).Log("message", "creating workflow parameters")
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
-
 	level.Debug(l).Log("message", "creating workflow")
-	workflowName, err := h.argo.Submit(h.argoCtx(r.Header.Get(txIDHeader)), workflowFrom, parameters)
+	workflowName, err := h.argo.Submit(h.argoCtx(r.Header.Get(requests.TxIDHeader)), workflowFrom, parameters)
 	if err != nil {
 		level.Error(l).Log("message", "error creating workflow", "error", err)
 		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError)
@@ -352,7 +351,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "getting workflow status")
 
-	status, err := h.argo.Status(h.argoCtx(r.Header.Get(txIDHeader)), workflowName)
+	status, err := h.argo.Status(h.argoCtx(r.Header.Get(requests.TxIDHeader)), workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow", "error", err)
 		h.errorResponse(w, "error getting workflow", http.StatusInternalServerError)
@@ -420,7 +419,7 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "get-workflow-logs", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "retrieving workflow logs")
-	argoWorkflowLogs, err := h.argo.Logs(h.argoCtx(r.Header.Get(txIDHeader)), workflowName)
+	argoWorkflowLogs, err := h.argo.Logs(h.argoCtx(r.Header.Get(requests.TxIDHeader)), workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logs", "error", err)
 		h.errorResponse(w, "error getting workflow logs", http.StatusInternalServerError)
@@ -445,7 +444,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "get-workflow-log-stream", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "retrieving workflow logs", "workflow", workflowName)
-	err := h.argo.LogStream(h.argoCtx(r.Header.Get(txIDHeader)), workflowName, w)
+	err := h.argo.LogStream(h.argoCtx(r.Header.Get(requests.TxIDHeader)), workflowName, w)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow logstream", "error", err)
 		h.errorResponse(w, "error getting workflow logs", http.StatusInternalServerError)
@@ -811,6 +810,6 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logger {
 	return log.With(
 		h.logger,
-		append([]interface{}{"txid", r.Header.Get(txIDHeader)}, fields...)...,
+		append([]interface{}{"txid", r.Header.Get(requests.TxIDHeader)}, fields...)...,
 	)
 }
