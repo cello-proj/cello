@@ -3,12 +3,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -78,13 +76,11 @@ func main() {
 		logger:                 logger,
 		newCredentialsProvider: credentials.NewVaultProvider,
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
-		argoCtx: func(txID string) context.Context {
-			return context.WithValue(argoCtx, requests.TxIDHeader, txID)
-		},
-		config:    config,
-		gitClient: gitClient,
-		env:       env,
-		dbClient:  dbClient,
+		argoCtx:                argoCtx,
+		config:                 config,
+		gitClient:              gitClient,
+		env:                    env,
+		dbClient:               dbClient,
 	}
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
 
