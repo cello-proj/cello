@@ -318,7 +318,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	level.Debug(l).Log("message", "creating workflow parameters")
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
-	workflowLabels := map[string]string{"X-B3-TraceId": r.Header.Get(txIDHeader)}
+	workflowLabels := map[string]string{txIDHeader: r.Header.Get(txIDHeader)}
 
 	level.Debug(l).Log("message", "creating workflow")
 	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters, workflowLabels)
