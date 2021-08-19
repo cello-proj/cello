@@ -82,6 +82,7 @@ func main() {
 		env:                    env,
 		dbClient:               dbClient,
 	}
+
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
 
 	r := setupRouter(h)

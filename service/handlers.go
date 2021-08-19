@@ -99,7 +99,6 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "list-workflows", "project", projectName, "target", targetName)
 
 	level.Debug(l).Log("message", "listing workflows")
-
 	workflowIDs, err := h.argo.List(h.argoCtx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
@@ -352,7 +351,6 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "get-workflow", "workflow", workflowName)
 
 	level.Debug(l).Log("message", "getting workflow status")
-
 	status, err := h.argo.Status(h.argoCtx, workflowName)
 	if err != nil {
 		level.Error(l).Log("message", "error getting workflow", "error", err)
