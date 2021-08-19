@@ -12,8 +12,6 @@ import (
 
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	argoWorkflowAPISpec "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -54,7 +52,7 @@ func (a ArgoWorkflow) List(ctx context.Context) ([]string, error) {
 
 	workflowListResult, err := a.svc.ListWorkflows(ctx, &argoWorkflowAPIClient.WorkflowListRequest{
 		Namespace: a.namespace,
-	}, txIDGrpcHeader(ctx))
+	})
 
 	if err != nil {
 		return workflowIDs, err
@@ -80,7 +78,7 @@ func (a ArgoWorkflow) Status(ctx context.Context, workflowName string) (*Status,
 	workflow, err := a.svc.GetWorkflow(ctx, &argoWorkflowAPIClient.WorkflowGetRequest{
 		Name:      workflowName,
 		Namespace: a.namespace,
-	}, txIDGrpcHeader(ctx))
+	})
 
 	if err != nil {
 		return nil, err
@@ -104,7 +102,7 @@ func (a ArgoWorkflow) Logs(ctx context.Context, workflowName string) (*Logs, err
 		LogOptions: &v1.PodLogOptions{
 			Container: mainContainer,
 		},
-	}, txIDGrpcHeader(ctx))
+	})
 
 	if err != nil {
 		return nil, err
@@ -136,7 +134,7 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 			Container: mainContainer,
 			Follow:    true,
 		},
-	}, txIDGrpcHeader(ctx))
+	})
 
 	if err != nil {
 		return err
@@ -198,7 +196,7 @@ func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[st
 			Parameters:   parameterStrings,
 			Labels:       labels.FormatLabels(labels.Set{"X-B3-TraceId": fmt.Sprintf("%s", ctx.Value(requests.TxIDHeader))}),
 		},
-	}, txIDGrpcHeader(ctx))
+	})
 
 	if err != nil {
 		return "", fmt.Errorf("failed to submit workflow: %w", err)
@@ -239,8 +237,4 @@ func NewParameters(environmentVariablesString, executeCommand, executeContainerI
 // CreateWorkflowResponse creates a workflow response.
 type CreateWorkflowResponse struct {
 	WorkflowName string `json:"workflow_name"`
-}
-
-func txIDGrpcHeader(ctx context.Context) grpc.HeaderCallOption {
-	return grpc.HeaderCallOption{HeaderAddr: &metadata.MD{"X-B3-TraceId=%s": []string{fmt.Sprintf("%s", ctx.Value(requests.TxIDHeader))}}}
 }
