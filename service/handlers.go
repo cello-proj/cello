@@ -811,3 +811,7 @@ func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logge
 		append([]interface{}{"txid", r.Header.Get(txIDHeader)}, fields...)...,
 	)
 }
+
+func foo(s string) bool {
+	return s == "foo"
+}
