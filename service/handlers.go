@@ -812,6 +812,10 @@ func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logge
 	)
 }
 
+func bar(s string) bool {
+	return s == "bar"
+}
+
 func foo(s string) bool {
 	return s == "foo"
 }

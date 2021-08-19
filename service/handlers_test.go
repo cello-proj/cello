@@ -177,75 +177,75 @@ type test struct {
 	method   string
 }
 
-// func TestCreateProject(t *testing.T) {
-// 	tests := []test{
-// 		{
-// 			name:     "fails to create project when not admin",
-// 			req:      loadCreateProjectRequest(t, "TestCreateProject/fails_to_create_project_when_not_admin.json"),
-// 			want:     http.StatusUnauthorized,
-// 			respFile: "TestCreateProject/fails_to_create_project_when_not_admin_response.json",
-// 			url:      "/projects",
-// 			method:   "POST",
-// 		},
-// 		{
-// 			name:    "can create project",
-// 			req:     loadCreateProjectRequest(t, "TestCreateProject/can_create_project.json"),
-// 			want:    http.StatusOK,
-// 			asAdmin: true,
-// 			url:     "/projects",
-// 			method:  "POST",
-// 		},
-// 		{
-// 			name:    "git repo must be valid",
-// 			req:     loadCreateProjectRequest(t, "TestCreateProject/git_repo_must_be_valid.json"),
-// 			want:    http.StatusBadRequest,
-// 			asAdmin: true,
-// 			url:     "/projects",
-// 			method:  "POST",
-// 		},
-// 		{
-// 			name:    "project name must be alphanumeric",
-// 			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_must_be_alphanumeric.json"),
-// 			want:    http.StatusBadRequest,
-// 			asAdmin: true,
-// 			url:     "/projects",
-// 			method:  "POST",
-// 		},
-// 		{
-// 			name:    "project name cannot be less than 4 characters",
-// 			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_be_less_than_4_characters.json"),
-// 			want:    http.StatusBadRequest,
-// 			asAdmin: true,
-// 			url:     "/projects",
-// 			method:  "POST",
-// 		},
-// 		{
-// 			name:    "project name cannot be greater than 32 characters",
-// 			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_be_greater_than_32_characters.json"),
-// 			want:    http.StatusBadRequest,
-// 			asAdmin: true,
-// 			url:     "/projects",
-// 			method:  "POST",
-// 		},
-// 		{
-// 			name:    "project name cannot already exist",
-// 			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_already_exist.json"),
-// 			want:    http.StatusBadRequest,
-// 			asAdmin: true,
-// 			url:     "/projects",
-// 			method:  "POST",
-// 		},
-// 		{
-// 			name:    "project fails to create db entry",
-// 			req:     loadCreateProjectRequest(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
-// 			want:    http.StatusInternalServerError,
-// 			asAdmin: true,
-// 			url:     "/projects",
-// 			method:  "POST",
-// 		},
-// 	}
-// 	runTests(t, tests)
-// }
+func TestCreateProject(t *testing.T) {
+	tests := []test{
+		{
+			name:     "fails to create project when not admin",
+			req:      loadCreateProjectRequest(t, "TestCreateProject/fails_to_create_project_when_not_admin.json"),
+			want:     http.StatusUnauthorized,
+			respFile: "TestCreateProject/fails_to_create_project_when_not_admin_response.json",
+			url:      "/projects",
+			method:   "POST",
+		},
+		{
+			name:    "can create project",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/can_create_project.json"),
+			want:    http.StatusOK,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
+			name:    "git repo must be valid",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/git_repo_must_be_valid.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
+			name:    "project name must be alphanumeric",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_must_be_alphanumeric.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
+			name:    "project name cannot be less than 4 characters",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_be_less_than_4_characters.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
+			name:    "project name cannot be greater than 32 characters",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_be_greater_than_32_characters.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
+			name:    "project name cannot already exist",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/project_name_cannot_already_exist.json"),
+			want:    http.StatusBadRequest,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+		{
+			name:    "project fails to create db entry",
+			req:     loadCreateProjectRequest(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
+			want:    http.StatusInternalServerError,
+			asAdmin: true,
+			url:     "/projects",
+			method:  "POST",
+		},
+	}
+	runTests(t, tests)
+}
 
 func TestDeleteProject(t *testing.T) {
 	tests := []test{
