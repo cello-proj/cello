@@ -90,7 +90,7 @@ func (m mockWorkflowSvc) List(ctx context.Context) ([]string, error) {
 	return []string{"project1-target1-abcde", "project2-target2-12345"}, nil
 }
 
-func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map[string]string, txID string) (string, error) {
+func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
 	return "success", nil
 }
 

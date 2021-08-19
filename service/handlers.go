@@ -319,8 +319,10 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	level.Debug(l).Log("message", "creating workflow parameters")
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
+	workflowLabels := map[string]string{"X-B3-TraceId": r.Header.Get(txIDHeader)}
+
 	level.Debug(l).Log("message", "creating workflow")
-	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters, r.Header.Get(requests.TxIDHeader.String()))
+	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters, workflowLabels)
 	if err != nil {
 		level.Error(l).Log("message", "error creating workflow", "error", err)
 		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError)
@@ -810,6 +812,6 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logger {
 	return log.With(
 		h.logger,
-		append([]interface{}{"txid", r.Header.Get(requests.TxIDHeader.String())}, fields...)...,
+		append([]interface{}{"txid", r.Header.Get(txIDHeader)}, fields...)...,
 	)
 }
