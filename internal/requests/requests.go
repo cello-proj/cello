@@ -75,9 +75,7 @@ func (req CreateWorkflow) validateParameters() error {
 }
 
 // validateArguments validates the Arguments.
-// The valid Arguments cases are:
-// * no arguments
-// * either 'execute' or 'init' or both
+// If any Arguments are provided, they must be one of 'execute' or 'init'.
 // TODO long term, we should evaluate if hard coding in code is the right
 // approach to specifying different argument types vs allowing dynamic
 // specification and interpolation in service/config.yaml
