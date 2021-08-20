@@ -23,6 +23,10 @@ jobs:
           ${{ runner.os }}-go-
     - name: Run build
       run: make
+    - name: Upload code coverage information to codecov.io
+      uses: codecov/codecov-action@v2
+      with:
+        files: coverage.out
   lint:
     runs-on: ubuntu-latest
     steps:
