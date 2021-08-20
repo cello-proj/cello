@@ -131,8 +131,8 @@ func (req CreateTarget) validateTargetProperties() error {
 		return err
 	}
 
-	if req.Properties.CredentialType != "vault" {
-		return errors.New("credential_type must be one of 'vault'")
+	if req.Properties.CredentialType != "assumed_role" {
+		return errors.New("credential_type must be one of 'assumed_role'")
 	}
 
 	if !validations.IsValidARN(req.Properties.RoleArn) {

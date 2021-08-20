@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2021-08-20
+### Fixed
+* Target credential_type only supports 'assumed_role'.
+
 ## [0.8.0] - 2021-08-20
 ### Changed
 * Refactored validations.
