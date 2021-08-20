@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Security
+* Updated argo-workflows to v3.1.8 to address CVE-2021-37914
+  (https://github.com/argoproj/argo-workflows/security/advisories/GHSA-h563-xh25-x54q).
 
 ## [0.8.1] - 2021-08-20
 ### Fixed
