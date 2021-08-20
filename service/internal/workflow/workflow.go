@@ -11,6 +11,7 @@ import (
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	argoWorkflowAPISpec "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const mainContainer = "main"
@@ -21,7 +22,7 @@ type Workflow interface {
 	Logs(ctx context.Context, workflowName string) (*Logs, error)
 	LogStream(ctx context.Context, workflowName string, data http.ResponseWriter) error
 	Status(ctx context.Context, workflowName string) (*Status, error)
-	Submit(ctx context.Context, from string, parameters map[string]string) (string, error)
+	Submit(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error)
 }
 
 // NewArgoWorkflow creates an Argo workflow.
@@ -166,7 +167,7 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 }
 
 // Submit submits a workflow execution.
-func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[string]string) (string, error) {
+func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[string]string, workflowLabels map[string]string) (string, error) {
 	parts := strings.SplitN(from, "/", 2)
 	for _, part := range parts {
 		if part == "" {
@@ -191,6 +192,7 @@ func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[st
 		SubmitOptions: &argoWorkflowAPISpec.SubmitOpts{
 			GenerateName: generateNamePrefix,
 			Parameters:   parameterStrings,
+			Labels:       labels.FormatLabels(workflowLabels),
 		},
 	})
 
