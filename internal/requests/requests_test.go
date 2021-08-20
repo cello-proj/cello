@@ -447,7 +447,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
@@ -458,7 +458,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 					PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
 					PolicyArns: []string{
@@ -476,7 +476,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "missing name",
 			req: CreateTarget{
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
@@ -488,7 +488,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "this-is-invalid",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
@@ -500,7 +500,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "abc",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
@@ -512,7 +512,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "a12345678901234567890123456789012",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
@@ -524,7 +524,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
 			},
@@ -535,7 +535,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "bad",
@@ -563,14 +563,14 @@ func TestCreateTargetValidate(t *testing.T) {
 				},
 				Type: "aws_account",
 			},
-			wantErr: errors.New("credential_type must be one of 'vault'"),
+			wantErr: errors.New("credential_type must be one of 'assumed_role'"),
 		},
 		{
 			name: "missing role_arn",
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 				},
 				Type: "aws_account",
 			},
@@ -581,7 +581,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					RoleArn:        "not-an-arn",
 				},
 				Type: "aws_account",
@@ -593,7 +593,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					PolicyArns: []string{
 						"arn:aws:iam::012345678901:policy/test-policy-1",
 						"arn:aws:iam::012345678901:policy/test-policy-2",
@@ -613,7 +613,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			req: CreateTarget{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "vault",
+					CredentialType: "assumed_role",
 					PolicyArns: []string{
 						"arn:aws:iam::012345678901:policy/test-policy-1",
 						"not-an-arn",
