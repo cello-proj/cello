@@ -1,7 +1,7 @@
 {
   "type": "aws_account",
   "properties": {
-    "credential_type": "vault",
+    "credential_type": "assumed_role",
     "policy_arns": [
       "arn:aws:iam::012345678901:policy/test-policy"
     ],
