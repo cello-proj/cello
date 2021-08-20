@@ -6,8 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-* config.listFrameworks() are now sorted (helps avoid flaky tests).
 * Refactored validations.
+
+## [0.7.0] - 2021-08-20
+### Changed
+* config.listFrameworks() are now sorted (helps avoid flaky tests).
+* Transaction ID label added for workflow submissions.
 
 ### Fixed
 * config.listFrameworks() was returning additional empty items.

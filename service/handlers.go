@@ -322,8 +322,10 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	level.Debug(l).Log("message", "creating workflow parameters")
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
+	workflowLabels := map[string]string{txIDHeader: r.Header.Get(txIDHeader)}
+
 	level.Debug(l).Log("message", "creating workflow")
-	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters)
+	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters, workflowLabels)
 	if err != nil {
 		level.Error(l).Log("message", "error creating workflow", "error", err)
 		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError)

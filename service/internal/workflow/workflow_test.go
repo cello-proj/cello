@@ -147,7 +147,7 @@ func TestArgoSubmit(t *testing.T) {
 				"namespace",
 			)
 
-			workflow, err := argoWf.Submit(context.Background(), "test/test", map[string]string{"param": "value"})
+			workflow, err := argoWf.Submit(context.Background(), "test/test", map[string]string{"param": "value"}, map[string]string{"X-B3-TraceId": "test-txid"})
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
