@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -10,45 +11,91 @@ import (
 // CreateWorkflow request.
 // TODO: diff and sync should have separate validations/structs for validations
 type CreateWorkflow struct {
-	Arguments            map[string][]string `validate:"is_valid_argument" yaml:"arguments" json:"arguments"`
-	EnvironmentVariables map[string]string   `yaml:"environment_variables" json:"environment_variables"`
-	Framework            string              `yaml:"framework" json:"framework"`
-	Parameters           map[string]string   `validate:"is_valid_execute_container_image,is_valid_precontainer_image" yaml:"parameters" json:"parameters"`
-	ProjectName          string              `validate:"min=4,max=32,alphanum" yaml:"project_name" json:"project_name"`
-	TargetName           string              `validate:"min=4,max=32,is_alphanumunderscore" yaml:"target_name" json:"target_name"`
-	Type                 string              `yaml:"type" json:"type"`
-	WorkflowTemplateName string              `yaml:"workflow_template_name" json:"workflow_template_name"`
+	Arguments            map[string][]string `json:"arguments" yaml:"arguments"`
+	EnvironmentVariables map[string]string   `json:"environment_variables" yaml:"environment_variables"`
+	// We don't validate the specific framework as it's dynamic and can only be
+	// done server side.
+	Framework   string            `json:"framework" yaml:"framework" valid:"required~framework is required"`
+	Parameters  map[string]string `json:"parameters" yaml:"parameters"`
+	ProjectName string            `json:"project_name" yaml:"project_name" valid:"required~project_name is required,alphanum~project_name must be alphanumeric,stringlength(4|32)~project_name must be between 4 and 32 characters"`
+	TargetName  string            `json:"target_name" yaml:"target_name" valid:"required~target_name is required,alphanumunderscore~target_name must be alphanumeric underscore,stringlength(4|32)~target_name must be between 4 and 32 characters"`
+	// We don't validate the specific type as it's dynamic and can only be done
+	// server side.
+	Type                 string `json:"type" yaml:"type" valid:"required~type is required"`
+	WorkflowTemplateName string `json:"workflow_template_name" yaml:"workflow_template_name" valid:"required~workflow_template_name is required"`
 }
 
-// ValidateFramework is an optional validation that should be passed as parameter to Validate().
-func (req CreateWorkflow) ValidateFramework(frameworks []string) func() error {
-	return func() error {
-		return validations.ValidateVar("framework", req.Framework, fmt.Sprintf("oneof=%s", strings.Join(frameworks, " ")))
+// Validate validates CreateWorkflow.
+func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
+	v := []func() error{
+		func() error { return validations.ValidateStruct(req) },
+		req.validateArguments,
+		req.validateParameters,
 	}
+	v = append(v, optionalValidations...)
+
+	return validations.Validate(v...)
 }
 
 // ValidateType is an optional validation should be passed as parameter to Validate().
 func (req CreateWorkflow) ValidateType(types []string) func() error {
 	return func() error {
-		return validations.ValidateVar("type", req.Type, fmt.Sprintf("oneof=%s", strings.Join(types, " ")))
+		for _, t := range types {
+			if req.Type == t {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("type must be one of '%s'", strings.Join(types, " "))
 	}
 }
 
-// Validate validates CreateWorkflow.
-func (req CreateWorkflow) Validate(optionalValidations ...func() error) error {
-	for _, validation := range optionalValidations {
-		if err := validation(); err != nil {
-			return err
+// validateParameters validates the Parameters.
+// 'execute_container_image_uri' is required and the URI format will be
+// validated.
+// 'pre_container_image_uri' is optional. If it's provided, the URI format will
+// be validated.
+func (req CreateWorkflow) validateParameters() error {
+	val, ok := req.Parameters["execute_container_image_uri"]
+	if !ok {
+		return errors.New("parameter execute_container_image_uri is required")
+	}
+
+	if !validations.IsValidImageURI(val) {
+		return errors.New("parameter execute_container_image_uri must be a valid container uri")
+	}
+
+	if val, ok := req.Parameters["pre_container_image_uri"]; ok {
+		if !validations.IsValidImageURI(val) {
+			return errors.New("parameter pre_container_image_uri must be a valid container uri")
 		}
 	}
-	return validations.ValidateStruct(req)
+
+	return nil
+}
+
+// validateArguments validates the Arguments.
+// If any Arguments are provided, they must be one of 'execute' or 'init'.
+// TODO long term, we should evaluate if hard coding in code is the right
+// approach to specifying different argument types vs allowing dynamic
+// specification and interpolation in service/config.yaml
+func (req CreateWorkflow) validateArguments() error {
+	for k := range req.Arguments {
+		if k != "execute" && k != "init" {
+			return fmt.Errorf("arguments must be one of 'execute init'")
+		}
+	}
+
+	return nil
 }
 
 // CreateGitWorkflow from git manifest request
 type CreateGitWorkflow struct {
-	CommitHash string `validate:"required,alphanum" json:"sha"`
-	Path       string `validate:"required" json:"path"`
-	Type       string `validate:"required" json:"type"`
+	CommitHash string `json:"sha" valid:"required~sha is required,alphanum~sha must be alphanumeric"`
+	Path       string `json:"path" valid:"required~path is required"`
+	// We don't validate the specific type as it's dynamic and can only be done
+	// server side.
+	Type string `json:"type" valid:"required~type is required"`
 }
 
 // Validate validates CreateGitWorkflow.
@@ -58,40 +105,90 @@ func (req CreateGitWorkflow) Validate() error {
 
 // CreateTarget request.
 type CreateTarget struct {
-	Name       string           `validate:"min=4,max=32,is_alphanumunderscore" json:"name"`
+	Name       string           `json:"name" valid:"required~name is required,alphanumunderscore~name must be alphanumeric underscore,stringlength(4|32)~name must be between 4 and 32 characters"`
 	Properties TargetProperties `json:"properties"`
-	Type       string           `validate:"is_valid_target_type" json:"type"`
+	Type       string           `json:"type" valid:"required~type is required"`
 }
 
 // Validate validates CreateTarget.
 func (req CreateTarget) Validate() error {
-	return validations.ValidateStruct(req)
+	v := []func() error{
+		func() error { return validations.ValidateStruct(req) },
+		func() error {
+			if req.Type != "aws_account" {
+				return errors.New("type must be one of 'aws_account'")
+			}
+			return nil
+		},
+		req.validateTargetProperties,
+	}
+
+	return validations.Validate(v...)
+}
+
+func (req CreateTarget) validateTargetProperties() error {
+	if err := validations.ValidateStruct(req.Properties); err != nil {
+		return err
+	}
+
+	if req.Properties.CredentialType != "vault" {
+		return errors.New("credential_type must be one of 'vault'")
+	}
+
+	if !validations.IsValidARN(req.Properties.RoleArn) {
+		return errors.New("role_arn must be a valid arn")
+	}
+
+	if len(req.Properties.PolicyArns) > 5 {
+		return errors.New("policy_arns cannot be more than 5")
+	}
+
+	for _, arn := range req.Properties.PolicyArns {
+		if !validations.IsValidARN(arn) {
+			return errors.New("policy_arns contains an invalid arn")
+		}
+	}
+
+	return nil
 }
 
 // CreateProject request.
 type CreateProject struct {
-	Name       string `validate:"min=4,max=32,alphanum" json:"name"`
-	Repository string `validate:"required,is_valid_git_repository" json:"repository"`
+	Name       string `json:"name" valid:"required~name is required,alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
+	Repository string `json:"repository" valid:"required~repository is required"`
 }
 
 // Validate validates CreateProject.
 func (req CreateProject) Validate() error {
-	return validations.ValidateStruct(req)
+	v := []func() error{
+		func() error { return validations.ValidateStruct(req) },
+		func() error {
+			if !validations.IsValidGitURI(req.Repository) {
+				return errors.New("repository must be a git uri")
+			}
+			return nil
+		},
+	}
+
+	return validations.Validate(v...)
 }
 
 // TargetProperties for target requests.
 type TargetProperties struct {
-	CredentialType string   `json:"credential_type"`
-	PolicyArns     []string `validate:"max=5,dive,is_arn" json:"policy_arns"`
+	CredentialType string   `json:"credential_type" valid:"required~credential_type is required"`
+	PolicyArns     []string `json:"policy_arns"`
 	PolicyDocument string   `json:"policy_document"`
-	RoleArn        string   `validate:"is_arn" json:"role_arn"`
+	RoleArn        string   `json:"role_arn" valid:"required~role_arn is required"`
 }
 
 // TargetOperation represents a target operation request.
+// TODO evaluate this vs. CreateGitWorkflow.
 type TargetOperation struct {
-	Path string `validate:"required" json:"path"`
-	SHA  string `validate:"required,alphanum" json:"sha"`
-	Type string `validate:"required,oneof=diff sync" json:"type"`
+	Path string `json:"path" valid:"required~path is required"`
+	SHA  string `json:"sha" valid:"required~sha is required,alphanum~sha must be alphanumeric"`
+	// We don't validate the specific type as it's dynamic and can only be done
+	// server side.
+	Type string `json:"type" valid:"required~type is required"`
 }
 
 // Validate validates TargetOperation.
