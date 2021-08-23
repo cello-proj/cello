@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 * Bump github.com/aws/aws-sdk-go from 1.33.16 to 1.40.28.
+* Bump github.com/google/go-cmp from 0.5.2 to 0.5.6.
 * Updated vault api lib to v1.1.1 to try to resolve dependabot resolution
   issues.
 
