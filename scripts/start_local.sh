@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
@@ -29,8 +28,16 @@ fi
 if [ -n "${AWS_PROFILE}" ]; then
     CREDS_PROCESS_VALUE=`aws configure get $AWS_PROFILE.credential_process`
     if [ -n "$CREDS_PROCESS_VALUE" ]; then
-        # profile is using credential_process - parse json from it
+        # profile is using credential_process 
+        # we require jq make sure it exits
+        if ! command -v jq >/dev/null 2>&1; then
+            echo "ERROR: 'jq' command could not be found"
+            exit 1
+        fi
+
+        # run credential_process - parse json from it
         CREDS_JSON=`$CREDS_PROCESS_VALUE`
+
         export AWS_ACCESS_KEY_ID=`echo "$CREDS_JSON" | jq -r ."AccessKeyId"`
         export AWS_SECRET_ACCESS_KEY=`echo "$CREDS_JSON" | jq -r ."SecretAccessKey"`
         export AWS_SESSION_TOKEN=`echo "$CREDS_JSON" | jq -r ."SessionToken"`
@@ -39,7 +46,6 @@ if [ -n "${AWS_PROFILE}" ]; then
         export AWS_ACCESS_KEY_ID=`aws configure get $AWS_PROFILE.aws_access_key_id`
         export AWS_SECRET_ACCESS_KEY=`aws configure get $AWS_PROFILE.aws_secret_access_key`
         export AWS_SESSION_TOKEN=`aws configure get $AWS_PROFILE.aws_session_token`
-        export ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`
     fi
 fi
 
@@ -61,6 +67,8 @@ if [ -z "$AWS_SESSION_TOKEN" ]; then
     echo "Error: AWS_SESSION_TOKEN was not set and could not be loaded from AWS_PROFILE"
     exit 1
 fi
+
+set -e
 
 # get account ID
 export ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`
