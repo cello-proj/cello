@@ -2,6 +2,7 @@
 
 unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
+export ARGO_ADDR='http://127.0.0.1:9000'
 
 MODE=${1}
 
@@ -150,6 +151,6 @@ echo "Starting Argo CloudOps Service"
 if [ "${MODE}" == "dev" ]; then
   build/service
 else
-  install/service
+  quickstart/service
 fi
 echo "Argo CloudOps Serivce Stopped"
