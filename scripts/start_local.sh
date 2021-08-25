@@ -4,6 +4,8 @@ unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
 export ARGO_ADDR='http://127.0.0.1:9000'
 
+MODE=${1}
+
 if [ -z "$ARGO_CLOUDOPS_DB_HOST" ]; then
     export ARGO_CLOUDOPS_DB_HOST=localhost
 fi
@@ -122,5 +124,9 @@ mkdir -p ./ssl
 output=$(openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=CA/L=Mountain View/O=Cognition/CN=app" -keyout ./ssl/certificate.key -out ./ssl/certificate.crt 2>&1) || echo "$output"
 
 echo "Starting Argo CloudOps Service"
-build/service
+if [ "${MODE}" == "dev" ]; then
+  build/service
+else
+  install/service
+fi
 echo "Argo CloudOps Serivce Stopped"
