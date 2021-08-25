@@ -2,7 +2,6 @@
 
 unset VAULT_TOKEN
 export VAULT_ADDR='http://127.0.0.1:8200'
-export ARGO_ADDR='http://127.0.0.1:9000'
 
 MODE=${1}
 
