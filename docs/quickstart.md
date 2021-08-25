@@ -2,9 +2,6 @@
 
 ## Pre-reqs
 
-The below instructions assume Argo CloudOps is on your local OSX system
-with Docker Desktop managing resource in AWS (region us-west-2) with credentials provided by Vault.
-
 * Install [Docker Desktop](https://www.docker.com/products/docker-desktop), ensure kubernetes is running.
 
 * Install [Argo Workflows](https://argoproj.github.io/argo-workflows/installation/)
