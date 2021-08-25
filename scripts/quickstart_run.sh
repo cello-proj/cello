@@ -93,7 +93,7 @@ if [ ! -f quickstart/argo-cloudops ]; then
         rm quickstart/argo-cloudops_cli_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz &> /dev/null
 fi
 
-# download Argo CloudOps service binary
+# download Argo CloudOps service binary if it doesn't exist
 if [ ! -f quickstart/service ]; then
   curl -L https://github.com/argoproj-labs/argo-cloudops/releases/download/v${ARGO_CLOUDOPS_VERSION}/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz -o quickstart/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz &> /dev/null
   tar -xzf quickstart/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz -C quickstart/ &> /dev/null
