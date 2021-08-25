@@ -125,18 +125,25 @@ func NewVaultSvc(c VaultConfig, h http.Header) (*vault.Client, error) {
 
 // Authorization represents a user's authorization token.
 type Authorization struct {
-	Provider string `validate:"required,eq=vault"`
-	Key      string `validate:"required"`
-	Secret   string `validate:"required"`
+	Provider string `valid:"required"`
+	Key      string `valid:"required"`
+	Secret   string `valid:"required"`
 }
 
 func (a Authorization) Validate(optionalValidations ...func() error) error {
-	for _, validation := range optionalValidations {
-		if err := validation(); err != nil {
-			return err
-		}
+	v := []func() error{
+		func() error {
+			if a.Provider != "vault" {
+				return errors.New("provider must be vault")
+			}
+			return nil
+		},
+		func() error { return validations.ValidateStruct(a) },
 	}
-	return validations.ValidateStruct(a)
+
+	v = append(v, optionalValidations...)
+
+	return validations.Validate(v...)
 }
 
 // ValidateAuthorizedAdmin determines if the Authorization is valid and an admin.
@@ -144,12 +151,14 @@ func (a Authorization) Validate(optionalValidations ...func() error) error {
 // Optional validation should be passed as parameter to Validate().
 func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) func() error {
 	return func() error {
-		if err := validations.ValidateVar("user", a.Key, "eq=admin"); err != nil {
-			return fmt.Errorf("must be an authorized admin, %w", err)
+		if a.Key != "admin" {
+			return fmt.Errorf("must be an authorized admin")
 		}
-		if err := validations.ValidateVar("admin secret", a.Secret, fmt.Sprintf("eq=%s", adminSecret)); err != nil {
+
+		if a.Secret != adminSecret {
 			return fmt.Errorf("must be an authorized admin, invalid admin secret")
 		}
+
 		return nil
 	}
 }

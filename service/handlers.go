@@ -152,6 +152,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "validating authorization header for create workflow from git")
 	ah := r.Header.Get("Authorization")
 	a := credentials.NewAuthorization(ah)
+	// TODO we need to ensure this _isn't an admin...
 	if err := a.Validate(); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
@@ -243,13 +244,16 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	types, err := h.config.listTypes(cwr.Framework)
 	if err != nil {
 		level.Error(l).Log("message", "error invalid framework", "error", err)
-		h.errorResponse(w, "error invalid framework", http.StatusBadRequest)
+		h.errorResponse(
+			w,
+			fmt.Sprintf("invalid request, framework must be one of '%s'", strings.Join(h.config.listFrameworks(), " ")),
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	level.Debug(l).Log("message", "validating workflow parameters")
 	if err := cwr.Validate(
-		cwr.ValidateFramework(h.config.listFrameworks()),
 		cwr.ValidateType(types),
 	); err != nil {
 		level.Error(l).Log("message", "error validating request", "error", err)
@@ -318,8 +322,10 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	level.Debug(l).Log("message", "creating workflow parameters")
 	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
 
+	workflowLabels := map[string]string{txIDHeader: r.Header.Get(txIDHeader)}
+
 	level.Debug(l).Log("message", "creating workflow")
-	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters)
+	workflowName, err := h.argo.Submit(h.argoCtx, workflowFrom, parameters, workflowLabels)
 	if err != nil {
 		level.Error(l).Log("message", "error creating workflow", "error", err)
 		h.errorResponse(w, "error creating workflow", http.StatusInternalServerError)
@@ -485,7 +491,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := capp.Validate(); err != nil {
 		level.Error(l).Log("message", "error invalid request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -660,7 +666,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a := credentials.NewAuthorization(ah)
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
-		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		h.errorResponse(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 	level.Debug(l).Log("message", "reading request body")
@@ -691,6 +697,18 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error determining if project exists", "error", err)
+	}
+
+	// TODO Perhaps this should be 404
+	if !projectExists {
+		level.Error(l).Log("message", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusBadRequest)
 		return
 	}
 
