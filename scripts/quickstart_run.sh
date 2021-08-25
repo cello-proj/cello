@@ -100,7 +100,6 @@ if [ ! -f quickstart/service ]; then
   rm quickstart/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz &> /dev/null
 fi
 
-export USER_INSTALL_START=1
 echo "Starting Argo Cloudops service, use Ctrl+c to end process"
 ./scripts/start_local.sh
 
