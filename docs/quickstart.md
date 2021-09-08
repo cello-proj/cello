@@ -8,7 +8,7 @@
 
 * Install **Argo CLI** `brew install argo`
 
-* Install [PostgreSQL](https://www.postgresql.org/download/)
+* Install PostgreSQL `brew install postgresql`
 
 * Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
 
@@ -37,14 +37,14 @@ the Argo CloudOps service.
 * Start the Argo CloudOps Service (includes vault)
 
     ```sh
-    ./scripts/quickstart_run.sh
+    bash scripts/quickstart_run.sh
     ```
 
 * To run in debug mode set log level DEBUG before running
 
     ```
     export ARGO_CLOUDOPS_LOG_LEVEL=DEBUG
-    ./scripts/quickstart_run.sh
+    bash scripts/quickstart_run.sh
     ```
 
 ### Create Argo CloudOps Project And Target (One Time Setup)

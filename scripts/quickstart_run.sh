@@ -72,10 +72,13 @@ kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflo
 # setup postgres db
 # dont fail if alredy exists
 set +e
-createdb argocloudops &> /dev/null
+# check if argocloudops db exists
+psql -lqt | cut -d \| -f 1 | grep -qw argocloudops
+if [ $? != 0 ]; then
+  createdb argocloudops -U postgres &> /dev/null
+fi
 set -e
-psql -d argocloudops -f scripts/createdbtables.sql &> /dev/null
-
+psql -d argocloudops -U postgres -f scripts/createdbtables.sql &> /dev/null
 
 # setup workflow if it doesn't exist
 set -e
