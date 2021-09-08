@@ -1,0 +1,14 @@
+arguments:
+  execute: 
+    - "--no-color --require-approval never"
+environment_variables:
+  AWS_REGION: us-west-2
+  CODE_URI: https://github.com/argoproj-labs/argo-cloudops/releases/download/v0.4.6/cdk-typescript-example.tar.gz
+  VAULT_ADDR: http://docker.for.mac.localhost:8200
+framework: cdk
+parameters:
+  execute_container_image_uri: argocloudops/argo-cloudops-cdk:1.99.0
+project_name: project1
+target_name: target1
+type: diff
+workflow_template_name: argo-cloudops-single-step-vault-aws
