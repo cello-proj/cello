@@ -56,7 +56,7 @@ env set to the same value used above.
 project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
 
     ```sh
-    bash scripts/create_project.sh https://github.com/Acepie/argo-cloudops-example.git
+    bash scripts/create_project.sh https://github.com/argoproj-labs/argo-cloudops.git
     ```
 
 ### Run Workflow
@@ -67,7 +67,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # CDK Example
-    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 8bacf9cd5cf08c142fd5d29317a4d072bdd0800c`
+    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml <TODO add SHA>`
 
     # Get the status / logs
     ./quickstart/argo-cloudops get $CDK_WORKFLOW_NAME
@@ -78,7 +78,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # Terraform Example
-    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 8bacf9cd5cf08c142fd5d29317a4d072bdd0800c`
+    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml <TODO add SHA>`
 
     # Get the status / logs
     ./quickstart/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
