@@ -108,7 +108,7 @@ kubectl exec vault-0 -- mkdir -p /home/vault/.aws
 kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 
 echo "Argo Cloudops started, forwarding to port 8443"
-export ACO_POD="$(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
+export ACO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
 kubectl port-forward $ACO_POD 8443:8443
 
 
