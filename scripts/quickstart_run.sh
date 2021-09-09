@@ -75,10 +75,10 @@ set +e
 # check if argocloudops db exists
 psql -lqt | cut -d \| -f 1 | grep -qw argocloudops
 if [ $? != 0 ]; then
-  createdb argocloudops -U postgres &> /dev/null
+  createdb argocloudops -U postgres
 fi
 set -e
-psql -d argocloudops -U postgres -f scripts/createdbtables.sql &> /dev/null
+psql -d argocloudops -f scripts/createdbtables.sql
 
 # setup workflow if it doesn't exist
 set -e
