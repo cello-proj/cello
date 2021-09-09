@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Bump github.com/spf13/cobra from 1.1.3 to 1.2.1.
 * Updated vault api lib to v1.1.1 to try to resolve dependabot resolution
   issues.
+* Remove Build test exceptions in cli files (linting).
 
 ### Security
 * Updated argo-workflows to v3.1.8 to address CVE-2021-37914
