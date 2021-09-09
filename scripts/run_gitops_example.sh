@@ -2,6 +2,7 @@
 
 GIT_PATH=$1
 GIT_SHA=$2
+MODE=$3
 
 if [ -z $ARGO_CLOUDOPS_PROJECT_NAME ]; then
     export ARGO_CLOUDOPS_PROJECT_NAME=project1
@@ -17,7 +18,11 @@ if [ -z $ARGO_CLOUDOPS_SERVICE_ADDR ]; then
 fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-CLI=$SCRIPT_DIR/../build/argo-cloudops
+if [ "${MODE}" == "dev" ]; then
+  CLI=$SCRIPT_DIR/../build/argo-cloudops
+else
+  CLI=$SCRIPT_DIR/../quickstart/argo-cloudops
+fi
 
 $CLI sync \
     -n $ARGO_CLOUDOPS_PROJECT_NAME \

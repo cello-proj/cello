@@ -34,6 +34,6 @@ clean_cli:
 	@rm -f ./build/argo-cloudops
 
 up: ## Starts a local vault and api locally
-	bash scripts/start_local.sh
+	bash scripts/start_local.sh dev
 
 .PHONY: build_service build_cli lint test tidy cover clean_cli clean_service up

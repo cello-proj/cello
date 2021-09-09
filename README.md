@@ -24,3 +24,4 @@ including CDK, Terraform and Cloud Formation via GitOps.
 * [Get Started Here](/docs/quickstart.md)
 * [Architecture](/docs/architecture.md)
 * [API](/docs/api.md)
+* [Development Setup](/docs/development.md)
