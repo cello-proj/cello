@@ -54,10 +54,24 @@ fi
 set -e
 
 set +e
+echo "Building docker image"
 docker build --pull --rm -f "Dockerfile" -t argocloudops:latest "."
+echo "Applying manifest"
 kubectl apply -f ./scripts/quickstart_manifest.yaml
 # Sleeping after applying manifest so pods have time to start
-sleep 60
+while [ "$(kubectl get pods -l=app='argocloudops' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for Argo CloudOps to be ready."
+done
+while [ "$(kubectl get pods -l=app.kubernetes.io/name='vault' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for Vault to be ready."
+done
+while [ "$(kubectl get pods -l=app='postgres' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for Postgres to be ready."
+done
+echo "Pods ready. Initializing environment"
 set -e
 
 # setup postgres db
