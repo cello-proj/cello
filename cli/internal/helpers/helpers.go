@@ -1,3 +1,4 @@
+//go:build !test
 // +build !test
 
 // Package helpers should be temporary until the cli args/flags are refactored.
