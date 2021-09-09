@@ -4,13 +4,9 @@
 
 * Install [Docker Desktop](https://www.docker.com/products/docker-desktop), ensure kubernetes is running.
 
-* Install [Argo Workflows](https://argoproj.github.io/argo-workflows/installation/)
+* Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 
 * Install **Argo CLI** `brew install argo`
-
-* Install PostgreSQL `brew install postgresql`
-
-* Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
 
 * Install [jq](https://stedolan.github.io/jq/) for json parsing.
 
@@ -26,31 +22,20 @@ You will need two windows
 
 * In window **#1**, ensure you have AWS credentials for the target account.
 
-* In window **#1** first set the **ARGO_CLOUDOPS_ADMIN_SECRET** to a 16
-character string, this will be used to authorize admin commands against
-the Argo CloudOps service.
+* Start the Argo CloudOps Service (includes workflows, vault, and postgres)
 
     ```sh
-    export ARGO_CLOUDOPS_ADMIN_SECRET=abcd1234abcd1234
-    ```
-
-* Start the Argo CloudOps Service (includes vault)
-
-    ```sh
-    bash scripts/quickstart_run.sh
-    ```
-
-* To run in debug mode set log level DEBUG before running
-
-    ```
-    export ARGO_CLOUDOPS_LOG_LEVEL=DEBUG
     bash scripts/quickstart_run.sh
     ```
 
 ### Create Argo CloudOps Project And Target (One Time Setup)
 
 * In window **#2**, ensure you have the **ARGO_CLOUDOPS_ADMIN_SECRET**
-env set to the same value used above.
+env set to `abcd1234abcd1234`.
+
+    ```sh
+    export ARGO_CLOUDOPS_ADMIN_SECRET=abcd1234abcd1234
+    ```
 
 * Ensure your credentials are set for the **target account** and create your first
 project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
@@ -67,7 +52,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # CDK Example
-    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 60675a3012c63dd7edc9097654246e48438fa93d`
+    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml <TODO add SHA>`
 
     # Get the status / logs
     ./quickstart/argo-cloudops get $CDK_WORKFLOW_NAME
@@ -78,7 +63,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # Terraform Example
-    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 60675a3012c63dd7edc9097654246e48438fa93d`
+    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml <TODO add SHA>`
 
     # Get the status / logs
     ./quickstart/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
