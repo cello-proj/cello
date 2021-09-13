@@ -23,6 +23,7 @@ nav:
     - Beginner: 
       - Core Concepts: users/coreconcepts.md
       - CLI: users/cli.md
+    - Examples: https://github.com/argoproj-labs/argo-cloudops/blob/master/examples/README.md
     - CLI Reference:
         - argo-cloudops: cli/argo-cloudops.md
         - argo-cloudops sync: cli/argo-cloudops_sync.md
@@ -32,7 +33,7 @@ nav:
         - argo-cloudops workflow: cli/argo-cloudops_workflow.md
         - argo-cloudops logs: cli/argo-cloudops_logs.md
   - Developer Guide:
-    - Quick Start: developers/quickstart.md
+    - Running Locally: developers/running-locally.md
     - Contributing: developers/CONTRIBUTING.md
     - Static Code Analysis: developers/static-code-analysis.md
     - API: developers/api.md

@@ -17,7 +17,7 @@ We're always looking for contributors.
 
 ### Running Locally
 
-To run Argo CloudOps locally for development: [running locally](quickstart.md).
+To run Argo CloudOps locally for development: [running locally](running-locally.md).
 
 ### Test Policy
 
