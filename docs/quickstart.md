@@ -52,7 +52,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # CDK Example
-    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml <TODO add SHA>`
+    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc`
 
     # Get the status / logs
     ./quickstart/argo-cloudops get $CDK_WORKFLOW_NAME
@@ -63,7 +63,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # Terraform Example
-    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml <TODO add SHA>`
+    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc`
 
     # Get the status / logs
     ./quickstart/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
