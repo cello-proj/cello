@@ -1,0 +1,43 @@
+site_name: Argo CloudOps - The engine for cloud deployments
+repo_url: https://github.com/argoproj-labs/argo-cloudops
+strict: true
+theme:
+  name: material
+  palette:
+    primary: blue
+  font:
+    text: Work Sans
+  logo: assets/logo.png
+markdown_extensions:
+  - codehilite
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.details
+  - toc:
+      permalink: true
+nav:
+  - Overview: index.md
+  - Architecture: architecture.md
+  - Quick Start: quickstart.md
+  - User Guide:
+    - Beginner: 
+      - Core Concepts: users/coreconcepts.md
+      - CLI: users/cli.md
+    - CLI Reference:
+        - argo-cloudops: cli/argo-cloudops.md
+        - argo-cloudops sync: cli/argo-cloudops_sync.md
+        - argo-cloudops diff: cli/argo-cloudops_diff.md
+        - argo-cloudops get: cli/argo-cloudops_get.md
+        - argo-cloudops list: cli/argo-cloudops_list.md
+        - argo-cloudops workflow: cli/argo-cloudops_workflow.md
+        - argo-cloudops logs: cli/argo-cloudops_logs.md
+  - Developer Guide:
+    - Quick Start: developers/quickstart.md
+    - Contributing: developers/CONTRIBUTING.md
+    - Static Code Analysis: developers/static-code-analysis.md
+    - API: developers/api.md
+    - Releasing: developers/releasing.md
+  - FAQ: faq.md
+  - Releases ⧉: https://github.com/argoproj-labs/argo-cloudops/releases
+  - Roadmap: roadmap.md
+  - Appendix: appendix.md

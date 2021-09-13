@@ -1,4 +1,4 @@
-# Development Environment setup
+# Quickstart
 
 ## Pre-reqs
 
@@ -15,17 +15,7 @@ with Docker Desktop managing resource in AWS (region us-west-2) with credentials
 
 * Install GoLint `go get -u golang.org/x/lint/golint` and ensure `$GOPATH` is in your `$PATH`.
 
-* Install PostgreSQL `brew install postgresql`
-
-* Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
-
-* Install [jq](https://stedolan.github.io/jq/) for json parsing.
-
-* Install **npm** `brew install npm` (For CDK).
-
-* Install [terraform](https://www.terraform.io/downloads.html).
-
-## Validate argo workflows is setup and working correctly.
+* Install [PostgreSQL](https://www.postgresql.org/download/)
 
 * Submit Argo Hello World workflow and record the **Name** from the output.
 
@@ -39,6 +29,13 @@ with Docker Desktop managing resource in AWS (region us-west-2) with credentials
     argo get -n argo <UPDATE_WITH_NAME_FROM_ABOVE> |grep Status
     ```
 
+* Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
+
+* Install [jq](https://stedolan.github.io/jq/) for json parsing.
+
+* Install **npm** `brew install npm` (For CDK).
+
+* Install [terraform](https://www.terraform.io/downloads.html).
 
 ## Deploy Sample App Locally
 
@@ -107,7 +104,7 @@ env set to the same value used above.
 project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
 
     ```sh
-    bash scripts/create_project.sh https://github.com/argoproj-labs/argo-cloudops.git
+    bash scripts/create_project.sh https://github.com/Acepie/argo-cloudops-example.git
     ```
 
 ### Run Workflow
@@ -118,7 +115,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # CDK Example
-    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 60675a3012c63dd7edc9097654246e48438fa93d dev`
+    CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 8bacf9cd5cf08c142fd5d29317a4d072bdd0800c`
 
     # Get the status / logs
     ./build/argo-cloudops get $CDK_WORKFLOW_NAME
@@ -129,7 +126,7 @@ project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new pr
 
     ```sh
     # Terraform Example
-    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 60675a3012c63dd7edc9097654246e48438fa93d dev`
+    TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 8bacf9cd5cf08c142fd5d29317a4d072bdd0800c`
 
     # Get the status / logs
     ./build/argo-cloudops get $TERRAFORM_WORKFLOW_NAME

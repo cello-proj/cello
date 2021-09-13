@@ -1,0 +1,7 @@
+# FAQ
+
+> Argo CloudOps server returns "INTERNAL ERROR" when following logs
+
+This happens when a deployment executes for a long time. Just reissue the logs command to retry.
+
+
