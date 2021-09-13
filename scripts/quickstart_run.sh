@@ -20,12 +20,10 @@ function executable_check()  {
 }
 
 executable_check "brew" '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+executable_check "docker" 'brew cask install docker'
 executable_check "kubectl" 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl"'
 executable_check "argo" 'brew install argo'
 executable_check "aws" 'brew install awscli'
-executable_check "psql" "brew install postgresql"
-executable_check "createdb" "brew install postgresql"
-executable_check "curl" 'brew install curl'
 
 # exit if aws credentials are not set
 set +e
@@ -55,30 +53,38 @@ if [ $? != 0 ]; then
 fi
 set -e
 
-# create argo namespace if it doesn't exist
 set +e
-kubectl get namespace argo &> /dev/null
-if [ $? != 0 ]; then
-  echo "creating argo namespace"
-  kubectl create namespace argo
-fi
+echo "Building docker image"
+docker build --pull --rm -f "Dockerfile" -t argocloudops:latest "."
+echo "Applying manifest"
+kubectl apply -f ./scripts/quickstart_manifest.yaml
+# Sleeping after applying manifest so pods have time to start
+while [ "$(kubectl get pods -l=app='argocloudops' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for Argo CloudOps to be ready."
+done
+while [ "$(kubectl get pods -l=app.kubernetes.io/name='vault' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for Vault to be ready."
+done
+while [ "$(kubectl get pods -l=app='postgres' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for Postgres to be ready."
+done
+echo "Pods ready. Initializing environment"
 set -e
-
-# install argo workflows from manifext
-echo "installing/updating argo"
-kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflows/v${ARGO_WORKFLOWS_VERSION}/manifests/install.yaml &> /dev/null
-
 
 # setup postgres db
 # dont fail if alredy exists
 set +e
-# check if argocloudops db exists
-psql -lqt | cut -d \| -f 1 | grep -qw argocloudops
+export POSTGRES_POD="$(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep postgres)"
+kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep argocloudops
 if [ $? != 0 ]; then
-  createdb argocloudops -U postgres
+  kubectl cp ./scripts/createdbtables.sql $POSTGRES_POD:./createdbtables.sql
+  kubectl exec $POSTGRES_POD -- createdb argocloudops -U postgres
+  kubectl exec $POSTGRES_POD -- psql -U postgres -d argocloudops -f ./createdbtables.sql
 fi
 set -e
-psql -d argocloudops -f scripts/createdbtables.sql
 
 # setup workflow if it doesn't exist
 set -e
@@ -87,23 +93,22 @@ if [ $? != 0 ]; then
   argo template create -n argo workflows/argo-cloudops-single-step-vault-aws.yaml
 fi
 
-mkdir -p quickstart
+# setup aws credentials in vault
+export AWS_ACCESS_KEY_ID=`aws configure get $AWS_PROFILE.aws_access_key_id`
+export AWS_SECRET_ACCESS_KEY=`aws configure get $AWS_PROFILE.aws_secret_access_key`
+export AWS_SESSION_TOKEN=`aws configure get $AWS_PROFILE.aws_session_token`
 
-# download Argo Cloudops CLI if it doesn't exist
-if [ ! -f quickstart/argo-cloudops ]; then
-    curl -L https://github.com/argoproj-labs/argo-cloudops/releases/download/v${ARGO_CLOUDOPS_VERSION}/argo-cloudops_cli_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz -o quickstart/argo-cloudops_cli_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz &> /dev/null
-      tar -xzf quickstart/argo-cloudops_cli_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz -C quickstart/ &> /dev/null
-        rm quickstart/argo-cloudops_cli_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz &> /dev/null
-fi
+cat > /tmp/awsConfig << EOF
+[default]
+aws_access_key_id=$AWS_ACCESS_KEY_ID
+aws_secret_access_key=$AWS_SECRET_ACCESS_KEY
+aws_session_token=$AWS_SESSION_TOKEN
+EOF
+kubectl exec vault-0 -- mkdir -p /home/vault/.aws
+kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 
-# download Argo CloudOps service binary if it doesn't exist
-if [ ! -f quickstart/service ]; then
-  curl -L https://github.com/argoproj-labs/argo-cloudops/releases/download/v${ARGO_CLOUDOPS_VERSION}/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz -o quickstart/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz &> /dev/null
-  tar -xzf quickstart/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz -C quickstart/ &> /dev/null
-  rm quickstart/argo-cloudops_service_${ARGO_CLOUDOPS_VERSION}_darwin_x86_64.tar.gz &> /dev/null
-fi
-
-echo "Starting Argo Cloudops service, use Ctrl+c to end process"
-./scripts/start_local.sh
+echo "Argo Cloudops started, forwarding to port 8443"
+export ACO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
+kubectl port-forward $ACO_POD 8443:8443
 
 
