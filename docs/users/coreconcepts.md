@@ -11,7 +11,7 @@ A project is a logical collection of all deployment targets.
 | Name            | Description                                                                                                   |
 |-----------------|---------------------------------------------------------------------------------------------------------------|
 | name            | name for the project                                                                                          |
-| repository      | link to the github repository with the [project manifest](https://github.com/argoproj-labs/argo-cloudops/blob/main/manifests/cdk_manifest.yaml). Should match the auth method being used (HTTPS, SSH). |
+| repository      | link to the github repository with [all project manifests](https://github.com/argoproj-labs/argo-cloudops/blob/main/manifests/cdk_manifest.yaml). Should match the auth method being used (HTTPS, SSH). |
 
 ## Target
 
