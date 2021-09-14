@@ -15,9 +15,9 @@ We're always looking for contributors.
 * Documentation - something missing or unclear? Please submit a pull request!
 * Code contribution - investigate an [issue](https://github.com/argoproj-labs/argo-cloudops/issues)
 
-### Running Locally
+### Local Development Environment
 
-To run Argo CloudOps locally for development: [running locally](running-locally.md).
+To run Argo CloudOps locally for [development](development-env.md).
 
 ### Test Policy
 

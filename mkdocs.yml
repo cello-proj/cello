@@ -7,7 +7,6 @@ theme:
     primary: blue
   font:
     text: Work Sans
-  logo: assets/logo.png
 markdown_extensions:
   - codehilite
   - admonition
@@ -34,7 +33,7 @@ nav:
         - argo-cloudops workflow: cli/argo-cloudops_workflow.md
         - argo-cloudops logs: cli/argo-cloudops_logs.md
   - Developer Guide:
-    - Running Locally: developers/running-locally.md
+    - Local Development Environment: developers/development-env.md
     - Contributing: developers/CONTRIBUTING.md
     - Static Code Analysis: developers/static-code-analysis.md
     - API: developers/api.md
@@ -43,4 +42,3 @@ nav:
   - Releases ⧉: https://github.com/argoproj-labs/argo-cloudops/releases
   - Roadmap: roadmap.md
   - Appendix: appendix.md
-  

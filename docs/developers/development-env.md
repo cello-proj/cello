@@ -1,4 +1,4 @@
-# Quickstart
+# Development Environment setup
 
 ## Pre-reqs
 
@@ -15,7 +15,17 @@ with Docker Desktop managing resource in AWS (region us-west-2) with credentials
 
 * Install GoLint `go get -u golang.org/x/lint/golint` and ensure `$GOPATH` is in your `$PATH`.
 
-* Install [PostgreSQL](https://www.postgresql.org/download/)
+* Install PostgreSQL `brew install postgresql`
+
+* Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
+
+* Install [jq](https://stedolan.github.io/jq/) for json parsing.
+
+* Install **npm** `brew install npm` (For CDK).
+
+* Install [terraform](https://www.terraform.io/downloads.html).
+
+## Validate argo workflows is setup and working correctly.
 
 * Submit Argo Hello World workflow and record the **Name** from the output.
 
@@ -29,13 +39,6 @@ with Docker Desktop managing resource in AWS (region us-west-2) with credentials
     argo get -n argo <UPDATE_WITH_NAME_FROM_ABOVE> |grep Status
     ```
 
-* Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
-
-* Install [jq](https://stedolan.github.io/jq/) for json parsing.
-
-* Install **npm** `brew install npm` (For CDK).
-
-* Install [terraform](https://www.terraform.io/downloads.html).
 
 ## Deploy Sample App Locally
 
