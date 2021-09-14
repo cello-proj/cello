@@ -5,7 +5,13 @@ This page serves as additional information in addition to the [Argo CloudOps Arc
 
 ## Project
 
-A project is a logical collection of all deployment targets. A project contains a single property of **name**.
+A project is a logical collection of all deployment targets.
+
+### Properties
+| Name            | Description                                                                                                   |
+|-----------------|---------------------------------------------------------------------------------------------------------------|
+| name            | name for the project                                                                                          |
+| repository      | link to the github repository with the [project manifest](https://github.com/argoproj-labs/argo-cloudops/blob/main/manifests/cdk_manifest.yaml). Should match the auth method being used (HTTPS, SSH). |
 
 ## Target
 

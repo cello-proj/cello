@@ -8,5 +8,5 @@ Gets status of workflow
 ### Flags
 
 ```
-  -h, --help                  help for sync
+  -h, --help                  help for get
 ```
