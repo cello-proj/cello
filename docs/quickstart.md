@@ -1,5 +1,7 @@
 # Quickstart
 
+Note: this is a quick guide for getting something up and running. This is configured for local setups and not meant to be run in production
+
 ## Pre-reqs
 
 * Install [Docker Desktop](https://www.docker.com/products/docker-desktop), ensure kubernetes is running.
