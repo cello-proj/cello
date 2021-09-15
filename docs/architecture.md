@@ -1,4 +1,4 @@
-![Architecture](/pictures/architecure.png)
+![Architecture](./assets/architecure.png)
 
 ## Definitions
 
@@ -30,7 +30,7 @@ environment variable which is read by the service at startup. The admin token is
 project. User tokens do not have the ability to manage the associated project or targets. User tokens have the format **PROVIDER:USER:SECRET**. User tokens are passed in the **Authorization** header to
 the service.
 
-* **Credential Tokens** Is used to obtain target credentials. Credential tokens are short lived and limited use tokens. They are generated and passed to the workflow during an operation. The token is then exchanged (via the credential provider) for target credentials (AWS credentials, etc). Credential tokens have a format based on the provider and should be considered opaque (for example vault **s.ABCDEFGHIJKLMNOPQRSTUVWXYZ**). Credentials tokens are
+* **Credential Tokens** Are used to obtain target credentials. Credential tokens are short lived and limited use tokens. They are generated and passed to the workflow during an operation. The token is then exchanged (via the credential provider) for target credentials (AWS credentials, etc). Credential tokens have a format based on the provider and should be considered opaque (for example vault **s.ABCDEFGHIJKLMNOPQRSTUVWXYZ**). Credentials tokens are
 passed from the credential provider to the service and then on to the workflow.
 
 ## State
@@ -53,7 +53,7 @@ Additionally you can define your own frameworks in **argo-cloudops.yaml**.
 
 ## Workflow
 
-Argo CloudOps uses Argo Workflows as it's workflow engine. To execute the provided command, an Argo workflow
+Argo CloudOps uses [Argo Workflows](https://argoproj.github.io/argo-workflows/) as its workflow engine. To execute the provided command, an Argo workflow
 is submitted by the service. Ordinary users should not need to access Argo workflows directly.  Workflows
 are stored as Argo Workflow Templates. Currently there is one generic workflow for all commands which
 performs one step which executes the image provided with the command, arguments and environment variables.
@@ -61,5 +61,5 @@ performs one step which executes the image provided with the command, arguments 
 ## Config
 
 The config file contains the commands executed by different frameworks.  The example config in
-[/examples/argo-cloudops.yaml](/examples/argo-cloudops.yaml) contains the default commands to
+[argo-cloudops.yaml](https://github.com/argoproj-labs/argo-cloudops/blob/main/argo-cloudops.yaml) contains the default commands to
 run **cdk** and **terraform**.
