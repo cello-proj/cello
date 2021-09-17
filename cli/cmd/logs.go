@@ -25,14 +25,13 @@ var logsCmd = &cobra.Command{
 		if streamLogs {
 			// This is a _very_ simple approach to streaming.
 			cobra.CheckErr(apiCl.StreamLogs(context.Background(), os.Stdout, workflowName))
+		} else {
+			resp, err := apiCl.GetLogs(context.Background(), workflowName)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+			fmt.Println(strings.Join(resp.Logs, "\n"))
 		}
-
-		resp, err := apiCl.GetLogs(context.Background(), workflowName)
-		if err != nil {
-			cobra.CheckErr(err)
-		}
-
-		fmt.Println(strings.Join(resp.Logs, "\n"))
 	},
 }
 
