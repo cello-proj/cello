@@ -154,6 +154,8 @@ if [ -z "$AWS_SESSION_TOKEN" ]; then
     exit 1
 fi
 
+set -e
+
 cat > /tmp/awsConfig << EOF
 [default]
 aws_access_key_id=$AWS_ACCESS_KEY_ID
