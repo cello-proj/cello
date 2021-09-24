@@ -768,9 +768,13 @@
                 <h1 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h1>
 <p>Note: this is a quick guide for getting something up and running. This is configured for local setups and not meant to be run in production</p>
 <h2 id="pre-reqs">Pre-reqs<a class="headerlink" href="#pre-reqs" title="Permanent link">&para;</a></h2>
+<p><em>The quickstart currently only supports macOS.</em></p>
 <ul>
 <li>
-<p>Install <a href="https://www.docker.com/products/docker-desktop">Docker Desktop</a>, ensure kubernetes is running.</p>
+<p>Clone the Argo CloudOps GitHub <a href="https://github.com/argoproj-labs/argo-cloudops">repository</a>.</p>
+</li>
+<li>
+<p>Install <a href="https://www.docker.com/products/docker-desktop">Docker Desktop</a>, ensure <a href="https://docs.docker.com/desktop/kubernetes/">Kubernetes</a> is running.</p>
 </li>
 <li>
 <p>Install <a href="https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html">AWS CLI</a></p>
@@ -791,10 +795,16 @@
 <h3 id="start-vault-argo-cloudops-service">Start Vault &amp; Argo CloudOps Service<a class="headerlink" href="#start-vault-argo-cloudops-service" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
-<p>In window <strong>#1</strong>, ensure you have AWS credentials for the target account.</p>
+<p>In window <strong>#1</strong>, ensure you have <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html">AWS credentials</a> for the target account configured and access to your kubernetes cluster. For the AWS credentials, export the AWS_PROFILE that is to be used.</p>
 </li>
 <li>
-<p>Start the Argo CloudOps Service (includes workflows, vault, and postgres)</p>
+<p>Set <strong>ARGO_CLOUDOPS_ADMIN_SECRET</strong> env var to <code>abcd1234abcd1234</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span> <span class="nv">ARGO_CLOUDOPS_ADMIN_SECRET</span><span class="o">=</span>abcd1234abcd1234
+</code></pre></div>
+</li>
+<li>
+<p>Start the Argo CloudOps Service (includes workflows, vault, and postgres).
+  Note: this will copy your current AWS credentials to the vault containers.</p>
 <div class="highlight"><pre><span></span><code>bash scripts/quickstart_run.sh
 </code></pre></div>
 </li>
@@ -803,13 +813,14 @@
 <ul>
 <li>
 <p>In window <strong>#2</strong>, ensure you have the <strong>ARGO_CLOUDOPS_ADMIN_SECRET</strong>
-env set to <code>abcd1234abcd1234</code>.</p>
+env var set to <code>abcd1234abcd1234</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="nb">export</span> <span class="nv">ARGO_CLOUDOPS_ADMIN_SECRET</span><span class="o">=</span>abcd1234abcd1234
 </code></pre></div>
 </li>
 <li>
-<p>Ensure your credentials are set for the <strong>target account</strong> and create your first
-project and target. This returns the <strong>ARGO_CLOUDOPS_USER_TOKEN</strong> for the new project.</p>
+<p>Ensure your AWS credentials are set for the <strong>target account</strong> and create
+  your first project and target. The output contains an export command for the <strong>ARGO_CLOUDOPS_USER_TOKEN</strong>
+  for the new project.</p>
 <div class="highlight"><pre><span></span><code>bash scripts/create_project.sh https://github.com/argoproj-labs/argo-cloudops.git
 </code></pre></div>
 </li>
@@ -817,16 +828,18 @@ project and target. This returns the <strong>ARGO_CLOUDOPS_USER_TOKEN</strong> f
 <h3 id="run-workflow">Run Workflow<a class="headerlink" href="#run-workflow" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
-<p>Ensure the <strong>ARGO_CLOUDOPS_USER_TOKEN</strong> for the project is specified</p>
+<p>In window <strong>#2</strong>, ensure the <strong>ARGO_CLOUDOPS_USER_TOKEN</strong> for the project is
+  specified (the output of <code>create_project.sh</code> should have output a bash
+  command to export it).</p>
 </li>
 <li>
 <p>CDK Example</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># CDK Example</span>
 <span class="nv">CDK_WORKFLOW_NAME</span><span class="o">=</span><span class="sb">`</span>bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc<span class="sb">`</span>
 
-<span class="c1"># Get the status / logs</span>
+<span class="c1"># Get the status/follow the logs</span>
 ./quickstart/argo-cloudops get <span class="nv">$CDK_WORKFLOW_NAME</span>
-./quickstart/argo-cloudops logs <span class="nv">$CDK_WORKFLOW_NAME</span>
+./quickstart/argo-cloudops logs -f <span class="nv">$CDK_WORKFLOW_NAME</span>
 </code></pre></div>
 </li>
 <li>
@@ -834,9 +847,9 @@ project and target. This returns the <strong>ARGO_CLOUDOPS_USER_TOKEN</strong> f
 <div class="highlight"><pre><span></span><code><span class="c1"># Terraform Example</span>
 <span class="nv">TERRAFORM_WORKFLOW_NAME</span><span class="o">=</span><span class="sb">`</span>bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc<span class="sb">`</span>
 
-<span class="c1"># Get the status / logs</span>
+<span class="c1"># Get the status/follow the logs</span>
 ./quickstart/argo-cloudops get <span class="nv">$TERRAFORM_WORKFLOW_NAME</span>
-./quickstart/argo-cloudops logs <span class="nv">$TERRAFORM_WORKFLOW_NAME</span>
+./quickstart/argo-cloudops logs -f <span class="nv">$TERRAFORM_WORKFLOW_NAME</span>
 </code></pre></div>
 </li>
 </ul>
