@@ -4,6 +4,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -87,7 +88,25 @@ func main() {
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
 
 	r := setupRouter(h)
-	err = http.ListenAndServeTLS(fmt.Sprintf(":%d", env.Port), "ssl/certificate.crt", "ssl/certificate.key", r)
+
+	cer, err := tls.LoadX509KeyPair("ssl/certificate.crt", "ssl/certificate.key")
+	if err != nil {
+		panic("error loading ssl certificate")
+	}
+
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", env.Port),
+		Handler: r,
+		TLSConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			NextProtos: []string{
+				"http/1.1",
+			},
+			Certificates: []tls.Certificate{cer},
+		},
+	}
+
+	err = srv.ListenAndServeTLS("ssl/certificate.crt", "ssl/certificate.key")
 	if err != nil {
 		level.Error(logger).Log("message", "error starting service", "error", err)
 		panic("error starting service")
