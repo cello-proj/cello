@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Updated vault api lib to v1.1.1 to try to resolve dependabot resolution
   issues.
 * Change build test exceptions declaration (linting).
+* Explicitly set http1.1 for service.
 
 ### Security
 * Updated argo-workflows to v3.1.8 to address CVE-2021-37914
