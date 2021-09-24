@@ -57,7 +57,6 @@ type handler struct {
 func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", h.env.VaultAddress)
 	l := h.requestLogger(r, "op", "health-check", "vault-endpoint", vaultEndpoint)
-	level.Debug(l).Log("message", "executing")
 
 	// #nosec
 	response, err := http.Get(vaultEndpoint)
