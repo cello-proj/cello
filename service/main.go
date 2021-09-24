@@ -88,12 +88,6 @@ func main() {
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
 
 	r := setupRouter(h)
-
-	cer, err := tls.LoadX509KeyPair("ssl/certificate.crt", "ssl/certificate.key")
-	if err != nil {
-		panic("error loading ssl certificate")
-	}
-
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", env.Port),
 		Handler: r,
@@ -102,7 +96,6 @@ func main() {
 			NextProtos: []string{
 				"http/1.1",
 			},
-			Certificates: []tls.Certificate{cer},
 		},
 	}
 
