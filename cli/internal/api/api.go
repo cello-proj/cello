@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
@@ -95,6 +96,11 @@ func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName strin
 
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
+		// retry call if we receive the stream error
+		if strings.Contains(err.Error(), "stream error: stream ID 1; INTERNAL_ERROR") {
+			fmt.Fprint(w, "argo workflow log stream error, restarting log stream output\n\n")
+			return err
+		}
 		return fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
 
