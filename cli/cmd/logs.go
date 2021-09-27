@@ -22,11 +22,12 @@ var logsCmd = &cobra.Command{
 
 		apiCl := api.NewClient(argoCloudOpsServiceAddr(), "")
 
+		ctx := context.Background()
 		if streamLogs {
 			// This is a _very_ simple approach to streaming.
-			cobra.CheckErr(apiCl.StreamLogs(context.Background(), os.Stdout, workflowName))
+			cobra.CheckErr(apiCl.StreamLogs(ctx, os.Stdout, workflowName, 0))
 		} else {
-			resp, err := apiCl.GetLogs(context.Background(), workflowName)
+			resp, err := apiCl.GetLogs(ctx, workflowName)
 			if err != nil {
 				cobra.CheckErr(err)
 			}

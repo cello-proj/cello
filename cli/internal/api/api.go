@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
@@ -74,8 +76,8 @@ func (c *Client) GetLogs(ctx context.Context, workflowName string) (responses.Ge
 	return output, nil
 }
 
-// StreamLogs streams the logs of a workflow.
-func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName string) error {
+// StreamLogs streams the logs of a workflow starting after loggedBytes.
+func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName string, loggedBytes int64) error {
 	url := fmt.Sprintf("%s/workflows/%s/logstream", c.endpoint, workflowName)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -93,13 +95,20 @@ func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName strin
 		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
 	}
 
-	_, err = io.Copy(w, resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
+	// discard reader bytes already logged
+	discardedWriter := &bytes.Buffer{}
+	if _, err := io.CopyN(discardedWriter, resp.Body, loggedBytes); err != nil {
+		return err
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
+	loggedBytes, err = io.Copy(w, resp.Body)
+	if err != nil {
+		// retry call if we receive the stream error
+		if strings.Contains(err.Error(), "stream error: stream ID 1; INTERNAL_ERROR") {
+			time.Sleep(time.Second * 10)
+			// Restart log streaming
+			return c.StreamLogs(ctx, w, workflowName, loggedBytes)
+		}
+		return fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
 
 	return nil

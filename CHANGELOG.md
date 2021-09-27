@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Change build test exceptions declaration (linting).
 * Explicitly set http1.1 for service.
 * Remove health check debug log messages.
+* Retry logging on stream INTERNAL_ERROR errors.
 
 ### Security
 * Updated argo-workflows to v3.1.8 to address CVE-2021-37914
