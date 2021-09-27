@@ -11,6 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	loggingStartByte int64 = 0
+)
+
 // logsCmd represents the logs command
 var logsCmd = &cobra.Command{
 	Use:   "logs [workflow name]",

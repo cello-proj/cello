@@ -121,6 +121,7 @@ func (c *Client) streamLogsToWriterAtCursor(ctx context.Context, w io.Writer, wo
 	if err != nil {
 		// retry call if we receive the stream error, increase the logging cursor byte by the amount we logged.
 		*loggingCursorByte += writtenBytes
+
 		return fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
 	return nil
