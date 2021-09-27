@@ -78,7 +78,24 @@ func (c *Client) GetLogs(ctx context.Context, workflowName string) (responses.Ge
 }
 
 // StreamLogs streams the logs of a workflow starting after loggedBytes.
-func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName string, skippedLogBytes int64) error {
+func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName string) error {
+	var loggingCursorByte int64
+	// When we receive a stream error we continue and retry processing up to 5 times keeping track of the byte we were logging.
+	for i := 0; i < 5; i++ {
+		err := c.streamLogsToWriterAtCursor(ctx, w, workflowName, &loggingCursorByte)
+		if err != nil {
+			if strings.Contains(err.Error(), "stream error: stream ID 1; INTERNAL_ERROR") {
+				time.Sleep(time.Second * 10)
+				continue
+			}
+			return err
+		}
+		break
+	}
+	return nil
+}
+
+func (c *Client) streamLogsToWriterAtCursor(ctx context.Context, w io.Writer, workflowName string, loggingCursorByte *int64) error {
 	url := fmt.Sprintf("%s/workflows/%s/logstream", c.endpoint, workflowName)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -96,26 +113,17 @@ func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName strin
 		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
 	}
 
-	// discard reader bytes already logged
-	if _, err := io.CopyN(ioutil.Discard, resp.Body, skippedLogBytes); err != nil {
+	// discard reader bytes till cursor byte number
+	if _, err := io.CopyN(ioutil.Discard, resp.Body, *loggingCursorByte); err != nil {
 		return err
 	}
-	skippedLogBytes, err = io.Copy(w, resp.Body)
+	writtenBytes, err := io.Copy(w, resp.Body)
 	if err != nil {
-		// retry call if we receive the stream error
-		if strings.Contains(err.Error(), "INTERNAL_ERROR") {
-			// temporary debug message
-			_, err := fmt.Fprintf(w, "internal error found while copying: '%v'\n", err.Error())
-			if err != nil {
-				return err
-			}
-			time.Sleep(time.Second * 10)
-			// Restart log streaming
-			return c.StreamLogs(ctx, w, workflowName, skippedLogBytes)
-		}
+		// retry call if we receive the stream error, increase the logging cursor byte by the amount we logged.
+		*loggingCursorByte += writtenBytes
+
 		return fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
-
 	return nil
 }
 
