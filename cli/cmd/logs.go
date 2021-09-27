@@ -25,13 +25,7 @@ var logsCmd = &cobra.Command{
 		ctx := context.Background()
 		if streamLogs {
 			// This is a _very_ simple approach to streaming.
-			err := apiCl.StreamLogs(ctx, os.Stdout, workflowName)
-			// catch and retry stream internal error
-			for err != nil && strings.Contains(err.Error(), "stream error: stream ID 1; INTERNAL_ERROR") {
-				err = apiCl.StreamLogs(ctx, os.Stdout, workflowName)
-			}
-			cobra.CheckErr(err)
-
+			cobra.CheckErr(apiCl.StreamLogs(ctx, os.Stdout, workflowName, 0))
 		} else {
 			resp, err := apiCl.GetLogs(ctx, workflowName)
 			if err != nil {
