@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
@@ -103,6 +104,7 @@ func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName strin
 	if err != nil {
 		// retry call if we receive the stream error
 		if strings.Contains(err.Error(), "stream error: stream ID 1; INTERNAL_ERROR") {
+			time.Sleep(time.Second * 30)
 			// Restart log streaming
 			return c.StreamLogs(ctx, w, workflowName, loggedBytes)
 		}
