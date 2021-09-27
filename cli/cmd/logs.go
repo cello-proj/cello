@@ -11,6 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	loggingStartByte int64 = 0
+)
+
 // logsCmd represents the logs command
 var logsCmd = &cobra.Command{
 	Use:   "logs [workflow name]",
@@ -25,7 +29,7 @@ var logsCmd = &cobra.Command{
 		ctx := context.Background()
 		if streamLogs {
 			// This is a _very_ simple approach to streaming.
-			cobra.CheckErr(apiCl.StreamLogs(ctx, os.Stdout, workflowName, 0))
+			cobra.CheckErr(apiCl.StreamLogs(ctx, os.Stdout, workflowName, loggingStartByte))
 		} else {
 			resp, err := apiCl.GetLogs(ctx, workflowName)
 			if err != nil {
