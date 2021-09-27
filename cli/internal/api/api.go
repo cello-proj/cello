@@ -103,12 +103,7 @@ func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName strin
 	skippedLogBytes, err = io.Copy(w, resp.Body)
 	if err != nil {
 		// retry call if we receive the stream error
-		if strings.Contains(err.Error(), "INTERNAL_ERROR") {
-			// temporary debug message
-			_, err := fmt.Fprintf(w, "internal error found while copying: '%v'\n", err.Error())
-			if err != nil {
-				return err
-			}
+		if strings.Contains(err.Error(), "stream error: stream ID 1; INTERNAL_ERROR") {
 			time.Sleep(time.Second * 10)
 			// Restart log streaming
 			return c.StreamLogs(ctx, w, workflowName, skippedLogBytes)
