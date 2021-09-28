@@ -134,8 +134,7 @@ func TestStreamLogs(t *testing.T) {
 		name                  string
 		apiRespBody           []byte
 		apiRespStatusCode     int
-		endpoint              string // Used to create new request error.
-		loggedBytes           int64
+		endpoint              string          // Used to create new request error.
 		mockHTTPClient        *mockHTTPClient // Only used when needed.
 		writeBadContentLength bool            // Used to create response body error.
 		want                  []byte
@@ -146,13 +145,6 @@ func TestStreamLogs(t *testing.T) {
 			apiRespBody:       readFile(t, "stream_logs_good.txt"),
 			apiRespStatusCode: http.StatusOK,
 			want:              readFile(t, "stream_logs_good.txt"),
-		},
-		{
-			name:              "Log after 8 bytes",
-			apiRespBody:       readFile(t, "stream_logs_good.txt"),
-			apiRespStatusCode: http.StatusOK,
-			loggedBytes:       8,
-			want:              readFile(t, "stream_logs_good.txt")[8:],
 		},
 		{
 			name:              "error non-200 response",
@@ -215,7 +207,7 @@ func TestStreamLogs(t *testing.T) {
 			}
 
 			var b bytes.Buffer
-			err := client.StreamLogs(context.Background(), &b, "workflow1", tt.loggedBytes)
+			err := client.StreamLogs(context.Background(), &b, "workflow1")
 
 			if tt.wantErr != nil {
 				assert.EqualError(t, err, tt.wantErr.Error())
