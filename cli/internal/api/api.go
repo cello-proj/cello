@@ -7,7 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
@@ -74,8 +77,25 @@ func (c *Client) GetLogs(ctx context.Context, workflowName string) (responses.Ge
 	return output, nil
 }
 
-// StreamLogs streams the logs of a workflow.
+// StreamLogs streams the logs of a workflow starting after loggedBytes.
 func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName string) error {
+	var loggingCursorByte int64
+	// When we receive a stream error we continue and retry processing up to 5 times keeping track of the byte we were logging.
+	for i := 0; i < 5; i++ {
+		err := c.streamLogsToWriterAtCursor(ctx, w, workflowName, &loggingCursorByte)
+		if err != nil {
+			if strings.Contains(err.Error(), "stream error: stream ID 1; INTERNAL_ERROR") {
+				time.Sleep(time.Second * 10)
+				continue
+			}
+			return err
+		}
+		break
+	}
+	return nil
+}
+
+func (c *Client) streamLogsToWriterAtCursor(ctx context.Context, w io.Writer, workflowName string, loggingCursorByte *int64) error {
 	url := fmt.Sprintf("%s/workflows/%s/logstream", c.endpoint, workflowName)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -93,15 +113,16 @@ func (c *Client) StreamLogs(ctx context.Context, w io.Writer, workflowName strin
 		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
 	}
 
-	_, err = io.Copy(w, resp.Body)
+	// discard reader bytes till cursor byte number
+	if _, err := io.CopyN(ioutil.Discard, resp.Body, *loggingCursorByte); err != nil {
+		return err
+	}
+	writtenBytes, err := io.Copy(w, resp.Body)
 	if err != nil {
+		// retry call if we receive the stream error, increase the logging cursor byte by the amount we logged.
+		*loggingCursorByte += writtenBytes
 		return fmt.Errorf("error reading response body. status code: %d, error: %w", resp.StatusCode, err)
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received unexpected status code: %d", resp.StatusCode)
-	}
-
 	return nil
 }
 
