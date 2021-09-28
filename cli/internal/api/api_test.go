@@ -124,7 +124,6 @@ func TestGetLogs(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 				assert.Equal(t, output, tt.want)
-
 			}
 		})
 	}
