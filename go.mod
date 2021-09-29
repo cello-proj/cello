@@ -3,7 +3,7 @@ module github.com/argoproj-labs/argo-cloudops
 go 1.16
 
 require (
-	github.com/argoproj/argo-workflows/v3 v3.1.8
+	github.com/argoproj/argo-workflows/v3 v3.1.13
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/aws/aws-sdk-go v1.40.45
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
