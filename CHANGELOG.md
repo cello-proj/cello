@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 * Bump github.com/go-git/go-git/v5 from 5.3.0 to 5.4.2.
+* Bump github.com/google/uuid from 1.2.0 to 1.3.0.
 * Bump github.com/go-kit/log from 0.10.0 to 0.12.0.
 * Bump github.com/upper/db/v4 from 4.1.0 to 4.2.1.
 * Migrated github.com/go-kit/kit to github.com/go-kit/log.
