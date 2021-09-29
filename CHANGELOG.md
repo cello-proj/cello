@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+* Bump github.com/argoproj/argo-workflows/v3 from 3.1.8 to 3.1.13.
 * Bump github.com/aws/aws-sdk-go from 1.40.45 to 1.40.51.
 * Bump github.com/go-git/go-git/v5 from 5.3.0 to 5.4.2.
 * Bump github.com/google/uuid from 1.2.0 to 1.3.0.
