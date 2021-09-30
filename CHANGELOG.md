@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Bump github.com/upper/db/v4 from 4.1.0 to 4.2.1.
 * Bump google.golang.org/grpc from 1.40.0 to 1.41.0.
 * Migrated github.com/go-kit/kit to github.com/go-kit/log.
+* Update to go 1.17.1.
 
 ## [0.8.2] - 2021-09-28
 ### Added
