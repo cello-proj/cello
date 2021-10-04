@@ -5,6 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+* Bump github.com/argoproj/argo-workflows/v3 from 3.1.8 to 3.1.13.
+* Bump github.com/aws/aws-sdk-go from 1.40.51 to 1.40.52.
+* Bump github.com/go-git/go-git/v5 from 5.3.0 to 5.4.2.
+* Bump github.com/google/uuid from 1.2.0 to 1.3.0.
+* Bump github.com/go-kit/log from 0.10.0 to 0.12.0.
+* Bump github.com/upper/db/v4 from 4.1.0 to 4.2.1.
+* Bump google.golang.org/grpc from 1.40.0 to 1.41.0.
+* Migrated github.com/go-kit/kit to github.com/go-kit/log.
+* Update to go 1.17.1.
+
+## [0.8.2] - 2021-09-28
 ### Added
 * Example manifest files.
 
