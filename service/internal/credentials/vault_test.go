@@ -506,6 +506,44 @@ func TestValidateAuthorizedAdmin(t *testing.T) {
 	}
 }
 
+func TestNewAuthorization(t *testing.T) {
+	tests := []struct {
+		name         string
+		header       string
+		expectedAuth *Authorization
+		expectErr    bool
+	}{
+		{
+			name:         "valid authorization header",
+			header:       "vault:testkey:testsecret",
+			expectedAuth: &Authorization{"vault", "testkey", "testsecret"},
+			expectErr:    false,
+		},
+		{
+			name:      "invalid authorization header",
+			header:    "vault:testbad",
+			expectErr: true,
+		},
+		{
+			name:      "authorization header empty",
+			header:    "",
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a, err := NewAuthorization(tt.header)
+			if err != nil != tt.expectErr {
+				t.Errorf("\nwant error: %v\n got error: %v", tt.expectErr, err != nil)
+			}
+			if !cmp.Equal(a, tt.expectedAuth) {
+				t.Errorf("\nwant auth: %v\n got: %v", tt.expectedAuth, a)
+			}
+		})
+	}
+}
+
 type mockVaultLogical struct {
 	vault.Logical
 	data  map[string]interface{}

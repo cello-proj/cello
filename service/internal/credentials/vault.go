@@ -165,13 +165,16 @@ func (a Authorization) ValidateAuthorizedAdmin(adminSecret string) func() error 
 
 // NewAuthorization provides an Authorization from a header.
 // This is separate from admin functions which use the admin env var
-func NewAuthorization(authorizationHeader string) *Authorization {
+func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 	var a Authorization
 	auth := strings.SplitN(authorizationHeader, ":", 3)
+	if len(auth) < 3 {
+		return nil, fmt.Errorf("invalid authorization header")
+	}
 	a.Provider = auth[0]
 	a.Key = auth[1]
 	a.Secret = auth[2]
-	return &a
+	return &a, nil
 }
 
 func (v VaultProvider) createPolicyState(name, policy string) error {

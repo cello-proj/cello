@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Migrated github.com/go-kit/kit to github.com/go-kit/log.
 * Update to go 1.17.1.
 
+### Fixed
+* Nil pointer error on bad auth header.
+
 ## [0.8.2] - 2021-09-28
 ### Added
 * Example manifest files.
