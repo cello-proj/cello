@@ -150,7 +150,11 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for create workflow from git")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	// TODO we need to ensure this _isn't an admin...
 	if err := a.Validate(); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
@@ -210,7 +214,11 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for create workflow")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
@@ -382,7 +390,11 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for get target")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
@@ -468,7 +480,11 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for create project")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
@@ -554,7 +570,11 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for get project")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
@@ -597,7 +617,11 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
@@ -663,7 +687,11 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for create target")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -739,7 +767,11 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for delete target")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
@@ -771,7 +803,11 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "validating authorization header for target list")
 	ah := r.Header.Get("Authorization")
-	a := credentials.NewAuthorization(ah)
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
 		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
