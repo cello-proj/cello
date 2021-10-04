@@ -169,7 +169,7 @@ func NewAuthorization(authorizationHeader string) (*Authorization, error) {
 	var a Authorization
 	auth := strings.SplitN(authorizationHeader, ":", 3)
 	if len(auth) < 3 {
-		return nil, fmt.Errorf("invalid authorication header")
+		return nil, fmt.Errorf("invalid authorization header")
 	}
 	a.Provider = auth[0]
 	a.Key = auth[1]
