@@ -524,6 +524,11 @@ func TestNewAuthorization(t *testing.T) {
 			header:    "vault:testbad",
 			expectErr: true,
 		},
+		{
+			name:      "authorization header empty",
+			header:    "",
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {
