@@ -85,7 +85,7 @@ func main() {
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
-	if err := http.ListenAndServeTLS(fmt.Sprintf(":%d", env.Port),"ssl/certificate.crt", "ssl/certificate.key", setupRouter(h)); err != nil {
+	if err := http.ListenAndServeTLS(fmt.Sprintf(":%d", env.Port), "ssl/certificate.crt", "ssl/certificate.key", setupRouter(h)); err != nil {
 		level.Error(logger).Log("message", "error starting service", "error", err)
 		panic("error starting service")
 	}
