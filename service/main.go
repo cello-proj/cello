@@ -46,21 +46,6 @@ func main() {
 	}
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", env.ConfigFilePath))
 
-	var gitClient git.BasicClient
-
-	if env.GitAuthMethod == "https" {
-		gitClient, err = git.NewHTTPSBasicClient(env.GitHTTPSUser, env.GitHTTPSPass)
-	} else if env.GitAuthMethod == "ssh" {
-		gitClient, err = git.NewSSHBasicClient(env.SSHPEMFile)
-	} else {
-		panic(fmt.Sprintf("Invalid git auth method provided %s", env.GitAuthMethod))
-	}
-
-	if err != nil {
-		level.Error(logger).Log("message", "error creating git client", "error", err)
-		panic("error creating git client")
-	}
-
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
 
@@ -79,7 +64,7 @@ func main() {
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
 		argoCtx:                argoCtx,
 		config:                 config,
-		gitClient:              gitClient,
+		gitClient:              gitClient(env, logger),
 		env:                    env,
 		dbClient:               dbClient,
 	}
@@ -98,4 +83,29 @@ func setLogLevel(logger *log.Logger, logLevel string) {
 	default:
 		*logger = level.NewFilter(*logger, level.AllowInfo())
 	}
+}
+
+func gitClient(env env.Vars, logger log.Logger) git.BasicClient {
+	var cl git.BasicClient
+	var err error
+
+	var opts []git.Option
+	if env.LogLevel == "DEBUG" {
+		opts = append(opts, git.WithProgressWriter(os.Stdout))
+	}
+
+	if env.GitAuthMethod == "https" {
+		cl, err = git.NewHTTPSBasicClient(env.GitHTTPSUser, env.GitHTTPSPass, opts...)
+	} else if env.GitAuthMethod == "ssh" {
+		cl, err = git.NewSSHBasicClient(env.SSHPEMFile, opts...)
+	} else {
+		panic(fmt.Sprintf("Invalid git auth method provided %s", env.GitAuthMethod))
+	}
+
+	if err != nil {
+		level.Error(logger).Log("message", "error creating git client", "error", err)
+		panic("error creating git client")
+	}
+
+	return cl
 }

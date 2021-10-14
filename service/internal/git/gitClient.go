@@ -3,7 +3,9 @@ package git
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,6 +53,15 @@ func (g gitSvcImpl) Checkout(w *git.Worktree, opts *git.CheckoutOptions) error {
 	return w.Checkout(opts)
 }
 
+// Option is a function for configuring the BasicClient
+type Option func(*BasicClient)
+
+func WithProgressWriter(w io.Writer) Option {
+	return func(c *BasicClient) {
+		c.pw = w
+	}
+}
+
 // BasicClient connects to git using ssh
 type BasicClient struct {
 	auth    transport.AuthMethod
@@ -58,36 +69,44 @@ type BasicClient struct {
 	git     gitSvc
 	fs      fs.FS
 	baseDir string // base directory to run git operations from
+	pw      io.Writer
 }
 
 // NewSSHBasicClient creates a new ssh based git client
-func NewSSHBasicClient(sshPemFile string) (BasicClient, error) {
+func NewSSHBasicClient(sshPemFile string, opts ...Option) (BasicClient, error) {
 	auth, err := ssh.NewPublicKeysFromFile("git", sshPemFile, "")
 	if err != nil {
 		return BasicClient{}, err
 	}
 
-	return BasicClient{
+	return newBasicClient(auth, opts...), nil
+}
+
+// NewHTTPSBasicClient creates a new https based git client
+func NewHTTPSBasicClient(user, pass string, opts ...Option) (BasicClient, error) {
+	auth := &http.BasicAuth{
+		Username: user,
+		Password: pass,
+	}
+
+	return newBasicClient(auth, opts...), nil
+}
+
+func newBasicClient(auth transport.AuthMethod, opts ...Option) BasicClient {
+	cl := BasicClient{
 		auth:    auth,
 		mu:      &sync.Mutex{},
 		git:     gitSvcImpl{},
 		fs:      os.DirFS(os.TempDir()),
 		baseDir: os.TempDir(),
-	}, nil
-}
+		pw:      ioutil.Discard,
+	}
 
-// NewHTTPSBasicClient creates a new https based git client
-func NewHTTPSBasicClient(user, pass string) (BasicClient, error) {
-	return BasicClient{
-		auth: &http.BasicAuth{
-			Username: user,
-			Password: pass,
-		},
-		mu:      &sync.Mutex{},
-		git:     gitSvcImpl{},
-		fs:      os.DirFS(os.TempDir()),
-		baseDir: os.TempDir(),
-	}, nil
+	for _, o := range opts {
+		o(&cl)
+	}
+
+	return cl
 }
 
 func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
@@ -107,7 +126,7 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 		repo, err = g.git.PlainClone(filePath, false, &git.CloneOptions{
 			URL:      repository,
 			Auth:     g.auth,
-			Progress: os.Stdout,
+			Progress: g.pw,
 		})
 		if err != nil {
 			return []byte{}, err
@@ -118,7 +137,7 @@ func (g BasicClient) GetManifestFile(repository, commitHash, path string) ([]byt
 			return []byte{}, err
 		}
 		err = g.git.Fetch(repo, &git.FetchOptions{
-			Progress: os.Stdout,
+			Progress: g.pw,
 			Auth:     g.auth,
 		})
 		if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
