@@ -13,8 +13,8 @@ including CDK, Terraform and Cloud Formation via GitOps.
 
 # Why Argo CloudOps?
 
-* GitOps opperating model
-* Multi cloud support (AWS, GCP, etc)
+* GitOps operating model
+* Multi cloud support (AWS, GCP, etc.)
 * Multi framework support (CDK, Terraform, etc)
 * Pluggable components (Workflows, Frameworks, Credentials Providers, etc)
 * Temporary, timebound, limited access credentials across mulitiple tenants
