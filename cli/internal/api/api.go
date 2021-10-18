@@ -14,6 +14,8 @@ import (
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+
+	"golang.org/x/net/http2"
 )
 
 const (
@@ -37,7 +39,7 @@ type Client struct {
 func NewClient(endpoint, authToken string) Client {
 	// Automatically disable TLS verification if it's a local endpoint.
 	// TODO handle this better.
-	tr := &http.Transport{}
+	tr := &http2.Transport{}
 	if endpoint == defaultLocalSecureURI {
 		// #nosec
 		tr.TLSClientConfig = &tls.Config{
