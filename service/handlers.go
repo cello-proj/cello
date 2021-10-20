@@ -453,6 +453,7 @@ func (h handler) getWorkflowLogs(w http.ResponseWriter, r *http.Request) {
 // Streams workflow logs
 func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("X-Accel-Buffering", "no")
 	vars := mux.Vars(r)
 	workflowName := vars["workflowName"]
 
