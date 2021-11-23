@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/argoproj/argo-workflows/v3 v3.1.13
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
-	github.com/aws/aws-sdk-go v1.40.52
+	github.com/aws/aws-sdk-go v1.42.10
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/distribution/distribution v2.7.1+incompatible
