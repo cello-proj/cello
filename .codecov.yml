@@ -1,0 +1,19 @@
+# https://docs.codecov.io/docs/codecov-yaml
+# https://docs.codecov.io/docs/commit-status
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto # require coverage to be >= previous commit/release
+        threshold: 0.3% # but ignore small decreases as noise
+        if_not_found: success
+    patch:
+      default:
+        target: 80%
+ignore: # ignore anything that is +build !test
+  - "service/main.go"
+  - "cli/internal/helpers/helpers.go"
+  - "cli/cmd/*.go"
+comment:
+  layout: "diff, flags, files:10, footer"
