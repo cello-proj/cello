@@ -14,6 +14,8 @@ Note: this is a quick guide for getting something up and running. This is config
 
 * Install **Argo CLI** `brew install argo`
 
+* Install [golang](https://go.dev/doc/install)
+
 * Install [jq](https://stedolan.github.io/jq/) for json parsing.
 
 ## Deploy Sample App Locally
@@ -60,9 +62,16 @@ env var set to `abcd1234abcd1234`.
 
 ### Run Workflow
 
+* Build the project binaries.
+
+    ```sh
+    make all
+    ```
+
 * In window **#2**, ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is
   specified (the output of `create_project.sh` should have output a bash
   command to export it).
+  
 
 * CDK Example
 
