@@ -20,8 +20,9 @@ type CommandVariables struct {
 
 // Config represents the configuration.
 type Config struct {
-	Version  string
-	Commands map[string]map[string]string `yaml:"commands"`
+	Version   string
+	Commands  map[string]map[string]string `yaml:"commands"`
+	ImageURIs []string                     `yaml:"image_uris"`
 }
 
 func loadConfig(configFilePath string) (*Config, error) {

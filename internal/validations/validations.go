@@ -8,6 +8,25 @@ import (
 	"github.com/distribution/distribution/reference"
 )
 
+var (
+	defaultAllowAll = map[string]struct{}{"*": {}}
+	imageURIs       = defaultAllowAll
+)
+
+// SetImageURIs restricts the approved container URIs to the provided set. To reset to a default allow-all state,
+// provide an empty list.
+func SetImageURIs(uris []string) {
+	if len(uris) == 0 {
+		imageURIs = defaultAllowAll
+		return
+	}
+
+	imageURIs = make(map[string]struct{})
+	for _, u := range uris {
+		imageURIs[u] = struct{}{}
+	}
+}
+
 // Validate iterates through the provided validation funcs.
 func Validate(validations ...func() error) error {
 	for _, v := range validations {
@@ -58,6 +77,17 @@ func IsValidARN(s string) bool {
 func IsValidImageURI(imageURI string) bool {
 	_, err := reference.ParseAnyReference(imageURI)
 	return err == nil
+}
+
+// IsApprovedImageURI determines if the image URI is approved for use. Default is allow-all. If any container_uris are
+// set in the config, then provided input must be a direct match.
+func IsApprovedImageURI(imageURI string) bool {
+	if _, ok := imageURIs["*"]; ok {
+		return true
+	}
+
+	_, ok := imageURIs[imageURI]
+	return ok
 }
 
 // IsValidGitURI determines if the provided string is a valid git URI.
