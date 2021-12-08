@@ -1,6 +1,6 @@
 # Core Concepts
 
-This page serves as additional information in addition to the [Argo CloudOps Architecture](/architecture).
+This page serves as additional information in addition to the [Argo CloudOps Architecture](../architecture.md).
 
 
 ## Project
