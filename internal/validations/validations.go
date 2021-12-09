@@ -1,6 +1,7 @@
 package validations
 
 import (
+	"path/filepath"
 	"regexp"
 
 	"github.com/asaskevich/govalidator"
@@ -9,7 +10,7 @@ import (
 )
 
 var (
-	defaultAllowAll = map[string]struct{}{"*": {}}
+	defaultAllowAll = []string{"**/*"}
 	imageURIs       = defaultAllowAll
 )
 
@@ -21,10 +22,7 @@ func SetImageURIs(uris []string) {
 		return
 	}
 
-	imageURIs = make(map[string]struct{})
-	for _, u := range uris {
-		imageURIs[u] = struct{}{}
-	}
+	imageURIs = uris
 }
 
 // Validate iterates through the provided validation funcs.
@@ -79,15 +77,20 @@ func IsValidImageURI(imageURI string) bool {
 	return err == nil
 }
 
-// IsApprovedImageURI determines if the image URI is approved for use. Default is allow-all. If any container_uris are
-// set in the config, then provided input must be a direct match.
+// IsApprovedImageURI determines if the image URI is approved for use. Default is allow-all. Full filepath matching
+// rules are applied to allow varying levels of globbing and wildcards.
+// Examples:
+// - Direct match: docker.myco.com/argocloups/cdk:1234
+// - Direct image, any tag: docker.myco.com/argocloudops/cdk:*
+// - Any image within a specific registry: docker.myco.com/*/*
 func IsApprovedImageURI(imageURI string) bool {
-	if _, ok := imageURIs["*"]; ok {
-		return true
+	for _, pattern := range imageURIs {
+		if ok, _ := filepath.Match(pattern, imageURI); ok {
+			return true
+		}
 	}
 
-	_, ok := imageURIs[imageURI]
-	return ok
+	return false
 }
 
 // IsValidGitURI determines if the provided string is a valid git URI.
