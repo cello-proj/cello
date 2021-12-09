@@ -9,6 +9,8 @@ import (
 	"text/template"
 
 	"gopkg.in/yaml.v2"
+
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 
 // CommandVariables respresents the config items for a command.
@@ -36,6 +38,8 @@ func loadConfig(configFilePath string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	validations.SetImageURIs(config.ImageURIs)
 
 	return &config, nil
 }
