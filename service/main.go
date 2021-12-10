@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -45,6 +46,9 @@ func main() {
 		panic(fmt.Sprintf("Unable to load config %s", err))
 	}
 	level.Info(logger).Log("message", fmt.Sprintf("loading config '%s' completed", env.ConfigFilePath))
+
+	// temp, will rm after config restructure
+	validations.SetImageURIs(env.ImageURIs)
 
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
