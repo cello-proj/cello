@@ -73,6 +73,10 @@ func (req CreateWorkflow) validateParameters() error {
 		if !validations.IsValidImageURI(val) {
 			return errors.New("parameter pre_container_image_uri must be a valid container uri")
 		}
+
+		if !validations.IsApprovedImageURI(val) {
+			return errors.New("parameter pre_container_image_uri must be an approved image uri")
+		}
 	}
 
 	return nil
