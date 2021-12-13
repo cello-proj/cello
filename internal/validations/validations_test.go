@@ -139,6 +139,53 @@ func TestIsValidImageURI(t *testing.T) {
 	}
 }
 
+func TestIsApprovedImageURI(t *testing.T) {
+	tests := []struct {
+		name       string
+		testString string
+		want       bool
+		uris       []string
+	}{
+		{
+			name:       "default allow-all passes",
+			testString: "argocloudops/argo-cloudops-cdk:1.87.1",
+			want:       true,
+		},
+		{
+			name:       "direct matched image from config passes",
+			testString: "argocloudops/match:1.87.1",
+			want:       true,
+			uris:       []string{"argocloudops/match:1.87.1"},
+		},
+		{
+			name:       "rejects non-approved image",
+			testString: "argocloudops/nomatch:1.87.1",
+			want:       false,
+			uris:       []string{"argocloudops/match:1.87.1"},
+		},
+		{
+			name:       "matches globbing on tag",
+			testString: "argocloudops/match:1.87.1",
+			want:       true,
+			uris:       []string{"argocloudops/match:*"},
+		},
+		{
+			name:       "matches globbing on any image within a registry",
+			testString: "docker.myco.com/argocloudops/match:1.87.1",
+			want:       true,
+			uris:       []string{"docker.myco.com/*/*"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SetImageURIs(tt.uris)
+
+			assert.Equal(t, tt.want, IsApprovedImageURI(tt.testString))
+		})
+	}
+}
+
 func TestIsValidARN(t *testing.T) {
 	tests := []struct {
 		name       string
