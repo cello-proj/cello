@@ -1,6 +1,6 @@
 # Examples
 
-This directory contains exampels of application being defined as code in
+This directory contains examples of an application being defined as code in
 different frameworks. These can be used as starter repos for your Argo
 CloudOps deployments.
 
