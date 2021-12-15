@@ -152,6 +152,12 @@ func TestIsApprovedImageURI(t *testing.T) {
 			want:       true,
 		},
 		{
+			name:       "default allow-all passes with multi-separator",
+			testString: "docker.myco.com/slash1/argo-cloudops/slash2/argo-cloudops-cdk:latest",
+			want:       true,
+			uris:       []string{},
+		},
+		{
 			name:       "direct matched image from config passes",
 			testString: "argocloudops/match:1.87.1",
 			want:       true,

@@ -10,18 +10,12 @@ import (
 )
 
 var (
-	defaultAllowAll = []string{"**/*"}
-	imageURIs       = defaultAllowAll
+	imageURIs []string
 )
 
 // SetImageURIs restricts the approved container URIs to the provided set. To reset to a default allow-all state,
 // provide an empty list.
 func SetImageURIs(uris []string) {
-	if len(uris) == 0 {
-		imageURIs = defaultAllowAll
-		return
-	}
-
 	imageURIs = uris
 }
 
@@ -84,6 +78,11 @@ func IsValidImageURI(imageURI string) bool {
 // - Direct image, any tag: docker.myco.com/argocloudops/cdk:*
 // - Any image within a specific registry: docker.myco.com/*/*
 func IsApprovedImageURI(imageURI string) bool {
+	// default to allow all if no restrictions set
+	if len(imageURIs) == 0 {
+		return true
+	}
+
 	for _, pattern := range imageURIs {
 		if ok, _ := filepath.Match(pattern, imageURI); ok {
 			return true
