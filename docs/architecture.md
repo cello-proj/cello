@@ -39,7 +39,7 @@ All state is stored in the credential provider (Vault) and Argo Workflows.
 
 ## Operations
 
-Operations are are converted to the equivalent command in the target framework.
+Operations are converted to the equivalent command in the target framework.
 
 * Terraform
   * **Sync**: init, apply
