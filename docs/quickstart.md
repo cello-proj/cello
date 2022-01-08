@@ -26,12 +26,12 @@ You will need two windows
 
 ### Start Vault & Argo CloudOps Service
 
-* In window **#1**, ensure you have [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html) for the target account configured and access to your kubernetes cluster. For the AWS credentials, export the AWS_PROFILE that is to be used.
+* In window **#1**, ensure you have [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html) for the target account configured and access to your kubernetes cluster. For the AWS credentials, export the [Named Profile](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#cli-configure-profiles-create) that is to be used using the env var `AWS_PROFILE` after its local creation.
 
-* Set **ARGO_CLOUDOPS_ADMIN_SECRET** env var to `abcd1234abcd1234`.
+* Set **AWS_PROFILE** env var to `myprofile`.
 
     ```sh
-    export ARGO_CLOUDOPS_ADMIN_SECRET=abcd1234abcd1234
+    export AWS_PROFILE=myprofile
     ```
 
 * Start the Argo CloudOps Service (includes workflows, vault, and postgres).
