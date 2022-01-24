@@ -3,6 +3,9 @@ package responses
 // Diff represents the responses for Diff.
 type Diff TargetOperation
 
+// Exec represents the responses for Exec.
+type Exec TargetOperation
+
 // ExecuteWorkflow represents the responses for ExecuteWorkflow.
 type ExecuteWorkflow struct {
 	WorkflowName string `json:"workflow_name"`
