@@ -18,7 +18,8 @@ import (
 )
 
 const (
-	authToken = "secret1234"
+	authToken          = "secret1234"
+	operationsEndpoint = "/projects/project1/targets/target1/operations"
 )
 
 func TestGetLogs(t *testing.T) {
@@ -474,7 +475,7 @@ func TestDiff(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			wantURL := "/projects/project1/targets/target1/operations"
+			wantURL := operationsEndpoint
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != wantURL {
@@ -715,7 +716,7 @@ func TestSync(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wantURL := "/projects/project1/targets/target1/operations"
+			wantURL := operationsEndpoint
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != wantURL {
@@ -836,7 +837,7 @@ func TestExec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wantURL := "/projects/project1/targets/target1/operations"
+			wantURL := operationsEndpoint
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != wantURL {
