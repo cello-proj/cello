@@ -101,9 +101,6 @@ func (req CreateWorkflow) validateArguments() error {
 type CreateGitWorkflow struct {
 	CommitHash string `json:"sha" valid:"required~sha is required,alphanum~sha must be alphanumeric"`
 	Path       string `json:"path" valid:"required~path is required"`
-	// We don't validate the specific type as it's dynamic and can only be done
-	// server side.
-	Type string `json:"type" valid:"required~type is required"`
 }
 
 // Validate validates CreateGitWorkflow.
