@@ -12,6 +12,7 @@ argo-cloudops [command]
 Available Commands:
   completion  generate the autocompletion script for the specified shell
   diff        Diff a project target using a manifest in git
+  exec        Executes an operation on a project target using a manifest in git
   get         Gets status of workflow
   help        Help about any command
   list        List workflow executions for a given project and target
