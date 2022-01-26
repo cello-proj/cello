@@ -202,7 +202,6 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	level.Debug(l).Log("message", "creating workflow")
-	cwr.Type = cgwr.Type
 	h.createWorkflowFromRequest(ctx, w, r, a, cwr, l)
 }
 

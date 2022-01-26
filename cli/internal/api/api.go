@@ -19,6 +19,7 @@ import (
 const (
 	diff                  = "diff"
 	defaultLocalSecureURI = "https://localhost:8443"
+	exec                  = "exec"
 	sync                  = "sync"
 )
 
@@ -169,6 +170,16 @@ func (c *Client) Diff(ctx context.Context, input TargetOperationInput) (response
 	}
 
 	return responses.Diff(output), nil
+}
+
+// Exec submits an "exec" for the provided project target.
+func (c *Client) Exec(ctx context.Context, input TargetOperationInput) (responses.Exec, error) {
+	output, err := c.targetOperation(ctx, input, exec)
+	if err != nil {
+		return responses.Exec{}, err
+	}
+
+	return responses.Exec(output), nil
 }
 
 // ExecuteWorkflow submits a workflow execution request.

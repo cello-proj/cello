@@ -172,8 +172,7 @@ Request Body
 ```json
 {
   "sha": "1234abdc5678efgh9012ijkl3456mnop7890qrst",
-  "path": "path/to/manifest.yaml",
-  "type": "sync"
+  "path": "path/to/manifest.yaml"
 }
 ```
 

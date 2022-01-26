@@ -392,14 +392,12 @@ func TestCreateGitWorkflowValidate(t *testing.T) {
 			req: CreateGitWorkflow{
 				CommitHash: "8458fd753f9fde51882414564c20df6d4c34a90e",
 				Path:       "./manifest.yaml",
-				Type:       "diff",
 			},
 		},
 		{
 			name: "missing commit hash",
 			req: CreateGitWorkflow{
 				Path: "./manifest.yaml",
-				Type: "diff",
 			},
 			wantErr: errors.New("sha is required"),
 		},
@@ -408,7 +406,6 @@ func TestCreateGitWorkflowValidate(t *testing.T) {
 			req: CreateGitWorkflow{
 				CommitHash: "8--",
 				Path:       "./manifest.yaml",
-				Type:       "diff",
 			},
 			wantErr: errors.New("sha must be alphanumeric"),
 		},
@@ -416,17 +413,8 @@ func TestCreateGitWorkflowValidate(t *testing.T) {
 			name: "missing path",
 			req: CreateGitWorkflow{
 				CommitHash: "8458fd753f9fde51882414564c20df6d4c34a90e",
-				Type:       "diff",
 			},
 			wantErr: errors.New("path is required"),
-		},
-		{
-			name: "missing type",
-			req: CreateGitWorkflow{
-				CommitHash: "8458fd753f9fde51882414564c20df6d4c34a90e",
-				Path:       "./manifest.yaml",
-			},
-			wantErr: errors.New("type is required"),
 		},
 	}
 
