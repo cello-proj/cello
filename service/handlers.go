@@ -838,6 +838,92 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
+// Creates a target
+func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+	targetName := vars["targetName"]
+
+	l := h.requestLogger(r, "op", "update-target", "project", projectName)
+
+	level.Debug(l).Log("message", "validating authorization header for update target")
+	ah := r.Header.Get("Authorization")
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
+	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
+		h.errorResponse(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	level.Debug(l).Log("message", "reading request body")
+
+	var utr requests.UpdateTarget
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		level.Error(l).Log("message", "error reading request data", "error", err)
+		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
+	}
+
+	if err := json.Unmarshal(reqBody, &utr); err != nil {
+		level.Error(l).Log("message", "error processing request", "error", err)
+		h.errorResponse(w, "error processing request", http.StatusBadRequest)
+		return
+	}
+
+	if err := utr.Validate(); err != nil {
+		level.Error(l).Log("message", "error invalid request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
+		return
+	}
+
+	l = log.With(l, "target", targetName)
+
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error determining if project exists", "error", err)
+	}
+
+	// TODO Perhaps this should be 404
+	if !projectExists {
+		level.Error(l).Log("message", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusBadRequest)
+		return
+	}
+
+	targetExists, _ := cp.TargetExists(projectName, targetName)
+	if !targetExists {
+		level.Error(l).Log("message", "target name must exist")
+		h.errorResponse(w, "target name must exist", http.StatusBadRequest)
+		return
+	}
+
+	existingTargetProperties, err := cp.GetTarget(projectName, targetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving existing target")
+		h.errorResponse(w, "error retrieving target", http.StatusBadRequest)
+	}
+
+	level.Debug(l).Log("message", "updating target")
+	err = cp.UpdateTarget(projectName, targetName, existingTargetProperties, utr)
+	if err != nil {
+		level.Error(l).Log("message", "error updating target", "error", err)
+		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, "{}")
+}
+
 // Convenience method that writes a failure response in a standard manner
 func (h handler) errorResponse(w http.ResponseWriter, message string, httpStatus int) {
 	r := generateErrorResponseJSON(message)

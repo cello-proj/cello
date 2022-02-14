@@ -22,6 +22,7 @@ const (
 type Provider interface {
 	CreateProject(string) (string, string, error)
 	CreateTarget(string, requests.CreateTarget) error
+	UpdateTarget(string, string, responses.TargetProperties, requests.UpdateTarget) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
 	GetProject(string) (responses.GetProject, error)
@@ -420,6 +421,31 @@ func (v VaultProvider) readSecretID(appRoleName string) (string, error) {
 func (v VaultProvider) TargetExists(projectName, targetName string) (bool, error) {
 	_, err := v.GetTarget(projectName, targetName)
 	return !errors.Is(err, ErrTargetNotFound), nil
+}
+
+// UpdateTarget updates a targets policies for the project.
+func (v VaultProvider) UpdateTarget(projectName string, targetName string, targetProperties responses.TargetProperties, utr requests.UpdateTarget) error {
+	if !v.isAdmin() {
+		return errors.New("admin credentials must be used to update target")
+	}
+
+	credentialType := targetProperties.CredentialType
+	policyArns := targetProperties.PolicyArns
+
+	// updatable properties
+	policyDocument := utr.PolicyDocument
+	roleArn := utr.RoleArn
+
+	options := map[string]interface{}{
+		"credential_type": credentialType,
+		"policy_arns":     policyArns,
+		"policy_document": policyDocument,
+		"role_arns":       roleArn,
+	}
+
+	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
+	_, err := v.vaultLogicalSvc.Write(path, options)
+	return err
 }
 
 func (v VaultProvider) writeProjectState(name string) error {

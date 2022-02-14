@@ -200,3 +200,26 @@ type TargetOperation struct {
 func (req TargetOperation) Validate() error {
 	return validations.ValidateStruct(req)
 }
+
+// UpdateTarget request.
+type UpdateTarget struct {
+	PolicyDocument string `json:"policy_document"`
+	RoleArn string `json:"role_arn" valid:"required~role_arn is required"`
+}
+
+// Validate validates CreateTarget.
+func (req UpdateTarget) Validate() error {
+	v := []func() error{
+		func() error { return validations.ValidateStruct(req) },
+		req.validateTargetUpdate,
+	}
+	return validations.Validate(v...)
+}
+
+func (req UpdateTarget) validateTargetUpdate() error {
+	if !validations.IsValidARN(req.RoleArn) {
+		return errors.New("role_arn must be a valid arn")
+	}
+	return nil
+}
+

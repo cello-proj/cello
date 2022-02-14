@@ -166,6 +166,10 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 	return false, nil
 }
 
+func (m mockCredentialsProvider) UpdateTarget(projectName string, targetName string, targetProperties responses.TargetProperties, req requests.UpdateTarget) error {
+	return nil
+}
+
 type test struct {
 	name     string
 	req      interface{}
@@ -364,6 +368,22 @@ func TestDeleteTarget(t *testing.T) {
 	}
 	runTests(t, tests)
 }
+
+//TODO add test
+//func TestUpdateTarget(t *testing.T) {
+//	tests := []test{
+//		{
+//			name:     "can update target",
+//			req:      loadJSON(t, "TestUpdateTarget/can_update_target_request.json"),
+//			want:     http.StatusOK,
+//			respFile: "TestUpdateTarget/can_update_target_response.json",
+//			asAdmin:  true,
+//			url:      "/projects/projectalreadyexists/targets/target1",
+//			method:   "PUT",
+//		},
+//	}
+//	runTests(t, tests)
+//}
 
 func TestCreateWorkflow(t *testing.T) {
 	tests := []test{
