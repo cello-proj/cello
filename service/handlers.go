@@ -838,7 +838,7 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
-// Creates a target
+// Updates a target
 func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectName := vars["projectName"]
