@@ -10,7 +10,7 @@
     "execute_container_image_uri": "argocloudops/argo-cloudops-cdk:1.87.1"
   },
   "project_name": "projectalreadyexists",
-  "target_name": "TARGET_ALREADY_EXISTS",
+  "target_name": "TARGET_EXISTS",
   "type": "sync",
   "workflow_template_name": "argo-cloudops-single-step-vault-aws"
 }

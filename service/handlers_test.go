@@ -174,7 +174,7 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 }
 
 func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (bool, error) {
-	if targetName == "TARGET_ALREADY_EXISTS" {
+	if targetName == "TARGET_EXISTS" {
 		return true, nil
 	}
 	return false, nil
@@ -258,7 +258,7 @@ func TestGetTarget(t *testing.T) {
 			want:     http.StatusOK,
 			respFile: "TestGetTarget/can_get_target_response.json",
 			asAdmin:  true,
-			url:      "/projects/undeletableprojecttargets/targets/target1",
+			url:      "/projects/undeletableprojecttargets/targets/TARGET_EXISTS",
 			method:   "GET",
 		},
 		{
@@ -443,7 +443,7 @@ func TestUpdateTarget(t *testing.T) {
 			want:     http.StatusOK,
 			respFile: "TestUpdateTarget/can_update_target_response.json",
 			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
 			method:   "PUT",
 		},
 		{
@@ -452,7 +452,7 @@ func TestUpdateTarget(t *testing.T) {
 			want:     http.StatusUnauthorized,
 			respFile: "TestUpdateTarget/fails_to_update_target_when_not_admin_response.json",
 			asAdmin:  false,
-			url:      "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
 			method:   "PUT",
 		},
 		{
@@ -462,7 +462,7 @@ func TestUpdateTarget(t *testing.T) {
 			respFile:      "TestUpdateTarget/fails_to_update_target_when_bad_auth_header_response.json",
 			asAdmin:       false,
 			badAuthHeader: true,
-			url:           "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			url:           "/projects/projectalreadyexists/targets/TARGET_EXISTS",
 			method:        "PUT",
 		},
 		{
@@ -471,13 +471,13 @@ func TestUpdateTarget(t *testing.T) {
 			want:     http.StatusBadRequest,
 			respFile: "TestUpdateTarget/bad_response.json",
 			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
 			method:   "PUT",
 		},
 		{
 			name:     "target name must exist",
 			req:      loadJSON(t, "TestUpdateTarget/target_name_must_exist_request.json"),
-			want:     http.StatusBadRequest,
+			want:     http.StatusNotFound,
 			respFile: "TestUpdateTarget/target_name_must_exist_response.json",
 			asAdmin:  true,
 			url:      "/projects/projectalreadyexists/targets/INVALID_TARGET",
@@ -489,7 +489,7 @@ func TestUpdateTarget(t *testing.T) {
 			want:     http.StatusBadRequest,
 			respFile: "TestUpdateTarget/project_must_exist_response.json",
 			asAdmin:  true,
-			url:      "/projects/projectdoesnotexist/targets/TARGET_ALREADY_EXISTS",
+			url:      "/projects/projectdoesnotexist/targets/TARGET_EXISTS",
 			method:   "PUT",
 		},
 	}

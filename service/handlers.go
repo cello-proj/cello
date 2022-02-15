@@ -407,22 +407,10 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetList, err := cp.ListTargets(projectName)
-	if err != nil {
-		level.Error(l).Log("message", "error retrieving target list", "error", err)
-		h.errorResponse(w, "error retrieving target list", http.StatusInternalServerError)
-		return
-	}
-	var targetExists bool
-	for _, target := range targetList {
-		if target == targetName {
-			targetExists = true
-		}
-	}
-
+	targetExists, _ := cp.TargetExists(projectName, targetName)
 	if !targetExists {
-		level.Error(l).Log("message", "target does not exist for project")
-		h.errorResponse(w, "target does not exist for project", http.StatusNotFound)
+		level.Error(l).Log("message", "target not found")
+		h.errorResponse(w, "target not found", http.StatusNotFound)
 		return
 	}
 
@@ -921,19 +909,9 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 
 	targetExists, _ := cp.TargetExists(projectName, targetName)
 	if !targetExists {
-		level.Error(l).Log("message", "target name must exist")
-		h.errorResponse(w, "target name must exist", http.StatusBadRequest)
+		level.Error(l).Log("message", "target not found")
+		h.errorResponse(w, "target not found", http.StatusNotFound)
 		return
-	}
-	targetList, err := cp.ListTargets(projectName)
-	if err != nil {
-		level.Error(l).Log("message", "error retrieving target list")
-		h.errorResponse(w, "error retrieving targets", http.StatusBadRequest)
-	}
-	for _, target := range targetList {
-		if target == targetName {
-
-		}
 	}
 
 	existingTarget, err := cp.GetTarget(projectName, targetName)
