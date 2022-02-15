@@ -369,21 +369,56 @@ func TestDeleteTarget(t *testing.T) {
 	runTests(t, tests)
 }
 
-//TODO add test
-//func TestUpdateTarget(t *testing.T) {
-//	tests := []test{
-//		{
-//			name:     "can update target",
-//			req:      loadJSON(t, "TestUpdateTarget/can_update_target_request.json"),
-//			want:     http.StatusOK,
-//			respFile: "TestUpdateTarget/can_update_target_response.json",
-//			asAdmin:  true,
-//			url:      "/projects/projectalreadyexists/targets/target1",
-//			method:   "PUT",
-//		},
-//	}
-//	runTests(t, tests)
-//}
+func TestUpdateTarget(t *testing.T) {
+	tests := []test{
+		{
+			name:     "can update target",
+			req:      loadJSON(t, "TestUpdateTarget/can_update_target_request.json"),
+			want:     http.StatusOK,
+			respFile: "TestUpdateTarget/can_update_target_response.json",
+			asAdmin:  true,
+			url:      "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			method:   "PUT",
+		},
+		{
+			name:     "fails to update target when not admin",
+			req:      loadJSON(t, "TestUpdateTarget/fails_to_update_target_when_not_admin_request.json"),
+			want:     http.StatusUnauthorized,
+			respFile: "TestUpdateTarget/fails_to_update_target_when_not_admin_response.json",
+			asAdmin:  false,
+			url:      "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			method:   "PUT",
+		},
+		{
+			name:     "bad request",
+			req:      loadJSON(t, "TestUpdateTarget/bad_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestUpdateTarget/bad_response.json",
+			asAdmin:  true,
+			url:      "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			method:   "PUT",
+		},
+		{
+			name:     "target name must exist",
+			req:      loadJSON(t, "TestUpdateTarget/target_name_must_exist_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestUpdateTarget/target_name_must_exist_response.json",
+			asAdmin:  true,
+			url:      "/projects/projectalreadyexists/targets/INVALID_TARGET",
+			method:   "PUT",
+		},
+		{
+			name:     "project must exist",
+			req:      loadJSON(t, "TestUpdateTarget/project_must_exist_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestUpdateTarget/project_must_exist_response.json",
+			asAdmin:  true,
+			url:      "/projects/projectdoesnotexist/targets/TARGET_ALREADY_EXISTS",
+			method:   "PUT",
+		},
+	}
+	runTests(t, tests)
+}
 
 func TestCreateWorkflow(t *testing.T) {
 	tests := []test{
