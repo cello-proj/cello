@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Add target update api operation
 
+### Changed
+* Change get target api response
+
 ## [0.10.0] - 2022-01-26
 * Add `exec` type/command 
 
