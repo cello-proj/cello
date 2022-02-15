@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/responses"
 
 	"github.com/google/go-cmp/cmp"
 	vault "github.com/hashicorp/vault/api"
@@ -114,6 +115,56 @@ func TestVaultCreateTarget(t *testing.T) {
 			}
 
 			err := v.CreateTarget("test", requests.CreateTarget{})
+			if err != nil {
+				if !tt.errResult {
+					t.Errorf("\ndid not expect error, got: %v", err)
+				}
+			} else {
+				if tt.errResult {
+					t.Errorf("\nexpected error")
+				}
+			}
+		})
+	}
+}
+
+func TestVaultUpdateTarget(t *testing.T) {
+	tests := []struct {
+		name      string
+		admin     bool
+		vaultErr  error
+		errResult bool
+	}{
+		{
+			name:  "update target success",
+			admin: true,
+		},
+		{
+			name:      "update target admin error",
+			admin:     false,
+			errResult: true,
+		},
+		{
+			name:      "update target error",
+			admin:     true,
+			vaultErr:  errTest,
+			errResult: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			var role = "testRole"
+			if tt.admin {
+				role = authorizationKeyAdmin
+			}
+			v := VaultProvider{
+				roleID:          role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
+			}
+
+			err := v.UpdateTarget("test", "test-project", responses.TargetProperties{}, requests.UpdateTarget{})
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)
