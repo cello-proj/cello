@@ -171,14 +171,15 @@ func (m mockCredentialsProvider) UpdateTarget(projectName string, targetName str
 }
 
 type test struct {
-	name     string
-	req      interface{}
-	want     int
-	body     string
-	respFile string
-	asAdmin  bool
-	url      string
-	method   string
+	name          string
+	req           interface{}
+	want          int
+	body          string
+	respFile      string
+	asAdmin       bool
+	badAuthHeader bool
+	url           string
+	method        string
 }
 
 func TestCreateProject(t *testing.T) {
@@ -273,6 +274,13 @@ func TestDeleteProject(t *testing.T) {
 func TestGetProject(t *testing.T) {
 	tests := []test{
 		{
+			name:    "cannot get project, when not admin",
+			want:    http.StatusUnauthorized,
+			asAdmin: false,
+			method:  "GET",
+			url:     "/projects/project1",
+		},
+		{
 			name:    "project exists, successful get project",
 			want:    http.StatusOK,
 			asAdmin: true,
@@ -287,7 +295,6 @@ func TestGetProject(t *testing.T) {
 			url:     "/projects/projectdoesnotexist",
 		},
 	}
-	// TODO not as admin
 	runTests(t, tests)
 }
 
@@ -310,6 +317,15 @@ func TestCreateTarget(t *testing.T) {
 			asAdmin:  false,
 			url:      "/projects/projectalreadyexists/targets",
 			method:   "POST",
+		},
+		{
+			name:          "fails to create target when using a bad auth header",
+			req:           loadJSON(t, "TestCreateTarget/can_create_target_request.json"),
+			want:          http.StatusUnauthorized,
+			respFile:      "TestCreateTarget/fails_to_create_target_when_bad_auth_header_response.json",
+			badAuthHeader: true,
+			url:           "/projects/projectalreadyexists/targets",
+			method:        "POST",
 		},
 		{
 			name:     "bad request",
@@ -352,6 +368,13 @@ func TestDeleteTarget(t *testing.T) {
 			method:  "DELETE",
 		},
 		{
+			name:          "fails to delete target when using a bad auth header",
+			want:          http.StatusUnauthorized,
+			badAuthHeader: true,
+			url:           "/projects/projectalreadyexists/targets/target1",
+			method:        "DELETE",
+		},
+		{
 			name:    "can delete target",
 			want:    http.StatusOK,
 			asAdmin: true,
@@ -388,6 +411,16 @@ func TestUpdateTarget(t *testing.T) {
 			asAdmin:  false,
 			url:      "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
 			method:   "PUT",
+		},
+		{
+			name:          "fails to update target when using a bad auth header",
+			req:           loadJSON(t, "TestUpdateTarget/fails_to_update_target_when_not_admin_request.json"),
+			want:          http.StatusUnauthorized,
+			respFile:      "TestUpdateTarget/fails_to_update_target_when_bad_auth_header_response.json",
+			asAdmin:       false,
+			badAuthHeader: true,
+			url:           "/projects/projectalreadyexists/targets/TARGET_ALREADY_EXISTS",
+			method:        "PUT",
 		},
 		{
 			name:     "bad request",
@@ -462,6 +495,14 @@ func TestCreateWorkflow(t *testing.T) {
 			method: "POST",
 			url:    "/workflows",
 		},
+		{
+			name:          "cannot create workflow with bad auth header",
+			req:           loadJSON(t, "TestCreateWorkflow/can_create_workflow_response.json"),
+			want:          http.StatusUnauthorized,
+			badAuthHeader: true,
+			method:        "POST",
+			url:           "/workflows",
+		},
 		// TODO with admin credentials should fail
 	}
 	runTests(t, tests)
@@ -533,11 +574,10 @@ func TestGetWorkflowLogs(t *testing.T) {
 func TestListWorkflows(t *testing.T) {
 	tests := []test{
 		{
-			name:    "can get workflows",
-			want:    http.StatusOK,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/projects/projects1/targets/target1/workflows",
+			name:   "can get workflows",
+			want:   http.StatusOK,
+			method: "GET",
+			url:    "/projects/projects1/targets/target1/workflows",
 		},
 	}
 	runTests(t, tests)
@@ -652,7 +692,7 @@ func serialize(toMarshal interface{}) *bytes.Buffer {
 func runTests(t *testing.T, tests []test) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp := executeRequest(tt.method, tt.url, serialize(tt.req), tt.asAdmin)
+			resp := executeRequest(tt.method, tt.url, serialize(tt.req), tt.asAdmin, tt.badAuthHeader)
 			if resp.StatusCode != tt.want {
 				t.Errorf("Unexpected status code %d", resp.StatusCode)
 			}
@@ -686,7 +726,7 @@ func runTests(t *testing.T, tests []test) {
 }
 
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
-func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool) *http.Response {
+func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool, invalidAuthorization bool) *http.Response {
 	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
@@ -707,7 +747,11 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool)
 
 	var router = setupRouter(h)
 	req, _ := http.NewRequest(method, url, body)
+
 	authorizationHeader := "vault:user:" + testPassword
+	if invalidAuthorization {
+		authorizationHeader = "bad auth header"
+	}
 	if asAdmin {
 		authorizationHeader = "vault:admin:" + testPassword
 	}
