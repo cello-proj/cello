@@ -719,6 +719,86 @@ func TestTargetOperationValidate(t *testing.T) {
 	}
 }
 
+func TestUpdateTargetValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     UpdateTarget
+		types   []string
+		wantErr error
+	}{
+		{
+			name: "valid minimal",
+			req: UpdateTarget{
+				RoleArn: "arn:aws:iam::012345678901:role/test-role",
+			},
+		},
+		{
+			name: "valid full",
+			req: UpdateTarget{
+				RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+				PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+				PolicyArns: []string{
+					"arn:aws:iam::012345678901:policy/test-policy-1",
+					"arn:aws:iam::012345678901:policy/test-policy-2",
+					"arn:aws:iam::012345678901:policy/test-policy-3",
+					"arn:aws:iam::012345678901:policy/test-policy-4",
+					"arn:aws:iam::012345678901:policy/test-policy-5",
+				},
+			},
+		},
+		{
+			name: "missing role_arn",
+			req: UpdateTarget{
+				PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+			},
+			wantErr: errors.New("role_arn is required"),
+		},
+		{
+			name: "role_arn must be an arn",
+			req: UpdateTarget{
+				RoleArn: "not-an-arn",
+			},
+			wantErr: errors.New("role_arn must be a valid arn"),
+		},
+		{
+			name: "too many policy arns",
+			req: UpdateTarget{
+				PolicyArns: []string{
+					"arn:aws:iam::012345678901:policy/test-policy-1",
+					"arn:aws:iam::012345678901:policy/test-policy-2",
+					"arn:aws:iam::012345678901:policy/test-policy-3",
+					"arn:aws:iam::012345678901:policy/test-policy-4",
+					"arn:aws:iam::012345678901:policy/test-policy-5",
+					"arn:aws:iam::012345678901:policy/test-policy-6",
+				},
+				RoleArn: "arn:aws:iam::012345678901:role/test-role",
+			},
+			wantErr: errors.New("policy_arns cannot be more than 5"),
+		},
+		{
+			name: "policy arns must be valid",
+			req: UpdateTarget{
+				PolicyArns: []string{
+					"arn:aws:iam::012345678901:policy/test-policy-1",
+					"not-an-arn",
+				},
+				RoleArn: "arn:aws:iam::012345678901:role/test-role",
+			},
+			wantErr: errors.New("policy_arns contains an invalid arn"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantErr != nil {
+				assert.EqualError(t, tt.req.Validate(), tt.wantErr.Error())
+			} else {
+				assert.Equal(t, tt.wantErr, tt.req.Validate())
+			}
+		})
+	}
+}
+
 func TestCreateProjectValidate(t *testing.T) {
 	tests := []struct {
 		name    string

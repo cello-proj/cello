@@ -204,8 +204,8 @@ func (req TargetOperation) Validate() error {
 // UpdateTarget request.
 type UpdateTarget struct {
 	PolicyArns     []string `json:"policy_arns"`
-	PolicyDocument string `json:"policy_document"`
-	RoleArn string `json:"role_arn" valid:"required~role_arn is required"`
+	PolicyDocument string   `json:"policy_document"`
+	RoleArn        string   `json:"role_arn" valid:"required~role_arn is required"`
 }
 
 // Validate validates CreateTarget.
@@ -232,4 +232,3 @@ func (req UpdateTarget) validateTargetUpdate() error {
 	}
 	return nil
 }
-
