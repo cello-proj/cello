@@ -203,6 +203,7 @@ func (req TargetOperation) Validate() error {
 
 // UpdateTarget request.
 type UpdateTarget struct {
+	PolicyArns     []string `json:"policy_arns"`
 	PolicyDocument string `json:"policy_document"`
 	RoleArn string `json:"role_arn" valid:"required~role_arn is required"`
 }
@@ -212,6 +213,15 @@ func (req UpdateTarget) Validate() error {
 	v := []func() error{
 		func() error { return validations.ValidateStruct(req) },
 		req.validateTargetUpdate,
+	}
+	if len(req.PolicyArns) > 5 {
+		return errors.New("policy_arns cannot be more than 5")
+	}
+
+	for _, arn := range req.PolicyArns {
+		if !validations.IsValidARN(arn) {
+			return errors.New("policy_arns contains an invalid arn")
+		}
 	}
 	return validations.Validate(v...)
 }

@@ -1,9 +1,3 @@
 {
-  "properties": {
-    "credential_type": "assumed_role",
-    "policy_arns": [
-      "arn:aws:iam::012345678901:policy/test-policy"
-    ],
-    "role_arn": "arn:aws:iam::012345678901:policy/test-role"
-  }
+  "credential_type": "assumed_role"
 }

@@ -430,9 +430,9 @@ func (v VaultProvider) UpdateTarget(projectName string, targetName string, targe
 	}
 
 	credentialType := targetProperties.CredentialType
-	policyArns := targetProperties.PolicyArns
 
 	// updatable properties
+	policyArns := utr.PolicyArns
 	policyDocument := utr.PolicyDocument
 	roleArn := utr.RoleArn
 
