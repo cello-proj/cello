@@ -126,8 +126,22 @@ func (m mockCredentialsProvider) CreateTarget(name string, req requests.CreateTa
 	return nil
 }
 
-func (m mockCredentialsProvider) GetTarget(string, string) (responses.TargetProperties, error) {
-	return responses.TargetProperties{}, nil
+func (m mockCredentialsProvider) GetTarget(project string, target string) (responses.GetTarget, error) {
+	if target == "targetdoesnotexist" {
+		return responses.GetTarget{}, credentials.ErrNotFound
+	}
+	return responses.GetTarget{
+		Name: "TARGET",
+		Type: "aws_account",
+		Properties: responses.TargetProperties{
+			CredentialType: "assumed_role",
+			PolicyArns: []string{
+				"arn:aws:iam::012345678901:policy/test-policy",
+			},
+			PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+			RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+		},
+	}, nil
 }
 
 func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
@@ -225,6 +239,35 @@ func TestCreateProject(t *testing.T) {
 			asAdmin: true,
 			url:     "/projects",
 			method:  "POST",
+		},
+	}
+	runTests(t, tests)
+}
+
+func TestGetTarget(t *testing.T) {
+	tests := []test{
+		{
+			name:     "fails to get target when not admin",
+			want:     http.StatusUnauthorized,
+			respFile: "TestGetTarget/fails_to_get_target_when_not_admin_response.json",
+			url:      "/projects/undeletableprojecttargets/targets/target1",
+			method:   "GET",
+		},
+		{
+			name:     "can get target",
+			want:     http.StatusOK,
+			respFile: "TestGetTarget/can_get_target_response.json",
+			asAdmin:  true,
+			url:      "/projects/undeletableprojecttargets/targets/target1",
+			method:   "GET",
+		},
+		{
+			name:     "target does not exist",
+			want:     http.StatusNotFound,
+			respFile: "TestGetTarget/target_does_not_exist_response.json",
+			asAdmin:  true,
+			url:      "/projects/undeletableprojecttargets/targets/targetdoesnotexist",
+			method:   "GET",
 		},
 	}
 	runTests(t, tests)

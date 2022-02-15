@@ -26,7 +26,7 @@ type Provider interface {
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
 	GetProject(string) (responses.GetProject, error)
-	GetTarget(string, string) (responses.TargetProperties, error)
+	GetTarget(string, string) (responses.GetTarget, error)
 	GetToken() (string, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
@@ -297,18 +297,18 @@ func (v VaultProvider) GetProject(projectName string) (responses.GetProject, err
 	return responses.GetProject{Name: projectName}, nil
 }
 
-func (v VaultProvider) GetTarget(projectName, targetName string) (responses.TargetProperties, error) {
+func (v VaultProvider) GetTarget(projectName, targetName string) (responses.GetTarget, error) {
 	if !v.isAdmin() {
-		return responses.TargetProperties{}, errors.New("admin credentials must be used to get target information")
+		return responses.GetTarget{}, errors.New("admin credentials must be used to get target information")
 	}
 
 	sec, err := v.vaultLogicalSvc.Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
 	if err != nil {
-		return responses.TargetProperties{}, fmt.Errorf("vault get target error: %w", err)
+		return responses.GetTarget{}, fmt.Errorf("vault get target error: %w", err)
 	}
 
 	if sec == nil {
-		return responses.TargetProperties{}, ErrTargetNotFound
+		return responses.GetTarget{}, ErrTargetNotFound
 	}
 
 	// These should always exist.
@@ -329,11 +329,15 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (responses.Targ
 		policyDocument = val.(string)
 	}
 
-	return responses.TargetProperties{
-		CredentialType: credentialType,
-		PolicyArns:     policies,
-		PolicyDocument: policyDocument,
-		RoleArn:        roleArn,
+	return responses.GetTarget{
+		Name: targetName,
+		Type: credentialType,
+		Properties: responses.TargetProperties{
+			CredentialType: credentialType,
+			PolicyArns:     policies,
+			PolicyDocument: policyDocument,
+			RoleArn:        roleArn,
+		},
 	}, nil
 }
 

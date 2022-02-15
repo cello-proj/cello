@@ -23,7 +23,9 @@ type GetProject struct {
 
 // GetTarget represents the responses for GetTarget.
 type GetTarget struct {
-	Name string `json:"name"`
+	Name       string           `json:"name"`
+	Properties TargetProperties `json:"properties"`
+	Type       string           `json:"type"`
 }
 
 // GetWorkflows represents the responses for GetWorkflows.

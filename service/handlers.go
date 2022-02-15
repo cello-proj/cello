@@ -379,7 +379,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(jsonData))
 }
 
-// Gets a workflow
+// Gets a target
 func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectName := vars["projectName"]
@@ -404,6 +404,25 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	targetList, err := cp.ListTargets(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target list", "error", err)
+		h.errorResponse(w, "error retrieving target list", http.StatusInternalServerError)
+		return
+	}
+	var targetExists bool
+	for _, target := range targetList {
+		if target == targetName {
+			targetExists = true
+		}
+	}
+
+	if !targetExists {
+		level.Error(l).Log("message", "target does not exist for project")
+		h.errorResponse(w, "target does not exist for project", http.StatusNotFound)
 		return
 	}
 
@@ -906,15 +925,25 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "target name must exist", http.StatusBadRequest)
 		return
 	}
+	targetList, err := cp.ListTargets(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target list")
+		h.errorResponse(w, "error retrieving targets", http.StatusBadRequest)
+	}
+	for _, target := range targetList {
+		if target == targetName {
 
-	existingTargetProperties, err := cp.GetTarget(projectName, targetName)
+		}
+	}
+
+	existingTarget, err := cp.GetTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving existing target")
 		h.errorResponse(w, "error retrieving target", http.StatusBadRequest)
 	}
 
 	level.Debug(l).Log("message", "updating target")
-	err = cp.UpdateTarget(projectName, targetName, existingTargetProperties, utr)
+	err = cp.UpdateTarget(projectName, targetName, existingTarget.Properties, utr)
 	if err != nil {
 		level.Error(l).Log("message", "error updating target", "error", err)
 		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
