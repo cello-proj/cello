@@ -273,6 +273,35 @@ func TestGetTarget(t *testing.T) {
 	runTests(t, tests)
 }
 
+func TestListTargets(t *testing.T) {
+	tests := []test{
+		{
+			name:     "fails to list targets when not admin",
+			want:     http.StatusUnauthorized,
+			respFile: "TestListTargets/fails_to_list_targets_when_not_admin_response.json",
+			url:      "/projects/undeletableprojecttargets/targets",
+			method:   "GET",
+		},
+		{
+			name:     "can list targets",
+			want:     http.StatusOK,
+			respFile: "TestListTargets/can_get_target_response.json",
+			asAdmin:  true,
+			url:      "/projects/undeletableprojecttargets/targets",
+			method:   "GET",
+		},
+		{
+			name:     "no targets",
+			want:     http.StatusOK,
+			respFile: "TestListTargets/no_targets_response.json",
+			asAdmin:  true,
+			url:      "/projects/project1/targets",
+			method:   "GET",
+		},
+	}
+	runTests(t, tests)
+}
+
 func TestDeleteProject(t *testing.T) {
 	tests := []test{
 		{
