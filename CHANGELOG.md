@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Change get target api response
 
+### Fixed
+* Validate project exists when listing targets
+
 ## [0.10.0] - 2022-01-26
 * Add `exec` type/command 
 

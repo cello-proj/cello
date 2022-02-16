@@ -828,6 +828,20 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	level.Debug(l).Log("message", "checking if project exists")
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error checking project", "error", err)
+		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
+		return
+	}
+
+	if !projectExists {
+		level.Debug(l).Log("message", "no action required because project does not exist")
+		h.errorResponse(w, "project does not exists", http.StatusNotFound)
+		return
+	}
+
 	targets, err := cp.ListTargets(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error listing targets", "error", err)

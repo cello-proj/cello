@@ -291,11 +291,19 @@ func TestListTargets(t *testing.T) {
 			method:   "GET",
 		},
 		{
+			name:     "project not found",
+			want:     http.StatusNotFound,
+			respFile: "TestListTargets/project_not_found_response.json",
+			asAdmin:  true,
+			url:      "/projects/badproject/targets",
+			method:   "GET",
+		},
+		{
 			name:     "no targets",
 			want:     http.StatusOK,
 			respFile: "TestListTargets/no_targets_response.json",
 			asAdmin:  true,
-			url:      "/projects/project1/targets",
+			url:      "/projects/projectalreadyexists/targets",
 			method:   "GET",
 		},
 	}
