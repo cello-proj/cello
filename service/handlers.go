@@ -321,7 +321,8 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		return
 	}
 	if !targetExists {
-		h.errorResponse(w, fmt.Sprintf("target '%s' does not exist for project `%s`", cwr.TargetName, cwr.ProjectName), http.StatusBadRequest)
+		level.Error(l).Log("message", "target not found")
+		h.errorResponse(w, "target not found", http.StatusBadRequest)
 		return
 	}
 
@@ -407,7 +408,13 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetExists, _ := cp.TargetExists(projectName, targetName)
+	targetExists, err := cp.TargetExists(projectName, targetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target", "error", err)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
+
 	if !targetExists {
 		level.Error(l).Log("message", "target not found")
 		h.errorResponse(w, "target not found", http.StatusNotFound)
@@ -746,7 +753,12 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetExists, _ := cp.TargetExists(projectName, ctr.Name)
+	targetExists, err := cp.TargetExists(projectName, ctr.Name)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target", "error", err)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
 	if targetExists {
 		level.Error(l).Log("message", "target name must not already exist")
 		h.errorResponse(w, "target name must not already exist", http.StatusBadRequest)
@@ -871,7 +883,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
-		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
@@ -913,6 +925,8 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	projectExists, err := cp.ProjectExists(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error determining if project exists", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
 	}
 
 	// TODO Perhaps this should be 404
@@ -922,7 +936,12 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetExists, _ := cp.TargetExists(projectName, targetName)
+	targetExists, err := cp.TargetExists(projectName, targetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target", "error", err)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
 	if !targetExists {
 		level.Error(l).Log("message", "target not found")
 		h.errorResponse(w, "target not found", http.StatusNotFound)
@@ -933,6 +952,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving existing target")
 		h.errorResponse(w, "error retrieving target", http.StatusBadRequest)
+		return
 	}
 
 	level.Debug(l).Log("message", "updating target")
@@ -943,7 +963,21 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, "{}")
+	newTarget, err := cp.GetTarget(projectName, targetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving new target information")
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(newTarget)
+	if err != nil {
+		level.Error(l).Log("message", "error creating response", "error", err)
+		h.errorResponse(w, "error creating response object", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, string(data))
 }
 
 // Convenience method that writes a failure response in a standard manner
