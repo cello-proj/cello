@@ -837,8 +837,8 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !projectExists {
-		level.Debug(l).Log("message", "no action required because project does not exist")
-		h.errorResponse(w, "project does not exists", http.StatusNotFound)
+		level.Debug(l).Log("message", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
 		return
 	}
 
@@ -885,6 +885,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
 		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
+		return
 	}
 
 	if err := json.Unmarshal(reqBody, &utr); err != nil {
