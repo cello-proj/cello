@@ -703,7 +703,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
-		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
