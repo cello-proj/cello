@@ -3,9 +3,9 @@ package requests
 import (
 	"errors"
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"strings"
 
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 

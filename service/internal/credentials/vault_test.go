@@ -2,10 +2,11 @@ package credentials
 
 import (
 	"fmt"
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"testing"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
+
 	"github.com/google/go-cmp/cmp"
 	vault "github.com/hashicorp/vault/api"
 )

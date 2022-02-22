@@ -2,12 +2,12 @@ package requests
 
 import (
 	"errors"
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateWorkflowValidate(t *testing.T) {
