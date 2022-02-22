@@ -8,6 +8,7 @@ import (
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 
@@ -22,7 +23,7 @@ const (
 type Provider interface {
 	CreateProject(string) (string, string, error)
 	CreateTarget(string, requests.CreateTarget) error
-	UpdateTarget(string, string, responses.TargetProperties, requests.UpdateTarget) error
+	UpdateTarget(string, string, types.Target, requests.UpdateTarget) (responses.UpdateTarget, error)
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
 	GetProject(string) (responses.GetProject, error)
@@ -332,7 +333,7 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (responses.GetT
 	return responses.GetTarget{
 		Name: targetName,
 		Type: credentialType,
-		Properties: responses.TargetProperties{
+		Properties: types.TargetProperties{
 			CredentialType: credentialType,
 			PolicyArns:     policies,
 			PolicyDocument: policyDocument,
@@ -428,28 +429,33 @@ func (v VaultProvider) TargetExists(projectName, targetName string) (bool, error
 }
 
 // UpdateTarget updates a targets policies for the project.
-func (v VaultProvider) UpdateTarget(projectName string, targetName string, targetProperties responses.TargetProperties, utr requests.UpdateTarget) error {
+func (v VaultProvider) UpdateTarget(projectName string, targetName string, target types.Target, utr requests.UpdateTarget) (responses.UpdateTarget, error) {
 	if !v.isAdmin() {
-		return errors.New("admin credentials must be used to update target")
+		return responses.UpdateTarget{}, errors.New("admin credentials must be used to update target")
 	}
 
-	credentialType := targetProperties.CredentialType
-
-	// updatable properties
-	policyArns := utr.PolicyArns
-	policyDocument := utr.PolicyDocument
-	roleArn := utr.RoleArn
+	properties := types.TargetProperties{
+		CredentialType: target.Properties.CredentialType,
+		// updatable properties
+		PolicyArns:     utr.Properties.PolicyArns,
+		PolicyDocument: utr.Properties.PolicyDocument,
+		RoleArn:        utr.Properties.RoleArn,
+	}
 
 	options := map[string]interface{}{
-		"credential_type": credentialType,
-		"policy_arns":     policyArns,
-		"policy_document": policyDocument,
-		"role_arns":       roleArn,
+		"credential_type": properties.CredentialType,
+		"policy_arns":     properties.PolicyArns,
+		"policy_document": properties.PolicyDocument,
+		"role_arns":       properties.RoleArn,
 	}
 
 	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
 	_, err := v.vaultLogicalSvc.Write(path, options)
-	return err
+	return responses.UpdateTarget{
+		Name:       targetName,
+		Type:       target.Type,
+		Properties: properties,
+	}, err
 }
 
 func (v VaultProvider) writeProjectState(name string) error {

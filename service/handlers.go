@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -956,21 +957,14 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "updating target")
-	err = cp.UpdateTarget(projectName, targetName, existingTarget.Properties, utr)
+	resp, err := cp.UpdateTarget(projectName, targetName, types.Target(existingTarget), utr)
 	if err != nil {
 		level.Error(l).Log("message", "error updating target", "error", err)
 		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
 		return
 	}
 
-	newTarget, err := cp.GetTarget(projectName, targetName)
-	if err != nil {
-		level.Error(l).Log("message", "error retrieving new target information")
-		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
-		return
-	}
-
-	data, err := json.Marshal(newTarget)
+	data, err := json.Marshal(resp)
 	if err != nil {
 		level.Error(l).Log("message", "error creating response", "error", err)
 		h.errorResponse(w, "error creating response object", http.StatusInternalServerError)

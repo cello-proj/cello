@@ -1,3 +1,5 @@
 {
-  "credential_type": "assumed_role"
+  "properties": {
+    "credential_type": "assumed_role"
+  }
 }

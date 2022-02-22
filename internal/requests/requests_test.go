@@ -2,6 +2,7 @@ package requests
 
 import (
 	"errors"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -467,7 +468,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "valid minimal",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -478,7 +479,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "valid full",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 					PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
@@ -496,7 +497,7 @@ func TestCreateTargetValidate(t *testing.T) {
 		{
 			name: "missing name",
 			req: CreateTarget{
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -508,7 +509,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "name must be alphanumeric underscore",
 			req: CreateTarget{
 				Name: "this-is-invalid",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -520,7 +521,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "too short name",
 			req: CreateTarget{
 				Name: "abc",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -532,7 +533,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "too long name",
 			req: CreateTarget{
 				Name: "a12345678901234567890123456789012",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -544,7 +545,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "missing type",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -555,7 +556,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "invalid type",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -567,7 +568,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "missing credential_type",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
@@ -578,7 +579,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "invalid credential_type",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "bad",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				},
@@ -590,7 +591,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "missing role_arn",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 				},
 				Type: "aws_account",
@@ -601,7 +602,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "role_arn must be an arn",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					RoleArn:        "not-an-arn",
 				},
@@ -613,7 +614,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "too many policy arns",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					PolicyArns: []string{
 						"arn:aws:iam::012345678901:policy/test-policy-1",
@@ -633,7 +634,7 @@ func TestCreateTargetValidate(t *testing.T) {
 			name: "policy arns must be valid",
 			req: CreateTarget{
 				Name: "target1",
-				Properties: TargetProperties{
+				Properties: types.TargetProperties{
 					CredentialType: "assumed_role",
 					PolicyArns: []string{
 						"arn:aws:iam::012345678901:policy/test-policy-1",
@@ -729,60 +730,72 @@ func TestUpdateTargetValidate(t *testing.T) {
 		{
 			name: "valid minimal",
 			req: UpdateTarget{
-				RoleArn: "arn:aws:iam::012345678901:role/test-role",
+				types.TargetProperties{
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
+				},
 			},
 		},
 		{
 			name: "valid full",
 			req: UpdateTarget{
-				RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-				PolicyArns: []string{
-					"arn:aws:iam::012345678901:policy/test-policy-1",
-					"arn:aws:iam::012345678901:policy/test-policy-2",
-					"arn:aws:iam::012345678901:policy/test-policy-3",
-					"arn:aws:iam::012345678901:policy/test-policy-4",
-					"arn:aws:iam::012345678901:policy/test-policy-5",
+				types.TargetProperties{
+					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+					PolicyArns: []string{
+						"arn:aws:iam::012345678901:policy/test-policy-1",
+						"arn:aws:iam::012345678901:policy/test-policy-2",
+						"arn:aws:iam::012345678901:policy/test-policy-3",
+						"arn:aws:iam::012345678901:policy/test-policy-4",
+						"arn:aws:iam::012345678901:policy/test-policy-5",
+					},
 				},
 			},
 		},
 		{
 			name: "missing role_arn",
 			req: UpdateTarget{
-				PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+				types.TargetProperties{
+					PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+				},
 			},
 			wantErr: errors.New("role_arn is required"),
 		},
 		{
 			name: "role_arn must be an arn",
 			req: UpdateTarget{
-				RoleArn: "not-an-arn",
+				types.TargetProperties{
+					RoleArn: "not-an-arn",
+				},
 			},
 			wantErr: errors.New("role_arn must be a valid arn"),
 		},
 		{
 			name: "too many policy arns",
 			req: UpdateTarget{
-				PolicyArns: []string{
-					"arn:aws:iam::012345678901:policy/test-policy-1",
-					"arn:aws:iam::012345678901:policy/test-policy-2",
-					"arn:aws:iam::012345678901:policy/test-policy-3",
-					"arn:aws:iam::012345678901:policy/test-policy-4",
-					"arn:aws:iam::012345678901:policy/test-policy-5",
-					"arn:aws:iam::012345678901:policy/test-policy-6",
+				types.TargetProperties{
+					PolicyArns: []string{
+						"arn:aws:iam::012345678901:policy/test-policy-1",
+						"arn:aws:iam::012345678901:policy/test-policy-2",
+						"arn:aws:iam::012345678901:policy/test-policy-3",
+						"arn:aws:iam::012345678901:policy/test-policy-4",
+						"arn:aws:iam::012345678901:policy/test-policy-5",
+						"arn:aws:iam::012345678901:policy/test-policy-6",
+					},
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
-				RoleArn: "arn:aws:iam::012345678901:role/test-role",
 			},
 			wantErr: errors.New("policy_arns cannot be more than 5"),
 		},
 		{
 			name: "policy arns must be valid",
 			req: UpdateTarget{
-				PolicyArns: []string{
-					"arn:aws:iam::012345678901:policy/test-policy-1",
-					"not-an-arn",
+				types.TargetProperties{
+					PolicyArns: []string{
+						"arn:aws:iam::012345678901:policy/test-policy-1",
+						"not-an-arn",
+					},
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
-				RoleArn: "arn:aws:iam::012345678901:role/test-role",
 			},
 			wantErr: errors.New("policy_arns contains an invalid arn"),
 		},

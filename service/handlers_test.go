@@ -15,6 +15,7 @@ import (
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -133,7 +134,7 @@ func (m mockCredentialsProvider) GetTarget(project string, target string) (respo
 	return responses.GetTarget{
 		Name: "TARGET",
 		Type: "aws_account",
-		Properties: responses.TargetProperties{
+		Properties: types.TargetProperties{
 			CredentialType: "assumed_role",
 			PolicyArns: []string{
 				"arn:aws:iam::012345678901:policy/test-policy",
@@ -180,8 +181,17 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 	return false, nil
 }
 
-func (m mockCredentialsProvider) UpdateTarget(projectName string, targetName string, targetProperties responses.TargetProperties, req requests.UpdateTarget) error {
-	return nil
+func (m mockCredentialsProvider) UpdateTarget(projectName string, targetName string, target types.Target, req requests.UpdateTarget) (responses.UpdateTarget, error) {
+	return responses.UpdateTarget{
+		Name: targetName,
+		Properties: types.TargetProperties{
+			CredentialType: target.Properties.CredentialType,
+			PolicyArns:     req.Properties.PolicyArns,
+			PolicyDocument: req.Properties.PolicyDocument,
+			RoleArn:        req.Properties.RoleArn,
+		},
+		Type: target.Type,
+	}, nil
 }
 
 type test struct {
@@ -481,7 +491,7 @@ func TestUpdateTarget(t *testing.T) {
 			respFile: "TestUpdateTarget/can_update_target_response.json",
 			asAdmin:  true,
 			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PUT",
+			method:   "PATCH",
 		},
 		{
 			name:     "fails to update target when not admin",
@@ -490,7 +500,7 @@ func TestUpdateTarget(t *testing.T) {
 			respFile: "TestUpdateTarget/fails_to_update_target_when_not_admin_response.json",
 			asAdmin:  false,
 			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PUT",
+			method:   "PATCH",
 		},
 		{
 			name:          "fails to update target when using a bad auth header",
@@ -500,7 +510,7 @@ func TestUpdateTarget(t *testing.T) {
 			asAdmin:       false,
 			badAuthHeader: true,
 			url:           "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:        "PUT",
+			method:        "PATCH",
 		},
 		{
 			name:     "bad request",
@@ -509,7 +519,7 @@ func TestUpdateTarget(t *testing.T) {
 			respFile: "TestUpdateTarget/bad_response.json",
 			asAdmin:  true,
 			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PUT",
+			method:   "PATCH",
 		},
 		{
 			name:     "target name must exist",
@@ -518,7 +528,7 @@ func TestUpdateTarget(t *testing.T) {
 			respFile: "TestUpdateTarget/target_name_must_exist_response.json",
 			asAdmin:  true,
 			url:      "/projects/projectalreadyexists/targets/INVALID_TARGET",
-			method:   "PUT",
+			method:   "PATCH",
 		},
 		{
 			name:     "project must exist",
@@ -527,7 +537,7 @@ func TestUpdateTarget(t *testing.T) {
 			respFile: "TestUpdateTarget/project_must_exist_response.json",
 			asAdmin:  true,
 			url:      "/projects/projectdoesnotexist/targets/TARGET_EXISTS",
-			method:   "PUT",
+			method:   "PATCH",
 		},
 	}
 	runTests(t, tests)

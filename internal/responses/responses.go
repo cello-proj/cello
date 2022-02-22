@@ -1,5 +1,7 @@
 package responses
 
+import "github.com/argoproj-labs/argo-cloudops/internal/types"
+
 // Diff represents the responses for Diff.
 type Diff TargetOperation
 
@@ -22,11 +24,7 @@ type GetProject struct {
 }
 
 // GetTarget represents the responses for GetTarget.
-type GetTarget struct {
-	Name       string           `json:"name"`
-	Properties TargetProperties `json:"properties"`
-	Type       string           `json:"type"`
-}
+type GetTarget types.Target
 
 // GetWorkflows represents the responses for GetWorkflows.
 type GetWorkflows []string
@@ -47,10 +45,5 @@ type TargetOperation struct {
 	WorkflowName string `json:"workflow_name"`
 }
 
-// TargetProperties represents the responses for Targetproperties.
-type TargetProperties struct {
-	CredentialType string   `json:"credential_type"`
-	PolicyArns     []string `json:"policy_arns"`
-	PolicyDocument string   `json:"policy_document"`
-	RoleArn        string   `json:"role_arn"`
-}
+// UpdateTarget represents the responses for UpdateTarget.
+type UpdateTarget types.Target
