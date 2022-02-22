@@ -133,9 +133,14 @@ func (req CreateTarget) validateTargetProperties() error {
 		return err
 	}
 
+	if req.Properties.RoleArn == "" {
+		return errors.New("role_arn is required")
+	}
+
 	if req.Properties.CredentialType == "" {
 		return errors.New("credential_type is required")
 	}
+
 	if req.Properties.CredentialType != "assumed_role" {
 		return errors.New("credential_type must be one of 'assumed_role'")
 	}
@@ -202,10 +207,21 @@ type UpdateTarget struct {
 func (req UpdateTarget) Validate() error {
 	v := []func() error{
 		func() error { return validations.ValidateStruct(req) },
-		req.validateTargetUpdate,
 	}
+
+	if len(req.Properties.PolicyArns) == 0 && req.Properties.RoleArn == "" && req.Properties.PolicyDocument == "" {
+		return errors.New("must provide properties to update")
+	}
+
 	if len(req.Properties.PolicyArns) > 5 {
 		return errors.New("policy_arns cannot be more than 5")
+	}
+
+	// if role_arn is being updated, validate it is a valid arn.
+	if req.Properties.RoleArn != "" {
+		if !validations.IsValidARN(req.Properties.RoleArn) {
+			return errors.New("role_arn must be a valid arn")
+		}
 	}
 
 	for _, arn := range req.Properties.PolicyArns {
@@ -214,11 +230,4 @@ func (req UpdateTarget) Validate() error {
 		}
 	}
 	return validations.Validate(v...)
-}
-
-func (req UpdateTarget) validateTargetUpdate() error {
-	if !validations.IsValidARN(req.Properties.RoleArn) {
-		return errors.New("role_arn must be a valid arn")
-	}
-	return nil
 }

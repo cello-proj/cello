@@ -1,5 +1,5 @@
 {
-  "name": "TARGET_EXISTS",
+  "name": "TARGET",
   "type": "aws_account",
   "properties": {
     "credential_type": "assumed_role",

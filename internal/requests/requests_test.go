@@ -752,13 +752,11 @@ func TestUpdateTargetValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "missing role_arn",
+			name: "missing properties to update",
 			req: UpdateTarget{
-				types.TargetProperties{
-					PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-				},
+				types.TargetProperties{},
 			},
-			wantErr: errors.New("role_arn is required"),
+			wantErr: errors.New("must provide properties to update"),
 		},
 		{
 			name: "role_arn must be an arn",

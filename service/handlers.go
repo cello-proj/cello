@@ -955,15 +955,40 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Update if available
+	policyArns := existingTarget.Properties.PolicyArns
+	if len(utr.Properties.PolicyArns) > 0 {
+		policyArns = utr.Properties.PolicyArns
+	}
+	policyDoc := existingTarget.Properties.PolicyDocument
+	if utr.Properties.PolicyDocument != "" {
+		policyDoc = utr.Properties.PolicyDocument
+	}
+	roleArn := existingTarget.Properties.RoleArn
+	if utr.Properties.RoleArn != "" {
+		roleArn = utr.Properties.RoleArn
+	}
+
+	updatedTarget := types.Target{
+		Name: existingTarget.Name,
+		Type: existingTarget.Type,
+		Properties: types.TargetProperties{
+			CredentialType: existingTarget.Properties.CredentialType,
+			PolicyArns:     policyArns,
+			PolicyDocument: policyDoc,
+			RoleArn:        roleArn,
+		},
+	}
+
 	level.Debug(l).Log("message", "updating target")
-	resp, err := cp.UpdateTarget(projectName, targetName, types.Target(existingTarget), utr)
+	err = cp.UpdateTarget(projectName, updatedTarget)
 	if err != nil {
 		level.Error(l).Log("message", "error updating target", "error", err)
 		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
 		return
 	}
 
-	data, err := json.Marshal(resp)
+	data, err := json.Marshal(updatedTarget)
 	if err != nil {
 		level.Error(l).Log("message", "error creating response", "error", err)
 		h.errorResponse(w, "error creating response object", http.StatusInternalServerError)

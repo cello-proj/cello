@@ -181,17 +181,8 @@ func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (b
 	return false, nil
 }
 
-func (m mockCredentialsProvider) UpdateTarget(projectName string, targetName string, target types.Target, req requests.UpdateTarget) (responses.UpdateTarget, error) {
-	return responses.UpdateTarget{
-		Name: targetName,
-		Properties: types.TargetProperties{
-			CredentialType: target.Properties.CredentialType,
-			PolicyArns:     req.Properties.PolicyArns,
-			PolicyDocument: req.Properties.PolicyDocument,
-			RoleArn:        req.Properties.RoleArn,
-		},
-		Type: target.Type,
-	}, nil
+func (m mockCredentialsProvider) UpdateTarget(projectName string, target types.Target) error {
+	return nil
 }
 
 type test struct {

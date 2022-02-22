@@ -164,7 +164,7 @@ func TestVaultUpdateTarget(t *testing.T) {
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
-			_, err := v.UpdateTarget("test", "test-project", types.Target{}, requests.UpdateTarget{})
+			err := v.UpdateTarget("test", types.Target{})
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)

@@ -23,7 +23,7 @@ const (
 type Provider interface {
 	CreateProject(string) (string, string, error)
 	CreateTarget(string, requests.CreateTarget) error
-	UpdateTarget(string, string, types.Target, requests.UpdateTarget) (responses.UpdateTarget, error)
+	UpdateTarget(string, types.Target) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
 	GetProject(string) (responses.GetProject, error)
@@ -429,33 +429,21 @@ func (v VaultProvider) TargetExists(projectName, targetName string) (bool, error
 }
 
 // UpdateTarget updates a targets policies for the project.
-func (v VaultProvider) UpdateTarget(projectName string, targetName string, target types.Target, utr requests.UpdateTarget) (responses.UpdateTarget, error) {
+func (v VaultProvider) UpdateTarget(projectName string, target types.Target) error {
 	if !v.isAdmin() {
-		return responses.UpdateTarget{}, errors.New("admin credentials must be used to update target")
-	}
-
-	properties := types.TargetProperties{
-		CredentialType: target.Properties.CredentialType,
-		// updatable properties
-		PolicyArns:     utr.Properties.PolicyArns,
-		PolicyDocument: utr.Properties.PolicyDocument,
-		RoleArn:        utr.Properties.RoleArn,
+		return errors.New("admin credentials must be used to update target")
 	}
 
 	options := map[string]interface{}{
-		"credential_type": properties.CredentialType,
-		"policy_arns":     properties.PolicyArns,
-		"policy_document": properties.PolicyDocument,
-		"role_arns":       properties.RoleArn,
+		"credential_type": target.Properties.CredentialType,
+		"policy_arns":     target.Properties.PolicyArns,
+		"policy_document": target.Properties.PolicyDocument,
+		"role_arns":       target.Properties.RoleArn,
 	}
 
-	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
+	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, target.Name)
 	_, err := v.vaultLogicalSvc.Write(path, options)
-	return responses.UpdateTarget{
-		Name:       targetName,
-		Type:       target.Type,
-		Properties: properties,
-	}, err
+	return err
 }
 
 func (v VaultProvider) writeProjectState(name string) error {
