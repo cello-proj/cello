@@ -930,10 +930,9 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO Perhaps this should be 404
 	if !projectExists {
 		level.Error(l).Log("message", "project does not exist")
-		h.errorResponse(w, "project does not exist", http.StatusBadRequest)
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
 		return
 	}
 
@@ -952,7 +951,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	existingTarget, err := cp.GetTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving existing target")
-		h.errorResponse(w, "error retrieving target", http.StatusBadRequest)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
 		return
 	}
 

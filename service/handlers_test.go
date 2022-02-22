@@ -533,7 +533,7 @@ func TestUpdateTarget(t *testing.T) {
 		{
 			name:     "project must exist",
 			req:      loadJSON(t, "TestUpdateTarget/project_must_exist_request.json"),
-			want:     http.StatusBadRequest,
+			want:     http.StatusNotFound,
 			respFile: "TestUpdateTarget/project_must_exist_response.json",
 			asAdmin:  true,
 			url:      "/projects/projectdoesnotexist/targets/TARGET_EXISTS",
