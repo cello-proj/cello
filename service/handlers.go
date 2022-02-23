@@ -954,6 +954,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// merge request data into existing target struct for update data
 	if err := json.Unmarshal(reqBody, &target); err != nil {
 		level.Error(l).Log("message", "error reading target properties data", "error", err)
 		h.errorResponse(w, "error reading target properties data", http.StatusInternalServerError)
