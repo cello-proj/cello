@@ -504,6 +504,15 @@ func TestUpdateTarget(t *testing.T) {
 			method:        "PATCH",
 		},
 		{
+			name:     "fails to update target credential_type",
+			req:      loadJSON(t, "TestUpdateTarget/fails_to_update_credential_type_request.json"),
+			want:     http.StatusBadRequest,
+			respFile: "TestUpdateTarget/fails_to_update_credential_type_response.json",
+			asAdmin:  true,
+			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
+			method:   "PATCH",
+		},
+		{
 			name:     "bad request",
 			req:      loadJSON(t, "TestUpdateTarget/bad_request.json"),
 			want:     http.StatusBadRequest,

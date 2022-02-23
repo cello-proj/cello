@@ -209,6 +209,10 @@ func (req UpdateTarget) Validate() error {
 		func() error { return validations.ValidateStruct(req) },
 	}
 
+	if req.Properties.CredentialType != "" {
+		return errors.New("credential_type cannot be updated")
+	}
+
 	if len(req.Properties.PolicyArns) == 0 && req.Properties.RoleArn == "" && req.Properties.PolicyDocument == "" {
 		return errors.New("must provide properties to update")
 	}

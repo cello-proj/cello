@@ -759,6 +759,13 @@ func TestUpdateTargetValidate(t *testing.T) {
 			wantErr: errors.New("must provide properties to update"),
 		},
 		{
+			name: "cannot update credential_type properties to update",
+			req: UpdateTarget{
+				types.TargetProperties{CredentialType: "bad_type"},
+			},
+			wantErr: errors.New("credential_type cannot be updated"),
+		},
+		{
 			name: "role_arn must be an arn",
 			req: UpdateTarget{
 				types.TargetProperties{
