@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -948,47 +947,28 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingTarget, err := cp.GetTarget(projectName, targetName)
+	target, err := cp.GetTarget(projectName, targetName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving existing target")
 		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
 		return
 	}
 
-	// Update if available
-	policyArns := existingTarget.Properties.PolicyArns
-	if len(utr.Properties.PolicyArns) > 0 {
-		policyArns = utr.Properties.PolicyArns
-	}
-	policyDoc := existingTarget.Properties.PolicyDocument
-	if utr.Properties.PolicyDocument != "" {
-		policyDoc = utr.Properties.PolicyDocument
-	}
-	roleArn := existingTarget.Properties.RoleArn
-	if utr.Properties.RoleArn != "" {
-		roleArn = utr.Properties.RoleArn
-	}
-
-	updatedTarget := types.Target{
-		Name: existingTarget.Name,
-		Type: existingTarget.Type,
-		Properties: types.TargetProperties{
-			CredentialType: existingTarget.Properties.CredentialType,
-			PolicyArns:     policyArns,
-			PolicyDocument: policyDoc,
-			RoleArn:        roleArn,
-		},
+	if err := json.Unmarshal(reqBody, &target); err != nil {
+		level.Error(l).Log("message", "error reading target properties data", "error", err)
+		h.errorResponse(w, "error reading target properties data", http.StatusInternalServerError)
+		return
 	}
 
 	level.Debug(l).Log("message", "updating target")
-	err = cp.UpdateTarget(projectName, updatedTarget)
+	err = cp.UpdateTarget(projectName, target)
 	if err != nil {
 		level.Error(l).Log("message", "error updating target", "error", err)
 		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
 		return
 	}
 
-	data, err := json.Marshal(updatedTarget)
+	data, err := json.Marshal(target)
 	if err != nil {
 		level.Error(l).Log("message", "error creating response", "error", err)
 		h.errorResponse(w, "error creating response object", http.StatusInternalServerError)

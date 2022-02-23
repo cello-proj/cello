@@ -127,11 +127,11 @@ func (m mockCredentialsProvider) CreateTarget(name string, req requests.CreateTa
 	return nil
 }
 
-func (m mockCredentialsProvider) GetTarget(project string, target string) (responses.GetTarget, error) {
+func (m mockCredentialsProvider) GetTarget(project string, target string) (types.Target, error) {
 	if target == "targetdoesnotexist" {
-		return responses.GetTarget{}, credentials.ErrNotFound
+		return types.Target{}, credentials.ErrNotFound
 	}
-	return responses.GetTarget{
+	return types.Target{
 		Name: "TARGET",
 		Type: "aws_account",
 		Properties: types.TargetProperties{
