@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/types"
 
 	"github.com/google/go-cmp/cmp"
@@ -114,7 +113,7 @@ func TestVaultCreateTarget(t *testing.T) {
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
 
-			err := v.CreateTarget("test", requests.CreateTarget{})
+			err := v.CreateTarget("test", types.Target{})
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)

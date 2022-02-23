@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -766,7 +767,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating target")
-	err = cp.CreateTarget(projectName, ctr)
+	err = cp.CreateTarget(projectName, types.Target(ctr))
 	if err != nil {
 		level.Error(l).Log("message", "error creating target", "error", err)
 		h.errorResponse(w, "error creating target", http.StatusInternalServerError)

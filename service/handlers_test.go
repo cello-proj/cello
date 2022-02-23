@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
 	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
@@ -123,7 +122,7 @@ func (m mockCredentialsProvider) GetProject(proj string) (responses.GetProject, 
 	return responses.GetProject{Name: "project1"}, nil
 }
 
-func (m mockCredentialsProvider) CreateTarget(name string, req requests.CreateTarget) error {
+func (m mockCredentialsProvider) CreateTarget(name string, req types.Target) error {
 	return nil
 }
 

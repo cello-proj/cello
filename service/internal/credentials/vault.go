@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
 	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
@@ -22,7 +21,7 @@ const (
 // Provider defines the interface required by providers.
 type Provider interface {
 	CreateProject(string) (string, string, error)
-	CreateTarget(string, requests.CreateTarget) error
+	CreateTarget(string, types.Target) error
 	UpdateTarget(string, types.Target) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
@@ -218,16 +217,16 @@ func (v VaultProvider) CreateProject(name string) (string, string, error) {
 // CreateTarget creates a target for the project.
 // TODO validate policy and other information is correct in target
 // TODO Validate role exists (if possible, etc)
-func (v VaultProvider) CreateTarget(projectName string, ctr requests.CreateTarget) error {
+func (v VaultProvider) CreateTarget(projectName string, target types.Target) error {
 	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to create target")
 	}
 
-	targetName := ctr.Name
-	credentialType := ctr.Properties.CredentialType
-	policyArns := ctr.Properties.PolicyArns
-	policyDocument := ctr.Properties.PolicyDocument
-	roleArn := ctr.Properties.RoleArn
+	targetName := target.Name
+	credentialType := target.Properties.CredentialType
+	policyArns := target.Properties.PolicyArns
+	policyDocument := target.Properties.PolicyDocument
+	roleArn := target.Properties.RoleArn
 
 	options := map[string]interface{}{
 		"credential_type": credentialType,
