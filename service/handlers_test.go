@@ -815,7 +815,7 @@ func runTests(t *testing.T, tests []test) {
 }
 
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
-func executeRequest(method string, url string, body *bytes.Buffer, asAdmin bool, invalidAuthorization bool) *http.Response {
+func executeRequest(method string, url string, body *bytes.Buffer, asAdmin, invalidAuthorization bool) *http.Response {
 	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))

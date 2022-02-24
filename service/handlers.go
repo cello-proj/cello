@@ -878,7 +878,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	projectName := vars["projectName"]
 	targetName := vars["targetName"]
 
-	l := h.requestLogger(r, "op", "update-target", "project", projectName)
+	l := h.requestLogger(r, "op", "update-target", "project", projectName, "target", targetName)
 
 	level.Debug(l).Log("message", "validating authorization header for update target")
 	ah := r.Header.Get("Authorization")
@@ -906,8 +906,6 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error processing request", http.StatusBadRequest)
 		return
 	}
-
-	l = log.With(l, "target", targetName)
 
 	level.Debug(l).Log("message", "creating credential provider")
 	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)

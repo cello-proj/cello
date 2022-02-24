@@ -222,20 +222,14 @@ func (v VaultProvider) CreateTarget(projectName string, target types.Target) err
 		return errors.New("admin credentials must be used to create target")
 	}
 
-	targetName := target.Name
-	credentialType := target.Properties.CredentialType
-	policyArns := target.Properties.PolicyArns
-	policyDocument := target.Properties.PolicyDocument
-	roleArn := target.Properties.RoleArn
-
 	options := map[string]interface{}{
-		"credential_type": credentialType,
-		"policy_arns":     policyArns,
-		"policy_document": policyDocument,
-		"role_arns":       roleArn,
+		"credential_type": target.Properties.CredentialType,
+		"policy_arns":     target.Properties.PolicyArns,
+		"policy_document": target.Properties.PolicyDocument,
+		"role_arns":       target.Properties.RoleArn,
 	}
 
-	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
+	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, target.Name)
 	_, err := v.vaultLogicalSvc.Write(path, options)
 	return err
 }
@@ -331,7 +325,8 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, 
 
 	return types.Target{
 		Name: targetName,
-		Type: credentialType,
+		// target 'Type' always 'aws_account', currently not stored in Vault
+		Type: "aws_account",
 		Properties: types.TargetProperties{
 			CredentialType: credentialType,
 			PolicyArns:     policies,
