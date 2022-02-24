@@ -962,7 +962,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error reading target properties data", http.StatusInternalServerError)
 		return
 	}
-	// overwrite existing target name and type values with original values so request body doesn't overwrite these values
+	// overwrite updated target, with existing target name and type values so request body doesn't overwrite these values
 	target.Name = targetName
 	target.Type = targetType
 
