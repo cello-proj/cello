@@ -112,56 +112,6 @@ func (req CreateGitWorkflow) Validate() error {
 // CreateTarget request.
 type CreateTarget types.Target
 
-// Validate validates CreateTarget.
-func (req CreateTarget) Validate() error {
-	v := []func() error{
-		func() error { return validations.ValidateStruct(req) },
-		func() error {
-			if req.Type != "aws_account" {
-				return errors.New("type must be one of 'aws_account'")
-			}
-			return nil
-		},
-		req.validateTargetProperties,
-	}
-
-	return validations.Validate(v...)
-}
-
-func (req CreateTarget) validateTargetProperties() error {
-	if err := validations.ValidateStruct(req.Properties); err != nil {
-		return err
-	}
-
-	if req.Properties.RoleArn == "" {
-		return errors.New("role_arn is required")
-	}
-
-	if req.Properties.CredentialType == "" {
-		return errors.New("credential_type is required")
-	}
-
-	if req.Properties.CredentialType != "assumed_role" {
-		return errors.New("credential_type must be one of 'assumed_role'")
-	}
-
-	if !validations.IsValidARN(req.Properties.RoleArn) {
-		return errors.New("role_arn must be a valid arn")
-	}
-
-	if len(req.Properties.PolicyArns) > 5 {
-		return errors.New("policy_arns cannot be more than 5")
-	}
-
-	for _, arn := range req.Properties.PolicyArns {
-		if !validations.IsValidARN(arn) {
-			return errors.New("policy_arns contains an invalid arn")
-		}
-	}
-
-	return nil
-}
-
 // CreateProject request.
 type CreateProject struct {
 	Name       string `json:"name" valid:"required~name is required,alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
@@ -201,37 +151,4 @@ func (req TargetOperation) Validate() error {
 // UpdateTarget request.
 type UpdateTarget struct {
 	Properties types.TargetProperties `json:"properties"`
-}
-
-// Validate validates CreateTarget.
-func (req UpdateTarget) Validate() error {
-	v := []func() error{
-		func() error { return validations.ValidateStruct(req) },
-	}
-
-	if req.Properties.CredentialType != "" {
-		return errors.New("credential_type cannot be updated")
-	}
-
-	if len(req.Properties.PolicyArns) == 0 && req.Properties.RoleArn == "" && req.Properties.PolicyDocument == "" {
-		return errors.New("must provide properties to update")
-	}
-
-	if len(req.Properties.PolicyArns) > 5 {
-		return errors.New("policy_arns cannot be more than 5")
-	}
-
-	// if role_arn is being updated, validate it is a valid arn.
-	if req.Properties.RoleArn != "" {
-		if !validations.IsValidARN(req.Properties.RoleArn) {
-			return errors.New("role_arn must be a valid arn")
-		}
-	}
-
-	for _, arn := range req.Properties.PolicyArns {
-		if !validations.IsValidARN(arn) {
-			return errors.New("policy_arns contains an invalid arn")
-		}
-	}
-	return validations.Validate(v...)
 }

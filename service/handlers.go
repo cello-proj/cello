@@ -726,7 +726,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ctr.Validate(); err != nil {
+	if err := types.Target(ctr).Validate(); err != nil {
 		level.Error(l).Log("message", "error invalid request", "error", err)
 		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
@@ -907,12 +907,6 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := utr.Validate(); err != nil {
-		level.Error(l).Log("message", "error invalid request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
-		return
-	}
-
 	l = log.With(l, "target", targetName)
 
 	level.Debug(l).Log("message", "creating credential provider")
@@ -962,7 +956,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error reading target properties data", http.StatusInternalServerError)
 		return
 	}
-	// overwrite updated target, with existing target name and type values so request body doesn't overwrite these values
+	// overwrite updated target with existing target name and type values so request body doesn't overwrite these values
 	target.Name = targetName
 	target.Type = targetType
 
@@ -971,6 +965,12 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error updating target", "error", err)
 		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
+		return
+	}
+
+	if err := target.Validate(); err != nil {
+		level.Error(l).Log("message", "error invalid request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
 	}
 

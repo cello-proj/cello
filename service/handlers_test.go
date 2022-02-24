@@ -521,15 +521,6 @@ func TestUpdateTarget(t *testing.T) {
 			method:   "PATCH",
 		},
 		{
-			name:     "bad request",
-			req:      loadJSON(t, "TestUpdateTarget/bad_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestUpdateTarget/bad_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PATCH",
-		},
-		{
 			name:     "target name must exist",
 			req:      loadJSON(t, "TestUpdateTarget/target_name_must_exist_request.json"),
 			want:     http.StatusNotFound,
