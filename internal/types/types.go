@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 )
 
