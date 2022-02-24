@@ -512,6 +512,15 @@ func TestUpdateTarget(t *testing.T) {
 			method:   "PATCH",
 		},
 		{
+			name:     "does not overwrite target name or type when in request",
+			req:      loadJSON(t, "TestUpdateTarget/fails_to_update_target_name_request.json"),
+			want:     http.StatusOK,
+			respFile: "TestUpdateTarget/fails_to_update_target_name_response.json",
+			asAdmin:  true,
+			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
+			method:   "PATCH",
+		},
+		{
 			name:     "bad request",
 			req:      loadJSON(t, "TestUpdateTarget/bad_request.json"),
 			want:     http.StatusBadRequest,

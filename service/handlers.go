@@ -954,6 +954,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
 		return
 	}
+	targetType := target.Type
 
 	// merge request data into existing target struct for update data
 	if err := json.Unmarshal(reqBody, &target); err != nil {
@@ -961,6 +962,9 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error reading target properties data", http.StatusInternalServerError)
 		return
 	}
+	// overwrite existing target name and type values with original values so request body doesn't overwrite these values
+	target.Name = targetName
+	target.Type = targetType
 
 	level.Debug(l).Log("message", "updating target")
 	err = cp.UpdateTarget(projectName, target)
