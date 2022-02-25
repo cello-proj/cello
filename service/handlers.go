@@ -963,7 +963,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
 	}
-	
+
 	level.Debug(l).Log("message", "updating target")
 	err = cp.UpdateTarget(projectName, target)
 	if err != nil {
