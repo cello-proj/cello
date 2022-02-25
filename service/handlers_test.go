@@ -27,7 +27,10 @@ import (
 
 const (
 	// #nosec
-	testPassword = "D34DB33FD34DB33FD34DB33FD34DB33F"
+	testPassword      = "D34DB33FD34DB33FD34DB33FD34DB33F"
+	userAuthHeader    = "vault:user:" + testPassword
+	invalidAuthHeader = "bad auth header"
+	adminAuthHeader   = "vault:admin:" + testPassword
 )
 
 type mockDB struct{}
@@ -185,60 +188,60 @@ func (m mockCredentialsProvider) UpdateTarget(projectName string, target types.T
 }
 
 type test struct {
-	name          string
-	req           interface{}
-	want          int
-	body          string
-	respFile      string
-	asAdmin       bool
-	badAuthHeader bool
-	url           string
-	method        string
+	name       string
+	req        interface{}
+	want       int
+	body       string
+	respFile   string
+	authHeader string
+	url        string
+	method     string
 }
 
 func TestCreateProject(t *testing.T) {
 	tests := []test{
 		{
-			name:     "fails to create project when not admin",
-			req:      loadJSON(t, "TestCreateProject/fails_to_create_project_when_not_admin_request.json"),
-			want:     http.StatusUnauthorized,
-			respFile: "TestCreateProject/fails_to_create_project_when_not_admin_response.json",
-			url:      "/projects",
-			method:   "POST",
+			name:       "fails to create project when not admin",
+			req:        loadJSON(t, "TestCreateProject/fails_to_create_project_when_not_admin_request.json"),
+			want:       http.StatusUnauthorized,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateProject/fails_to_create_project_when_not_admin_response.json",
+			url:        "/projects",
+			method:     "POST",
 		},
 		{
-			name:     "can create project",
-			req:      loadJSON(t, "TestCreateProject/can_create_project_request.json"),
-			want:     http.StatusOK,
-			respFile: "TestCreateProject/can_create_project_response.json",
-			asAdmin:  true,
-			url:      "/projects",
-			method:   "POST",
+			name:       "can create project",
+			req:        loadJSON(t, "TestCreateProject/can_create_project_request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestCreateProject/can_create_project_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects",
+			method:     "POST",
 		},
 		{
-			name:     "bad request",
-			req:      loadJSON(t, "TestCreateProject/bad_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateProject/bad_response.json",
-			asAdmin:  true,
-			url:      "/projects",
-			method:   "POST",
+			name:       "bad request",
+			req:        loadJSON(t, "TestCreateProject/bad_request.json"),
+			want:       http.StatusBadRequest,
+			respFile:   "TestCreateProject/bad_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects",
+			method:     "POST",
 		},
 		{
-			name:    "project name cannot already exist",
-			req:     loadJSON(t, "TestCreateProject/project_name_cannot_already_exist.json"),
-			want:    http.StatusBadRequest,
-			asAdmin: true,
-			url:     "/projects",
-			method:  "POST",
+			name:       "project name cannot already exist",
+			req:        loadJSON(t, "TestCreateProject/project_name_cannot_already_exist.json"),
+			want:       http.StatusBadRequest,
+			authHeader: adminAuthHeader,
+			url:        "/projects",
+			method:     "POST",
 		},
 		{
-			name:    "project fails to create db entry",
-			req:     loadJSON(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
-			want:    http.StatusInternalServerError,
-			asAdmin: true,
-			url:     "/projects",
-			method:  "POST",
+			name:       "project fails to create db entry",
+			req:        loadJSON(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects",
+			method:     "POST",
 		},
 	}
 	runTests(t, tests)
@@ -247,27 +250,28 @@ func TestCreateProject(t *testing.T) {
 func TestGetTarget(t *testing.T) {
 	tests := []test{
 		{
-			name:     "fails to get target when not admin",
-			want:     http.StatusUnauthorized,
-			respFile: "TestGetTarget/fails_to_get_target_when_not_admin_response.json",
-			url:      "/projects/undeletableprojecttargets/targets/target1",
-			method:   "GET",
+			name:       "fails to get target when not admin",
+			want:       http.StatusUnauthorized,
+			respFile:   "TestGetTarget/fails_to_get_target_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/undeletableprojecttargets/targets/target1",
+			method:     "GET",
 		},
 		{
-			name:     "can get target",
-			want:     http.StatusOK,
-			respFile: "TestGetTarget/can_get_target_response.json",
-			asAdmin:  true,
-			url:      "/projects/undeletableprojecttargets/targets/TARGET_EXISTS",
-			method:   "GET",
+			name:       "can get target",
+			want:       http.StatusOK,
+			respFile:   "TestGetTarget/can_get_target_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets/targets/TARGET_EXISTS",
+			method:     "GET",
 		},
 		{
-			name:     "target does not exist",
-			want:     http.StatusNotFound,
-			respFile: "TestGetTarget/target_does_not_exist_response.json",
-			asAdmin:  true,
-			url:      "/projects/undeletableprojecttargets/targets/targetdoesnotexist",
-			method:   "GET",
+			name:       "target does not exist",
+			want:       http.StatusNotFound,
+			respFile:   "TestGetTarget/target_does_not_exist_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets/targets/targetdoesnotexist",
+			method:     "GET",
 		},
 	}
 	runTests(t, tests)
@@ -276,35 +280,36 @@ func TestGetTarget(t *testing.T) {
 func TestListTargets(t *testing.T) {
 	tests := []test{
 		{
-			name:     "fails to list targets when not admin",
-			want:     http.StatusUnauthorized,
-			respFile: "TestListTargets/fails_to_list_targets_when_not_admin_response.json",
-			url:      "/projects/undeletableprojecttargets/targets",
-			method:   "GET",
+			name:       "fails to list targets when not admin",
+			want:       http.StatusUnauthorized,
+			respFile:   "TestListTargets/fails_to_list_targets_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/undeletableprojecttargets/targets",
+			method:     "GET",
 		},
 		{
-			name:     "can list targets",
-			want:     http.StatusOK,
-			respFile: "TestListTargets/can_get_target_response.json",
-			asAdmin:  true,
-			url:      "/projects/undeletableprojecttargets/targets",
-			method:   "GET",
+			name:       "can list targets",
+			want:       http.StatusOK,
+			respFile:   "TestListTargets/can_get_target_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets/targets",
+			method:     "GET",
 		},
 		{
-			name:     "project not found",
-			want:     http.StatusNotFound,
-			respFile: "TestListTargets/project_not_found_response.json",
-			asAdmin:  true,
-			url:      "/projects/badproject/targets",
-			method:   "GET",
+			name:       "project not found",
+			want:       http.StatusNotFound,
+			respFile:   "TestListTargets/project_not_found_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/badproject/targets",
+			method:     "GET",
 		},
 		{
-			name:     "no targets",
-			want:     http.StatusOK,
-			respFile: "TestListTargets/no_targets_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets",
-			method:   "GET",
+			name:       "no targets",
+			want:       http.StatusOK,
+			respFile:   "TestListTargets/no_targets_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets",
+			method:     "GET",
 		},
 	}
 	runTests(t, tests)
@@ -313,39 +318,39 @@ func TestListTargets(t *testing.T) {
 func TestDeleteProject(t *testing.T) {
 	tests := []test{
 		{
-			name:    "fails to delete project when not admin",
-			want:    http.StatusUnauthorized,
-			asAdmin: false,
-			url:     "/projects/projectalreadyexists",
-			method:  "DELETE",
+			name:       "fails to delete project when not admin",
+			want:       http.StatusUnauthorized,
+			authHeader: userAuthHeader,
+			url:        "/projects/projectalreadyexists",
+			method:     "DELETE",
 		},
 		{
-			name:    "can delete project",
-			want:    http.StatusOK,
-			asAdmin: true,
-			url:     "/projects/projectalreadyexists",
-			method:  "DELETE",
+			name:       "can delete project",
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists",
+			method:     "DELETE",
 		},
 		{
-			name:    "fails to delete project if any targets exist",
-			want:    http.StatusBadRequest,
-			asAdmin: true,
-			url:     "/projects/undeletableprojecttargets",
-			method:  "DELETE",
+			name:       "fails to delete project if any targets exist",
+			want:       http.StatusBadRequest,
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets",
+			method:     "DELETE",
 		},
 		{
-			name:    "fails to delete project",
-			want:    http.StatusInternalServerError,
-			asAdmin: true,
-			url:     "/projects/undeletableproject",
-			method:  "DELETE",
+			name:       "fails to delete project",
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableproject",
+			method:     "DELETE",
 		},
 		{
-			name:    "fails to delete project db entry",
-			want:    http.StatusInternalServerError,
-			asAdmin: true,
-			url:     "/projects/somedeletedberror",
-			method:  "DELETE",
+			name:       "fails to delete project db entry",
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects/somedeletedberror",
+			method:     "DELETE",
 		},
 	}
 	runTests(t, tests)
@@ -354,25 +359,25 @@ func TestDeleteProject(t *testing.T) {
 func TestGetProject(t *testing.T) {
 	tests := []test{
 		{
-			name:    "cannot get project, when not admin",
-			want:    http.StatusUnauthorized,
-			asAdmin: false,
-			method:  "GET",
-			url:     "/projects/project1",
+			name:       "cannot get project, when not admin",
+			want:       http.StatusUnauthorized,
+			authHeader: userAuthHeader,
+			method:     "GET",
+			url:        "/projects/project1",
 		},
 		{
-			name:    "project exists, successful get project",
-			want:    http.StatusOK,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/projects/project1",
+			name:       "project exists, successful get project",
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/projects/project1",
 		},
 		{
-			name:    "project does not exist",
-			want:    http.StatusNotFound,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/projects/projectdoesnotexist",
+			name:       "project does not exist",
+			want:       http.StatusNotFound,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/projects/projectdoesnotexist",
 		},
 	}
 	runTests(t, tests)
@@ -381,58 +386,58 @@ func TestGetProject(t *testing.T) {
 func TestCreateTarget(t *testing.T) {
 	tests := []test{
 		{
-			name:     "can create target",
-			req:      loadJSON(t, "TestCreateTarget/can_create_target_request.json"),
-			want:     http.StatusOK,
-			respFile: "TestCreateTarget/can_create_target_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets",
-			method:   "POST",
+			name:       "can create target",
+			req:        loadJSON(t, "TestCreateTarget/can_create_target_request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestCreateTarget/can_create_target_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets",
+			method:     "POST",
 		},
 		{
-			name:     "fails to create target when not admin",
-			req:      loadJSON(t, "TestCreateTarget/fails_to_create_target_when_not_admin_request.json"),
-			want:     http.StatusUnauthorized,
-			respFile: "TestCreateTarget/fails_to_create_target_when_not_admin_response.json",
-			asAdmin:  false,
-			url:      "/projects/projectalreadyexists/targets",
-			method:   "POST",
+			name:       "fails to create target when not admin",
+			req:        loadJSON(t, "TestCreateTarget/fails_to_create_target_when_not_admin_request.json"),
+			want:       http.StatusUnauthorized,
+			respFile:   "TestCreateTarget/fails_to_create_target_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/projectalreadyexists/targets",
+			method:     "POST",
 		},
 		{
-			name:          "fails to create target when using a bad auth header",
-			req:           loadJSON(t, "TestCreateTarget/can_create_target_request.json"),
-			want:          http.StatusUnauthorized,
-			respFile:      "TestCreateTarget/fails_to_create_target_when_bad_auth_header_response.json",
-			badAuthHeader: true,
-			url:           "/projects/projectalreadyexists/targets",
-			method:        "POST",
+			name:       "fails to create target when using a bad auth header",
+			req:        loadJSON(t, "TestCreateTarget/can_create_target_request.json"),
+			want:       http.StatusUnauthorized,
+			respFile:   "TestCreateTarget/fails_to_create_target_when_bad_auth_header_response.json",
+			authHeader: invalidAuthHeader,
+			url:        "/projects/projectalreadyexists/targets",
+			method:     "POST",
 		},
 		{
-			name:     "bad request",
-			req:      loadJSON(t, "TestCreateTarget/bad_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateTarget/bad_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets",
-			method:   "POST",
+			name:       "bad request",
+			req:        loadJSON(t, "TestCreateTarget/bad_request.json"),
+			want:       http.StatusBadRequest,
+			respFile:   "TestCreateTarget/bad_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets",
+			method:     "POST",
 		},
 		{
-			name:     "target name cannot already exist",
-			req:      loadJSON(t, "TestCreateTarget/target_name_cannot_already_exist_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateTarget/target_name_cannot_already_exist_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets",
-			method:   "POST",
+			name:       "target name cannot already exist",
+			req:        loadJSON(t, "TestCreateTarget/target_name_cannot_already_exist_request.json"),
+			want:       http.StatusBadRequest,
+			respFile:   "TestCreateTarget/target_name_cannot_already_exist_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets",
+			method:     "POST",
 		},
 		{
-			name:     "project must exist",
-			req:      loadJSON(t, "TestCreateTarget/project_must_exist_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateTarget/project_must_exist_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectdoesnotexist/targets",
-			method:   "POST",
+			name:       "project must exist",
+			req:        loadJSON(t, "TestCreateTarget/project_must_exist_request.json"),
+			want:       http.StatusBadRequest,
+			respFile:   "TestCreateTarget/project_must_exist_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectdoesnotexist/targets",
+			method:     "POST",
 		},
 	}
 	runTests(t, tests)
@@ -441,32 +446,32 @@ func TestCreateTarget(t *testing.T) {
 func TestDeleteTarget(t *testing.T) {
 	tests := []test{
 		{
-			name:    "fails to delete target when not admin",
-			want:    http.StatusUnauthorized,
-			asAdmin: false,
-			url:     "/projects/projectalreadyexists/targets/target1",
-			method:  "DELETE",
+			name:       "fails to delete target when not admin",
+			want:       http.StatusUnauthorized,
+			authHeader: userAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/target1",
+			method:     "DELETE",
 		},
 		{
-			name:          "fails to delete target when using a bad auth header",
-			want:          http.StatusUnauthorized,
-			badAuthHeader: true,
-			url:           "/projects/projectalreadyexists/targets/target1",
-			method:        "DELETE",
+			name:       "fails to delete target when using a bad auth header",
+			want:       http.StatusUnauthorized,
+			authHeader: invalidAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/target1",
+			method:     "DELETE",
 		},
 		{
-			name:    "can delete target",
-			want:    http.StatusOK,
-			asAdmin: true,
-			url:     "/projects/projectalreadyexists/targets/target1",
-			method:  "DELETE",
+			name:       "can delete target",
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/target1",
+			method:     "DELETE",
 		},
 		{
-			name:    "target fails to delete",
-			want:    http.StatusInternalServerError,
-			asAdmin: true,
-			url:     "/projects/projectalreadyexists/targets/undeletabletarget",
-			method:  "DELETE",
+			name:       "target fails to delete",
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/undeletabletarget",
+			method:     "DELETE",
 		},
 	}
 	runTests(t, tests)
@@ -475,68 +480,67 @@ func TestDeleteTarget(t *testing.T) {
 func TestUpdateTarget(t *testing.T) {
 	tests := []test{
 		{
-			name:     "can update target",
-			req:      loadJSON(t, "TestUpdateTarget/can_update_target_request.json"),
-			want:     http.StatusOK,
-			respFile: "TestUpdateTarget/can_update_target_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PATCH",
+			name:       "can update target",
+			req:        loadJSON(t, "TestUpdateTarget/can_update_target_request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestUpdateTarget/can_update_target_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
+			method:     "PATCH",
 		},
 		{
-			name:     "fails to update target when not admin",
-			req:      loadJSON(t, "TestUpdateTarget/fails_to_update_target_when_not_admin_request.json"),
-			want:     http.StatusUnauthorized,
-			respFile: "TestUpdateTarget/fails_to_update_target_when_not_admin_response.json",
-			asAdmin:  false,
-			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PATCH",
+			name:       "fails to update target when not admin",
+			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_target_when_not_admin_request.json"),
+			want:       http.StatusUnauthorized,
+			respFile:   "TestUpdateTarget/fails_to_update_target_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
+			method:     "PATCH",
 		},
 		{
-			name:          "fails to update target when using a bad auth header",
-			req:           loadJSON(t, "TestUpdateTarget/fails_to_update_target_when_not_admin_request.json"),
-			want:          http.StatusUnauthorized,
-			respFile:      "TestUpdateTarget/fails_to_update_target_when_bad_auth_header_response.json",
-			asAdmin:       false,
-			badAuthHeader: true,
-			url:           "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:        "PATCH",
+			name:       "fails to update target when using a bad auth header",
+			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_target_when_not_admin_request.json"),
+			want:       http.StatusUnauthorized,
+			respFile:   "TestUpdateTarget/fails_to_update_target_when_bad_auth_header_response.json",
+			authHeader: invalidAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
+			method:     "PATCH",
 		},
 		{
-			name:     "fails to update target credential_type",
-			req:      loadJSON(t, "TestUpdateTarget/fails_to_update_credential_type_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestUpdateTarget/fails_to_update_credential_type_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PATCH",
+			name:       "fails to update target credential_type",
+			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_credential_type_request.json"),
+			want:       http.StatusBadRequest,
+			respFile:   "TestUpdateTarget/fails_to_update_credential_type_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
+			method:     "PATCH",
 		},
 		{
-			name:     "does not overwrite target name or type when in request",
-			req:      loadJSON(t, "TestUpdateTarget/fails_to_update_target_name_request.json"),
-			want:     http.StatusOK,
-			respFile: "TestUpdateTarget/fails_to_update_target_name_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:   "PATCH",
+			name:       "does not overwrite target name or type when in request",
+			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_target_name_request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestUpdateTarget/fails_to_update_target_name_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
+			method:     "PATCH",
 		},
 		{
-			name:     "target name must exist",
-			req:      loadJSON(t, "TestUpdateTarget/target_name_must_exist_request.json"),
-			want:     http.StatusNotFound,
-			respFile: "TestUpdateTarget/target_name_must_exist_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectalreadyexists/targets/INVALID_TARGET",
-			method:   "PATCH",
+			name:       "target name must exist",
+			req:        loadJSON(t, "TestUpdateTarget/target_name_must_exist_request.json"),
+			want:       http.StatusNotFound,
+			respFile:   "TestUpdateTarget/target_name_must_exist_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectalreadyexists/targets/INVALID_TARGET",
+			method:     "PATCH",
 		},
 		{
-			name:     "project must exist",
-			req:      loadJSON(t, "TestUpdateTarget/project_must_exist_request.json"),
-			want:     http.StatusNotFound,
-			respFile: "TestUpdateTarget/project_must_exist_response.json",
-			asAdmin:  true,
-			url:      "/projects/projectdoesnotexist/targets/TARGET_EXISTS",
-			method:   "PATCH",
+			name:       "project must exist",
+			req:        loadJSON(t, "TestUpdateTarget/project_must_exist_request.json"),
+			want:       http.StatusNotFound,
+			respFile:   "TestUpdateTarget/project_must_exist_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectdoesnotexist/targets/TARGET_EXISTS",
+			method:     "PATCH",
 		},
 	}
 	runTests(t, tests)
@@ -545,52 +549,57 @@ func TestUpdateTarget(t *testing.T) {
 func TestCreateWorkflow(t *testing.T) {
 	tests := []test{
 		{
-			name:     "can create workflows",
-			req:      loadJSON(t, "TestCreateWorkflow/can_create_workflow_request.json"),
-			want:     http.StatusOK,
-			respFile: "TestCreateWorkflow/can_create_workflow_response.json",
-			method:   "POST",
-			url:      "/workflows",
+			name:       "can create workflows",
+			req:        loadJSON(t, "TestCreateWorkflow/can_create_workflow_request.json"),
+			want:       http.StatusOK,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateWorkflow/can_create_workflow_response.json",
+			method:     "POST",
+			url:        "/workflows",
 		},
 		// We test this specific validation as it's server side only.
 		{
-			name:     "framework must be valid",
-			req:      loadJSON(t, "TestCreateWorkflow/framework_must_be_valid_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateWorkflow/framework_must_be_valid_response.json",
-			method:   "POST",
-			url:      "/workflows",
+			name:       "framework must be valid",
+			req:        loadJSON(t, "TestCreateWorkflow/framework_must_be_valid_request.json"),
+			want:       http.StatusBadRequest,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateWorkflow/framework_must_be_valid_response.json",
+			method:     "POST",
+			url:        "/workflows",
 		},
 		// We test this specific validation as it's server side only.
 		{
-			name:     "type must be valid",
-			respFile: "TestCreateWorkflow/type_must_be_valid_response.json",
-			req:      loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
-			want:     http.StatusBadRequest,
-			method:   "POST",
-			url:      "/workflows",
+			name:       "type must be valid",
+			respFile:   "TestCreateWorkflow/type_must_be_valid_response.json",
+			req:        loadJSON(t, "TestCreateWorkflow/type_must_be_valid_request.json"),
+			authHeader: userAuthHeader,
+			want:       http.StatusBadRequest,
+			method:     "POST",
+			url:        "/workflows",
 		},
 		{
-			name:   "project must exist",
-			req:    loadJSON(t, "TestCreateWorkflow/project_must_exist.json"),
-			want:   http.StatusBadRequest,
-			method: "POST",
-			url:    "/workflows",
+			name:       "project must exist",
+			req:        loadJSON(t, "TestCreateWorkflow/project_must_exist.json"),
+			authHeader: userAuthHeader,
+			want:       http.StatusBadRequest,
+			method:     "POST",
+			url:        "/workflows",
 		},
 		{
-			name:   "target must exist",
-			req:    loadJSON(t, "TestCreateWorkflow/target_must_exist.json"),
-			want:   http.StatusBadRequest,
-			method: "POST",
-			url:    "/workflows",
+			name:       "target must exist",
+			req:        loadJSON(t, "TestCreateWorkflow/target_must_exist.json"),
+			authHeader: userAuthHeader,
+			want:       http.StatusBadRequest,
+			method:     "POST",
+			url:        "/workflows",
 		},
 		{
-			name:          "cannot create workflow with bad auth header",
-			req:           loadJSON(t, "TestCreateWorkflow/can_create_workflow_response.json"),
-			want:          http.StatusUnauthorized,
-			badAuthHeader: true,
-			method:        "POST",
-			url:           "/workflows",
+			name:       "cannot create workflow with bad auth header",
+			req:        loadJSON(t, "TestCreateWorkflow/can_create_workflow_response.json"),
+			want:       http.StatusUnauthorized,
+			authHeader: invalidAuthHeader,
+			method:     "POST",
+			url:        "/workflows",
 		},
 		// TODO with admin credentials should fail
 	}
@@ -600,20 +609,22 @@ func TestCreateWorkflow(t *testing.T) {
 func TestCreateWorkflowFromGit(t *testing.T) {
 	tests := []test{
 		{
-			name:     "can create workflows",
-			req:      loadJSON(t, "TestCreateWorkflowFromGit/good_request.json"),
-			want:     http.StatusOK,
-			respFile: "TestCreateWorkflowFromGit/good_response.json",
-			method:   "POST",
-			url:      "/projects/project1/targets/target1/operations",
+			name:       "can create workflows",
+			req:        loadJSON(t, "TestCreateWorkflowFromGit/good_request.json"),
+			want:       http.StatusOK,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateWorkflowFromGit/good_response.json",
+			method:     "POST",
+			url:        "/projects/project1/targets/target1/operations",
 		},
 		{
-			name:     "bad request",
-			req:      loadJSON(t, "TestCreateWorkflowFromGit/bad_request.json"),
-			want:     http.StatusBadRequest,
-			respFile: "TestCreateWorkflowFromGit/bad_response.json",
-			method:   "POST",
-			url:      "/projects/project1/targets/target1/operations",
+			name:       "bad request",
+			req:        loadJSON(t, "TestCreateWorkflowFromGit/bad_request.json"),
+			want:       http.StatusBadRequest,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateWorkflowFromGit/bad_response.json",
+			method:     "POST",
+			url:        "/projects/project1/targets/target1/operations",
 		},
 		// TODO with admin credentials should fail
 	}
@@ -623,18 +634,18 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 func TestGetWorkflow(t *testing.T) {
 	tests := []test{
 		{
-			name:    "workflow exists, successful get workflow",
-			want:    http.StatusOK,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/WORKFLOW_ALREADY_EXISTS",
+			name:       "workflow exists, successful get workflow",
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/workflows/WORKFLOW_ALREADY_EXISTS",
 		},
 		{
-			name:    "workflow does not exist",
-			want:    http.StatusInternalServerError,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/WORKFLOW_DOES_NOT_EXIST",
+			name:       "workflow does not exist",
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/workflows/WORKFLOW_DOES_NOT_EXIST",
 		},
 	}
 	runTests(t, tests)
@@ -643,18 +654,18 @@ func TestGetWorkflow(t *testing.T) {
 func TestGetWorkflowLogs(t *testing.T) {
 	tests := []test{
 		{
-			name:    "successful get workflow logs",
-			want:    http.StatusOK,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/WORKFLOW_ALREADY_EXISTS/logs",
+			name:       "successful get workflow logs",
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/workflows/WORKFLOW_ALREADY_EXISTS/logs",
 		},
 		{
-			name:    "workflow does not exist",
-			want:    http.StatusInternalServerError,
-			asAdmin: true,
-			method:  "GET",
-			url:     "/workflows/WORKFLOW_DOES_NOT_EXIST/logs",
+			name:       "workflow does not exist",
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/workflows/WORKFLOW_DOES_NOT_EXIST/logs",
 		},
 	}
 	runTests(t, tests)
@@ -663,10 +674,11 @@ func TestGetWorkflowLogs(t *testing.T) {
 func TestListWorkflows(t *testing.T) {
 	tests := []test{
 		{
-			name:   "can get workflows",
-			want:   http.StatusOK,
-			method: "GET",
-			url:    "/projects/projects1/targets/target1/workflows",
+			name:       "can get workflows",
+			want:       http.StatusOK,
+			authHeader: userAuthHeader,
+			method:     "GET",
+			url:        "/projects/projects1/targets/target1/workflows",
 		},
 	}
 	runTests(t, tests)
@@ -781,7 +793,7 @@ func serialize(toMarshal interface{}) *bytes.Buffer {
 func runTests(t *testing.T, tests []test) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp := executeRequest(tt.method, tt.url, serialize(tt.req), tt.asAdmin, tt.badAuthHeader)
+			resp := executeRequest(tt.method, tt.url, serialize(tt.req), tt.authHeader)
 			if resp.StatusCode != tt.want {
 				t.Errorf("Unexpected status code %d", resp.StatusCode)
 			}
@@ -815,7 +827,7 @@ func runTests(t *testing.T, tests []test) {
 }
 
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
-func executeRequest(method string, url string, body *bytes.Buffer, asAdmin, invalidAuthorization bool) *http.Response {
+func executeRequest(method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
 	config, err := loadConfig(testConfigPath)
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load config %s", err))
@@ -837,14 +849,7 @@ func executeRequest(method string, url string, body *bytes.Buffer, asAdmin, inva
 	var router = setupRouter(h)
 	req, _ := http.NewRequest(method, url, body)
 
-	authorizationHeader := "vault:user:" + testPassword
-	if invalidAuthorization {
-		authorizationHeader = "bad auth header"
-	}
-	if asAdmin {
-		authorizationHeader = "vault:admin:" + testPassword
-	}
-	req.Header.Add("Authorization", authorizationHeader)
+	req.Header.Add("Authorization", authHeader)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	return w.Result()
