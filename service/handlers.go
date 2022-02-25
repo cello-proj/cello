@@ -958,17 +958,17 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	target.Name = targetName
 	target.Type = targetType
 
+	if err := target.Validate(); err != nil {
+		level.Error(l).Log("message", "error invalid request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
+		return
+	}
+	
 	level.Debug(l).Log("message", "updating target")
 	err = cp.UpdateTarget(projectName, target)
 	if err != nil {
 		level.Error(l).Log("message", "error updating target", "error", err)
 		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
-		return
-	}
-
-	if err := target.Validate(); err != nil {
-		level.Error(l).Log("message", "error invalid request", "error", err)
-		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
 	}
 
