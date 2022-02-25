@@ -14,10 +14,10 @@ type Target struct {
 
 // TargetProperties for target
 type TargetProperties struct {
-	CredentialType string   `json:"credential_type"`
+	CredentialType string   `json:"credential_type" valid:"required~credential_type is required"`
 	PolicyArns     []string `json:"policy_arns"`
 	PolicyDocument string   `json:"policy_document"`
-	RoleArn        string   `json:"role_arn"`
+	RoleArn        string   `json:"role_arn" valid:"required~role_arn is required"`
 }
 
 // Validate validates Target.
@@ -41,14 +41,6 @@ func (properties TargetProperties) Validate() error {
 	v := []func() error{
 		func() error { return validations.ValidateStruct(properties) },
 		func() error {
-			if properties.RoleArn == "" {
-				return errors.New("role_arn is required")
-			}
-
-			if properties.CredentialType == "" {
-				return errors.New("credential_type is required")
-			}
-
 			if properties.CredentialType != "assumed_role" {
 				return errors.New("credential_type must be one of 'assumed_role'")
 			}
