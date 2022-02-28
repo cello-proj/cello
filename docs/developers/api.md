@@ -98,15 +98,19 @@ Response Body
 
 ```json
 {
-  "credential_type":"assumed_role",
-  "policy_arns": [
-    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-    "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
-    "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
-    "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
-  ],
-  "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-  "role_arn":"arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
+  "name": "target1",
+  "type": "aws_account",
+  "properties": {
+    "credential_type": "assumed_role",
+    "policy_arns": [
+      "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+      "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+      "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
+      "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+    ],
+    "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+    "role_arn": "arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
+  }
 }
 ```
 
@@ -139,15 +143,19 @@ Response Body
 
 ```json
 {
-  "credential_type":"assumed_role",
-  "policy_arns": [
-    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-    "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
-    "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
-    "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
-  ],
-  "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-  "role_arn":"arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
+  "name": "target1",
+  "type": "aws_account",
+  "properties": {
+    "credential_type": "assumed_role",
+    "policy_arns": [
+      "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+      "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+      "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
+      "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+    ],
+    "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+    "role_arn": "arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
+  }
 }
 ```
 
