@@ -18,7 +18,8 @@ import (
 )
 
 const (
-	authToken = "secret1234"
+	authToken          = "secret1234"
+	operationsEndpoint = "/projects/project1/targets/target1/operations"
 )
 
 func TestGetLogs(t *testing.T) {
@@ -474,7 +475,7 @@ func TestDiff(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			wantURL := "/projects/project1/targets/target1/operations"
+			wantURL := operationsEndpoint
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != wantURL {
@@ -715,7 +716,7 @@ func TestSync(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wantURL := "/projects/project1/targets/target1/operations"
+			wantURL := operationsEndpoint
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != wantURL {
@@ -760,6 +761,127 @@ func TestSync(t *testing.T) {
 			}
 
 			got, err := client.Sync(
+				context.Background(),
+				TargetOperationInput{
+					"./prod/target1.yaml",
+					"project1",
+					"7fa96067f580a20c3908f5b872377181091ffaec",
+					"target1",
+				},
+			)
+
+			if tt.wantErr != nil {
+				assert.EqualError(t, err, tt.wantErr.Error())
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestExec(t *testing.T) {
+	tests := []struct {
+		name                  string
+		apiRespBody           []byte
+		apiRespStatusCode     int
+		endpoint              string          // Used to create new request error.
+		mockHTTPClient        *mockHTTPClient // Only used when needed.
+		writeBadContentLength bool            // Used to create response body error.
+		want                  responses.Exec
+		wantAPIReqBody        []byte
+		wantErr               error
+	}{
+		{
+			name:              "good",
+			apiRespBody:       readFile(t, "exec_response_good.json"),
+			apiRespStatusCode: http.StatusOK,
+			want: responses.Exec{
+				WorkflowName: "workflow1",
+			},
+			wantAPIReqBody: readFile(t, "exec_request_good.json"),
+		},
+		{
+			name:              "error non-200 response",
+			apiRespBody:       []byte("boom"),
+			apiRespStatusCode: http.StatusInternalServerError,
+			wantAPIReqBody:    readFile(t, "exec_request_good.json"),
+			wantErr:           fmt.Errorf("received unexpected status code: 500, body: boom"),
+		},
+		{
+			name:              "error non-json response",
+			apiRespBody:       []byte("boom"),
+			apiRespStatusCode: 200,
+			wantAPIReqBody:    readFile(t, "exec_request_good.json"),
+			wantErr:           fmt.Errorf("unable to parse response: invalid character 'b' looking for beginning of value"),
+		},
+		{
+			name:     "error creating http request",
+			endpoint: string('\f'),
+			wantErr:  fmt.Errorf(`unable to create api request: parse "\f/projects/project1/targets/target1/operations": net/url: invalid control character in URL`),
+		},
+		{
+			name:           "error making http request",
+			mockHTTPClient: &mockHTTPClient{errDo: fmt.Errorf("boom")},
+			wantErr:        fmt.Errorf("unable to make api call: boom"),
+		},
+		{
+			name:                  "error reading body",
+			apiRespBody:           nil,
+			apiRespStatusCode:     http.StatusOK,
+			writeBadContentLength: true,
+			wantAPIReqBody:        readFile(t, "exec_request_good.json"),
+			wantErr:               fmt.Errorf("error reading response body. status code: %d, error: unexpected EOF", http.StatusOK),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wantURL := operationsEndpoint
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != wantURL {
+					http.NotFound(w, r)
+				}
+
+				if r.Method != http.MethodPost {
+					w.WriteHeader(http.StatusMethodNotAllowed)
+					return
+				}
+
+				if tt.writeBadContentLength {
+					w.Header().Set("Content-Length", "1")
+				}
+
+				// Make sure the request we received is what we want
+				body, err := io.ReadAll(r.Body)
+				r.Body.Close()
+
+				assert.Nil(t, err, "unable to read request body")
+
+				assert.JSONEq(t, string(body), string(tt.wantAPIReqBody))
+				assert.Equal(t, r.Header.Get("Authorization"), authToken)
+
+				w.WriteHeader(tt.apiRespStatusCode)
+				fmt.Fprint(w, string(tt.apiRespBody))
+			}))
+			defer server.Close()
+
+			client := Client{
+				authToken:  authToken,
+				endpoint:   server.URL,
+				httpClient: &http.Client{},
+			}
+
+			if tt.endpoint != "" {
+				client.endpoint = tt.endpoint
+			}
+
+			if tt.mockHTTPClient != nil {
+				client.httpClient = tt.mockHTTPClient
+			}
+
+			got, err := client.Exec(
 				context.Background(),
 				TargetOperationInput{
 					"./prod/target1.yaml",

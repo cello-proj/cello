@@ -3,6 +3,9 @@ package responses
 // Diff represents the responses for Diff.
 type Diff TargetOperation
 
+// Exec represents the responses for Exec.
+type Exec TargetOperation
+
 // ExecuteWorkflow represents the responses for ExecuteWorkflow.
 type ExecuteWorkflow struct {
 	WorkflowName string `json:"workflow_name"`
@@ -15,11 +18,6 @@ type GetLogs struct {
 
 // GetProject represents the responses for GetProject.
 type GetProject struct {
-	Name string `json:"name"`
-}
-
-// GetTarget represents the responses for GetTarget.
-type GetTarget struct {
 	Name string `json:"name"`
 }
 
@@ -40,12 +38,4 @@ type Sync TargetOperation
 // TargetOperation represents the output to a targetOperation.
 type TargetOperation struct {
 	WorkflowName string `json:"workflow_name"`
-}
-
-// TargetProperties represents the responses for Targetproperties.
-type TargetProperties struct {
-	CredentialType string   `json:"credential_type"`
-	PolicyArns     []string `json:"policy_arns"`
-	PolicyDocument string   `json:"policy_document"`
-	RoleArn        string   `json:"role_arn"`
 }
