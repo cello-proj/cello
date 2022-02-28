@@ -21,11 +21,6 @@ type GetProject struct {
 	Name string `json:"name"`
 }
 
-// GetTarget represents the responses for GetTarget.
-type GetTarget struct {
-	Name string `json:"name"`
-}
-
 // GetWorkflows represents the responses for GetWorkflows.
 type GetWorkflows []string
 
@@ -43,12 +38,4 @@ type Sync TargetOperation
 // TargetOperation represents the output to a targetOperation.
 type TargetOperation struct {
 	WorkflowName string `json:"workflow_name"`
-}
-
-// TargetProperties represents the responses for Targetproperties.
-type TargetProperties struct {
-	CredentialType string   `json:"credential_type"`
-	PolicyArns     []string `json:"policy_arns"`
-	PolicyDocument string   `json:"policy_document"`
-	RoleArn        string   `json:"role_arn"`
 }

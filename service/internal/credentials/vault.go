@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
 	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
 
@@ -21,11 +21,12 @@ const (
 // Provider defines the interface required by providers.
 type Provider interface {
 	CreateProject(string) (string, string, error)
-	CreateTarget(string, requests.CreateTarget) error
+	CreateTarget(string, types.Target) error
+	UpdateTarget(string, types.Target) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
 	GetProject(string) (responses.GetProject, error)
-	GetTarget(string, string) (responses.TargetProperties, error)
+	GetTarget(string, string) (types.Target, error)
 	GetToken() (string, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
@@ -216,25 +217,19 @@ func (v VaultProvider) CreateProject(name string) (string, string, error) {
 // CreateTarget creates a target for the project.
 // TODO validate policy and other information is correct in target
 // TODO Validate role exists (if possible, etc)
-func (v VaultProvider) CreateTarget(projectName string, ctr requests.CreateTarget) error {
+func (v VaultProvider) CreateTarget(projectName string, target types.Target) error {
 	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to create target")
 	}
 
-	targetName := ctr.Name
-	credentialType := ctr.Properties.CredentialType
-	policyArns := ctr.Properties.PolicyArns
-	policyDocument := ctr.Properties.PolicyDocument
-	roleArn := ctr.Properties.RoleArn
-
 	options := map[string]interface{}{
-		"credential_type": credentialType,
-		"policy_arns":     policyArns,
-		"policy_document": policyDocument,
-		"role_arns":       roleArn,
+		"credential_type": target.Properties.CredentialType,
+		"policy_arns":     target.Properties.PolicyArns,
+		"policy_document": target.Properties.PolicyDocument,
+		"role_arns":       target.Properties.RoleArn,
 	}
 
-	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, targetName)
+	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, target.Name)
 	_, err := v.vaultLogicalSvc.Write(path, options)
 	return err
 }
@@ -296,18 +291,18 @@ func (v VaultProvider) GetProject(projectName string) (responses.GetProject, err
 	return responses.GetProject{Name: projectName}, nil
 }
 
-func (v VaultProvider) GetTarget(projectName, targetName string) (responses.TargetProperties, error) {
+func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, error) {
 	if !v.isAdmin() {
-		return responses.TargetProperties{}, errors.New("admin credentials must be used to get target information")
+		return types.Target{}, errors.New("admin credentials must be used to get target information")
 	}
 
 	sec, err := v.vaultLogicalSvc.Read(fmt.Sprintf("aws/roles/argo-cloudops-projects-%s-target-%s", projectName, targetName))
 	if err != nil {
-		return responses.TargetProperties{}, fmt.Errorf("vault get target error: %w", err)
+		return types.Target{}, fmt.Errorf("vault get target error: %w", err)
 	}
 
 	if sec == nil {
-		return responses.TargetProperties{}, ErrTargetNotFound
+		return types.Target{}, ErrTargetNotFound
 	}
 
 	// These should always exist.
@@ -328,11 +323,16 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (responses.Targ
 		policyDocument = val.(string)
 	}
 
-	return responses.TargetProperties{
-		CredentialType: credentialType,
-		PolicyArns:     policies,
-		PolicyDocument: policyDocument,
-		RoleArn:        roleArn,
+	return types.Target{
+		Name: targetName,
+		// target 'Type' always 'aws_account', currently not stored in Vault
+		Type: "aws_account",
+		Properties: types.TargetProperties{
+			CredentialType: credentialType,
+			PolicyArns:     policies,
+			PolicyDocument: policyDocument,
+			RoleArn:        roleArn,
+		},
 	}, nil
 }
 
@@ -420,6 +420,24 @@ func (v VaultProvider) readSecretID(appRoleName string) (string, error) {
 func (v VaultProvider) TargetExists(projectName, targetName string) (bool, error) {
 	_, err := v.GetTarget(projectName, targetName)
 	return !errors.Is(err, ErrTargetNotFound), nil
+}
+
+// UpdateTarget updates a targets policies for the project.
+func (v VaultProvider) UpdateTarget(projectName string, target types.Target) error {
+	if !v.isAdmin() {
+		return errors.New("admin credentials must be used to update target")
+	}
+
+	options := map[string]interface{}{
+		"credential_type": target.Properties.CredentialType,
+		"policy_arns":     target.Properties.PolicyArns,
+		"policy_document": target.Properties.PolicyDocument,
+		"role_arns":       target.Properties.RoleArn,
+	}
+
+	path := fmt.Sprintf("aws/roles/%s-%s-target-%s", vaultProjectPrefix, projectName, target.Name)
+	_, err := v.vaultLogicalSvc.Write(path, options)
+	return err
 }
 
 func (v VaultProvider) writeProjectState(name string) error {
