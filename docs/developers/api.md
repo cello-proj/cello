@@ -110,6 +110,47 @@ Response Body
 }
 ```
 
+## Update Target
+
+PATCH /projects/<project_name>/targets/<target_name>
+
+Request Body
+
+```json
+{
+  "properties": {
+    "policy_arns": [
+      "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+      "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+      "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
+      "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+    ],
+    "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+    "role_arn": "arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>"
+  }
+}
+```
+
+Note: Target properties that are provided will be updated with the new values provided.
+Properties that are not provided in the PATCH request will remain with their current values.
+`credential_type` cannot be updated
+
+Response Body
+
+```json
+{
+  "credential_type":"assumed_role",
+  "policy_arns": [
+    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+    "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
+    "arn:aws:iam::aws:policy/AmazonSQSFullAccess",
+    "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+  ],
+  "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+  "role_arn":"arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
+}
+```
+
 ## Delete Target
 
 DELETE /projects/<project_name>/targets/<target_name>
