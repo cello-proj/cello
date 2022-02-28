@@ -891,21 +891,6 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	level.Debug(l).Log("message", "reading request body")
-
-	var utr requests.UpdateTarget
-	reqBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		level.Error(l).Log("message", "error reading request data", "error", err)
-		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
-		return
-	}
-
-	if err := json.Unmarshal(reqBody, &utr); err != nil {
-		level.Error(l).Log("message", "error processing request", "error", err)
-		h.errorResponse(w, "error processing request", http.StatusBadRequest)
-		return
-	}
 
 	level.Debug(l).Log("message", "creating credential provider")
 	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
@@ -947,6 +932,14 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	targetType := target.Type
+
+	level.Debug(l).Log("message", "reading request body")
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		level.Error(l).Log("message", "error reading request data", "error", err)
+		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
+		return
+	}
 
 	// merge request data into existing target struct for update data
 	if err := json.Unmarshal(reqBody, &target); err != nil {
