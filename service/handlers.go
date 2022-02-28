@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/argoproj-labs/argo-cloudops/internal/types"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
 	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
@@ -202,7 +203,6 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	log.With(l, "project", cwr.ProjectName, "target", cwr.TargetName, "framework", cwr.Framework, "type", cwr.Type, "workflow-template", cwr.WorkflowTemplateName)
 
 	level.Debug(l).Log("message", "creating workflow")
-	cwr.Type = cgwr.Type
 	h.createWorkflowFromRequest(ctx, w, r, a, cwr, l)
 }
 
@@ -322,7 +322,8 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 		return
 	}
 	if !targetExists {
-		h.errorResponse(w, fmt.Sprintf("target '%s' does not exist for project `%s`", cwr.TargetName, cwr.ProjectName), http.StatusBadRequest)
+		level.Error(l).Log("message", "target not found")
+		h.errorResponse(w, "target not found", http.StatusBadRequest)
 		return
 	}
 
@@ -380,7 +381,7 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(jsonData))
 }
 
-// Gets a workflow
+// Gets a target
 func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectName := vars["projectName"]
@@ -405,6 +406,19 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error creating credentials provider", "error", err)
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	targetExists, err := cp.TargetExists(projectName, targetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target", "error", err)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
+
+	if !targetExists {
+		level.Error(l).Log("message", "target not found")
+		h.errorResponse(w, "target not found", http.StatusNotFound)
 		return
 	}
 
@@ -690,7 +704,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	ah := r.Header.Get("Authorization")
 	a, err := credentials.NewAuthorization(ah)
 	if err != nil {
-		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
 		return
 	}
 	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
@@ -712,7 +726,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ctr.Validate(); err != nil {
+	if err := types.Target(ctr).Validate(); err != nil {
 		level.Error(l).Log("message", "error invalid request", "error", err)
 		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
 		return
@@ -740,7 +754,12 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetExists, _ := cp.TargetExists(projectName, ctr.Name)
+	targetExists, err := cp.TargetExists(projectName, ctr.Name)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target", "error", err)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
 	if targetExists {
 		level.Error(l).Log("message", "target name must not already exist")
 		h.errorResponse(w, "target name must not already exist", http.StatusBadRequest)
@@ -748,7 +767,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating target")
-	err = cp.CreateTarget(projectName, ctr)
+	err = cp.CreateTarget(projectName, types.Target(ctr))
 	if err != nil {
 		level.Error(l).Log("message", "error creating target", "error", err)
 		h.errorResponse(w, "error creating target", http.StatusInternalServerError)
@@ -822,6 +841,20 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	level.Debug(l).Log("message", "checking if project exists")
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error checking project", "error", err)
+		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
+		return
+	}
+
+	if !projectExists {
+		level.Debug(l).Log("message", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		return
+	}
+
 	targets, err := cp.ListTargets(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error listing targets", "error", err)
@@ -833,6 +866,109 @@ func (h handler) listTargets(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error serializing targets", "error", err)
 		h.errorResponse(w, "error listing targets", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, string(data))
+}
+
+// Updates a target
+func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+	targetName := vars["targetName"]
+
+	l := h.requestLogger(r, "op", "update-target", "project", projectName, "target", targetName)
+
+	level.Debug(l).Log("message", "validating authorization header for update target")
+	ah := r.Header.Get("Authorization")
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
+		h.errorResponse(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error determining if project exists", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	if !projectExists {
+		level.Error(l).Log("message", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		return
+	}
+
+	targetExists, err := cp.TargetExists(projectName, targetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving target", "error", err)
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
+	if !targetExists {
+		level.Error(l).Log("message", "target not found")
+		h.errorResponse(w, "target not found", http.StatusNotFound)
+		return
+	}
+
+	target, err := cp.GetTarget(projectName, targetName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving existing target")
+		h.errorResponse(w, "error retrieving target", http.StatusInternalServerError)
+		return
+	}
+	targetType := target.Type
+
+	level.Debug(l).Log("message", "reading request body")
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		level.Error(l).Log("message", "error reading request data", "error", err)
+		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
+		return
+	}
+
+	// merge request data into existing target struct for update data
+	if err := json.Unmarshal(reqBody, &target); err != nil {
+		level.Error(l).Log("message", "error reading target properties data", "error", err)
+		h.errorResponse(w, "error reading target properties data", http.StatusInternalServerError)
+		return
+	}
+	// overwrite updated target with existing target name and type values so request body doesn't overwrite these values
+	target.Name = targetName
+	target.Type = targetType
+
+	if err := target.Validate(); err != nil {
+		level.Error(l).Log("message", "error invalid request", "error", err)
+		h.errorResponse(w, fmt.Sprintf("invalid request, %s", err), http.StatusBadRequest)
+		return
+	}
+
+	level.Debug(l).Log("message", "updating target")
+	err = cp.UpdateTarget(projectName, target)
+	if err != nil {
+		level.Error(l).Log("message", "error updating target", "error", err)
+		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(target)
+	if err != nil {
+		level.Error(l).Log("message", "error creating response", "error", err)
+		h.errorResponse(w, "error creating response object", http.StatusInternalServerError)
 		return
 	}
 

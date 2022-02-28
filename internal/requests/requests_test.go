@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateWorkflowValidate(t *testing.T) {
@@ -392,14 +392,12 @@ func TestCreateGitWorkflowValidate(t *testing.T) {
 			req: CreateGitWorkflow{
 				CommitHash: "8458fd753f9fde51882414564c20df6d4c34a90e",
 				Path:       "./manifest.yaml",
-				Type:       "diff",
 			},
 		},
 		{
 			name: "missing commit hash",
 			req: CreateGitWorkflow{
 				Path: "./manifest.yaml",
-				Type: "diff",
 			},
 			wantErr: errors.New("sha is required"),
 		},
@@ -408,7 +406,6 @@ func TestCreateGitWorkflowValidate(t *testing.T) {
 			req: CreateGitWorkflow{
 				CommitHash: "8--",
 				Path:       "./manifest.yaml",
-				Type:       "diff",
 			},
 			wantErr: errors.New("sha must be alphanumeric"),
 		},
@@ -416,17 +413,8 @@ func TestCreateGitWorkflowValidate(t *testing.T) {
 			name: "missing path",
 			req: CreateGitWorkflow{
 				CommitHash: "8458fd753f9fde51882414564c20df6d4c34a90e",
-				Type:       "diff",
 			},
 			wantErr: errors.New("path is required"),
-		},
-		{
-			name: "missing type",
-			req: CreateGitWorkflow{
-				CommitHash: "8458fd753f9fde51882414564c20df6d4c34a90e",
-				Path:       "./manifest.yaml",
-			},
-			wantErr: errors.New("type is required"),
 		},
 	}
 
@@ -464,208 +452,6 @@ func TestCreateWorkflowValidateType(t *testing.T) {
 				Type: "foo",
 			}
 			assert.Equal(t, tt.wantErr, req.ValidateType(tt.types)())
-		})
-	}
-}
-
-func TestCreateTargetValidate(t *testing.T) {
-	tests := []struct {
-		name    string
-		req     CreateTarget
-		types   []string
-		wantErr error
-	}{
-		{
-			name: "valid minimal",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-		},
-		{
-			name: "valid full",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-					PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-					PolicyArns: []string{
-						"arn:aws:iam::012345678901:policy/test-policy-1",
-						"arn:aws:iam::012345678901:policy/test-policy-2",
-						"arn:aws:iam::012345678901:policy/test-policy-3",
-						"arn:aws:iam::012345678901:policy/test-policy-4",
-						"arn:aws:iam::012345678901:policy/test-policy-5",
-					},
-				},
-				Type: "aws_account",
-			},
-		},
-		{
-			name: "missing name",
-			req: CreateTarget{
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("name is required"),
-		},
-		{
-			name: "name must be alphanumeric underscore",
-			req: CreateTarget{
-				Name: "this-is-invalid",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("name must be alphanumeric underscore"),
-		},
-		{
-			name: "too short name",
-			req: CreateTarget{
-				Name: "abc",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("name must be between 4 and 32 characters"),
-		},
-		{
-			name: "too long name",
-			req: CreateTarget{
-				Name: "a12345678901234567890123456789012",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("name must be between 4 and 32 characters"),
-		},
-		{
-			name: "missing type",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-			},
-			wantErr: errors.New("type is required"),
-		},
-		{
-			name: "invalid type",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "bad",
-			},
-			wantErr: errors.New("type must be one of 'aws_account'"),
-		},
-		{
-			name: "missing credential_type",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					RoleArn: "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("credential_type is required"),
-		},
-		{
-			name: "invalid credential_type",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "bad",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("credential_type must be one of 'assumed_role'"),
-		},
-		{
-			name: "missing role_arn",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("role_arn is required"),
-		},
-		{
-			name: "role_arn must be an arn",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "not-an-arn",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("role_arn must be a valid arn"),
-		},
-		{
-			name: "too many policy arns",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					PolicyArns: []string{
-						"arn:aws:iam::012345678901:policy/test-policy-1",
-						"arn:aws:iam::012345678901:policy/test-policy-2",
-						"arn:aws:iam::012345678901:policy/test-policy-3",
-						"arn:aws:iam::012345678901:policy/test-policy-4",
-						"arn:aws:iam::012345678901:policy/test-policy-5",
-						"arn:aws:iam::012345678901:policy/test-policy-6",
-					},
-					RoleArn: "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("policy_arns cannot be more than 5"),
-		},
-		{
-			name: "policy arns must be valid",
-			req: CreateTarget{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					PolicyArns: []string{
-						"arn:aws:iam::012345678901:policy/test-policy-1",
-						"not-an-arn",
-					},
-					RoleArn: "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("policy_arns contains an invalid arn"),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.wantErr != nil {
-				assert.EqualError(t, tt.req.Validate(), tt.wantErr.Error())
-			} else {
-				assert.Equal(t, tt.wantErr, tt.req.Validate())
-			}
 		})
 	}
 }
