@@ -1,0 +1,8 @@
+{
+  "properties": {
+    "policy_arns": [
+      "arn:aws:iam::012345678901:policy/test-policy2"
+    ],
+    "role_arn": "arn:aws:iam::012345678901:role/test-role2"
+  }
+}
