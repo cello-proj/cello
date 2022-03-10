@@ -3,7 +3,7 @@ package types
 import (
 	"errors"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+	"github.com/cello-proj/cello/internal/validations"
 )
 
 type Target struct {

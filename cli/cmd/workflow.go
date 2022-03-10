@@ -7,9 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/argoproj-labs/argo-cloudops/cli/internal/api"
-	"github.com/argoproj-labs/argo-cloudops/cli/internal/helpers"
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
+	"github.com/cello-proj/cello/cli/internal/api"
+	"github.com/cello-proj/cello/cli/internal/helpers"
+	"github.com/cello-proj/cello/internal/requests"
 
 	"github.com/spf13/cobra"
 )

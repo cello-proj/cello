@@ -62,14 +62,14 @@ latest_release="${latest_release//v}"
 
 # download Argo Cloudops CLI if it doesn't exist
 if [ ! -f quickstart/argo-cloudops ]; then
-    curl -L https://github.com/argoproj-labs/argo-cloudops/releases/download/v${latest_release}/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz -o quickstart/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
+    curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz -o quickstart/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
       tar -xzf quickstart/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz -C quickstart/ #&> /dev/null
         rm quickstart/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
 fi
 
-# download Argo CloudOps service binary if it doesn't exist
+# download Cello service binary if it doesn't exist
 if [ ! -f quickstart/service ]; then
-  curl -L https://github.com/argoproj-labs/argo-cloudops/releases/download/v${latest_release}/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz -o quickstart/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz &> /dev/null
+  curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz -o quickstart/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz &> /dev/null
   tar -xzf quickstart/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz -C quickstart/ &> /dev/null
   rm quickstart/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz &> /dev/null
 fi
@@ -82,7 +82,7 @@ kubectl apply -f ./scripts/quickstart_manifest.yaml
 # Sleeping after applying manifest so pods have time to start
 while [ "$(kubectl get pods -l=app='argocloudops' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
    sleep 5
-   echo "Waiting for Argo CloudOps to be ready."
+   echo "Waiting for Cello to be ready."
 done
 while [ "$(kubectl get pods -l=app.kubernetes.io/name='vault' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
    sleep 5

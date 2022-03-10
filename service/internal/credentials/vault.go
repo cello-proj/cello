@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/responses"
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
+	"github.com/cello-proj/cello/internal/responses"
+	"github.com/cello-proj/cello/internal/types"
+	"github.com/cello-proj/cello/internal/validations"
+	"github.com/cello-proj/cello/service/internal/env"
 
 	vault "github.com/hashicorp/vault/api"
 )

@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
-	"github.com/argoproj-labs/argo-cloudops/internal/responses"
+	"github.com/cello-proj/cello/internal/requests"
+	"github.com/cello-proj/cello/internal/responses"
 
 	"github.com/stretchr/testify/assert"
 )

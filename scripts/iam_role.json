@@ -1,5 +1,5 @@
 {
-  "Description": "Sample IAM role for Argo CloudOps",
+  "Description": "Sample IAM role for Cello",
   "Parameters": {
     "RoleName": {
       "Type": "String",

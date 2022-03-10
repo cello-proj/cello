@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/git"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+	"github.com/cello-proj/cello/internal/validations"
+	"github.com/cello-proj/cello/service/internal/credentials"
+	"github.com/cello-proj/cello/service/internal/db"
+	"github.com/cello-proj/cello/service/internal/env"
+	"github.com/cello-proj/cello/service/internal/git"
+	"github.com/cello-proj/cello/service/internal/workflow"
 
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/log"

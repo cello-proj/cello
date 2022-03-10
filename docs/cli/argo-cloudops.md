@@ -1,6 +1,6 @@
 ## argo-cloudops
 
-argo-cloudops is the command line interface to Argo CloudOps
+argo-cloudops is the command line interface to Cello
 
 ```
 argo-cloudops [command]
