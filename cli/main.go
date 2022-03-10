@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/argoproj-labs/argo-cloudops/cli/cmd"
+	"github.com/cello-proj/cello/cli/cmd"
 )
 
 var (

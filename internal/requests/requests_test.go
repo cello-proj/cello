@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+	"github.com/cello-proj/cello/internal/validations"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -528,13 +528,13 @@ func TestCreateProjectValidate(t *testing.T) {
 			name: "valid",
 			req: CreateProject{
 				Name:       "project1",
-				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+				Repository: "https://github.com/cello-proj/cello.git",
 			},
 		},
 		{
 			name: "missing name",
 			req: CreateProject{
-				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+				Repository: "https://github.com/cello-proj/cello.git",
 			},
 			wantErr: errors.New("name is required"),
 		},
@@ -542,7 +542,7 @@ func TestCreateProjectValidate(t *testing.T) {
 			name: "name must be alphanumeric",
 			req: CreateProject{
 				Name:       "this-is-invalid",
-				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+				Repository: "https://github.com/cello-proj/cello.git",
 			},
 			wantErr: errors.New("name must be alphanumeric"),
 		},
@@ -550,7 +550,7 @@ func TestCreateProjectValidate(t *testing.T) {
 			name: "too short name",
 			req: CreateProject{
 				Name:       "abc",
-				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+				Repository: "https://github.com/cello-proj/cello.git",
 			},
 			wantErr: errors.New("name must be between 4 and 32 characters"),
 		},
@@ -558,7 +558,7 @@ func TestCreateProjectValidate(t *testing.T) {
 			name: "too long name",
 			req: CreateProject{
 				Name:       "a12345678901234567890123456789012",
-				Repository: "https://github.com/argoproj-labs/argo-cloudops.git",
+				Repository: "https://github.com/cello-proj/cello.git",
 			},
 			wantErr: errors.New("name must be between 4 and 32 characters"),
 		},

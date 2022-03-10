@@ -1,4 +1,4 @@
-module github.com/argoproj-labs/argo-cloudops
+module github.com/cello-proj/cello
 
 go 1.17
 

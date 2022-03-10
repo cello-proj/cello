@@ -86,7 +86,7 @@ func TestIsValidGitURI(t *testing.T) {
 	}{
 		{
 			name:       "valid https",
-			testString: "https://github.com/argoproj-labs/argo-cloudops.git",
+			testString: "https://github.com/cello-proj/cello.git",
 			want:       true,
 		},
 		{

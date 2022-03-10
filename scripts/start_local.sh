@@ -147,10 +147,10 @@ mkdir -p ./ssl
 # generate certificate, suppress output unless there is an error
 output=$(openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=CA/L=Mountain View/O=Cognition/CN=app" -keyout ./ssl/certificate.key -out ./ssl/certificate.crt 2>&1) || echo "$output"
 
-echo "Starting Argo CloudOps Service"
+echo "Starting Cello Service"
 if [ "${MODE}" == "dev" ]; then
   build/service
 else
   quickstart/service
 fi
-echo "Argo CloudOps Serivce Stopped"
+echo "Cello Serivce Stopped"

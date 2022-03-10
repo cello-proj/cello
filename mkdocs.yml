@@ -1,5 +1,5 @@
-site_name: Argo CloudOps - The engine for cloud deployments
-repo_url: https://github.com/argoproj-labs/argo-cloudops
+site_name: Cello - The engine for cloud deployments
+repo_url: https://github.com/cello-proj/cello
 strict: true
 theme:
   name: material
@@ -19,26 +19,26 @@ nav:
   - Architecture: architecture.md
   - Quick Start: quickstart.md
   - User Guide:
-    - Beginner: 
-      - Core Concepts: users/coreconcepts.md
-      - CLI: users/cli.md
-    - Environment Variables: users/envvars.md
-    - Examples: https://github.com/argoproj-labs/argo-cloudops/blob/master/examples/README.md
-    - CLI Reference:
-        - argo-cloudops: cli/argo-cloudops.md
-        - argo-cloudops sync: cli/argo-cloudops_sync.md
-        - argo-cloudops diff: cli/argo-cloudops_diff.md
-        - argo-cloudops get: cli/argo-cloudops_get.md
-        - argo-cloudops list: cli/argo-cloudops_list.md
-        - argo-cloudops workflow: cli/argo-cloudops_workflow.md
-        - argo-cloudops logs: cli/argo-cloudops_logs.md
+      - Beginner:
+          - Core Concepts: users/coreconcepts.md
+          - CLI: users/cli.md
+      - Environment Variables: users/envvars.md
+      - Examples: https://github.com/cello-proj/cello/blob/master/examples/README.md
+      - CLI Reference:
+          - argo-cloudops: cli/argo-cloudops.md
+          - argo-cloudops sync: cli/argo-cloudops_sync.md
+          - argo-cloudops diff: cli/argo-cloudops_diff.md
+          - argo-cloudops get: cli/argo-cloudops_get.md
+          - argo-cloudops list: cli/argo-cloudops_list.md
+          - argo-cloudops workflow: cli/argo-cloudops_workflow.md
+          - argo-cloudops logs: cli/argo-cloudops_logs.md
   - Developer Guide:
-    - Local Development Environment: developers/development-env.md
-    - Contributing: developers/CONTRIBUTING.md
-    - Static Code Analysis: developers/static-code-analysis.md
-    - API: developers/api.md
-    - Releasing: developers/releasing.md
+      - Local Development Environment: developers/development-env.md
+      - Contributing: developers/CONTRIBUTING.md
+      - Static Code Analysis: developers/static-code-analysis.md
+      - API: developers/api.md
+      - Releasing: developers/releasing.md
   - FAQ: faq.md
-  - Releases ⧉: https://github.com/argoproj-labs/argo-cloudops/releases
+  - Releases ⧉: https://github.com/cello-proj/cello/releases
   - Roadmap: roadmap.md
   - Appendix: appendix.md

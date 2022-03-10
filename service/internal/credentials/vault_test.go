@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
+	"github.com/cello-proj/cello/internal/types"
 
 	"github.com/google/go-cmp/cmp"
 	vault "github.com/hashicorp/vault/api"

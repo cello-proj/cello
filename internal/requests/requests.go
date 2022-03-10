@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
-	"github.com/argoproj-labs/argo-cloudops/internal/validations"
+	"github.com/cello-proj/cello/internal/types"
+	"github.com/cello-proj/cello/internal/validations"
 )
 
 // CreateWorkflow request.

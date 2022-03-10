@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/cli/internal/api"
+	"github.com/cello-proj/cello/cli/internal/api"
 
 	"github.com/spf13/cobra"
 )

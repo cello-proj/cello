@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/argoproj-labs/argo-cloudops/internal/requests"
-	"github.com/argoproj-labs/argo-cloudops/internal/types"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/credentials"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/db"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/env"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/git"
-	"github.com/argoproj-labs/argo-cloudops/service/internal/workflow"
+	"github.com/cello-proj/cello/internal/requests"
+	"github.com/cello-proj/cello/internal/types"
+	"github.com/cello-proj/cello/service/internal/credentials"
+	"github.com/cello-proj/cello/service/internal/db"
+	"github.com/cello-proj/cello/service/internal/env"
+	"github.com/cello-proj/cello/service/internal/git"
+	"github.com/cello-proj/cello/service/internal/workflow"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -565,7 +565,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	level.Debug(l).Log("message", "retrieving Argo CloudOps token")
+	level.Debug(l).Log("message", "retrieving Cello token")
 	t := newArgoCloudOpsToken("vault", role, secret)
 	jsonResult, err := json.Marshal(t)
 	if err != nil {
