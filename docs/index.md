@@ -16,8 +16,6 @@ including CDK, Terraform and Cloud Formation via GitOps.
 - Multi framework support (CDK, Terraform, etc)
 - Pluggable components (Workflows, Frameworks, Credentials Providers, etc)
 
-# Argo Documentation
-
 ### Getting Started
 
 For set-up information and running your first Workflows, please see our [Getting Started](quickstart.md) guide.
