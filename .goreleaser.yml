@@ -1,7 +1,7 @@
 # This is an example .goreleaser.yml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
 #
-project_name: argo-cloudops
+project_name: cello
 before:
   hooks:
     # Run this first to avoid possible issues with concurrent builds.
@@ -62,7 +62,7 @@ archives:
       386: i386
       amd64: x86_64
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 release:
   # Mark non-final version tags (e.g. -dev, -alpha, -beta, etc.) as draft
   # releases.
