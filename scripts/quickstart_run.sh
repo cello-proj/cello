@@ -55,23 +55,23 @@ set -e
 # Download artifacts
 mkdir -p quickstart
 
-latest_release=$(curl --silent "https://api.github.com/repos/argoproj-labs/argo-cloudops/releases/latest" | jq -r .tag_name
+latest_release=$(curl --silent "https://api.github.com/repos/cello-proj/cello/releases/latest" | jq -r .tag_name
 )
 # remove leading 'v'
 latest_release="${latest_release//v}"
 
-# download Argo Cloudops CLI if it doesn't exist
+# download Cello CLI if it doesn't exist
 if [ ! -f quickstart/argo-cloudops ]; then
-    curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz -o quickstart/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
-      tar -xzf quickstart/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz -C quickstart/ #&> /dev/null
-        rm quickstart/argo-cloudops_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
+    curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/cello_cli_${latest_release}_darwin_x86_64.tar.gz -o quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
+      tar -xzf quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz -C quickstart/ #&> /dev/null
+        rm quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
 fi
 
 # download Cello service binary if it doesn't exist
 if [ ! -f quickstart/service ]; then
-  curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz -o quickstart/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz &> /dev/null
-  tar -xzf quickstart/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz -C quickstart/ &> /dev/null
-  rm quickstart/argo-cloudops_service_${latest_release}_linux_x86_64.tar.gz &> /dev/null
+  curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/cello_service_${latest_release}_linux_x86_64.tar.gz -o quickstart/cello_service_${latest_release}_linux_x86_64.tar.gz &> /dev/null
+  tar -xzf quickstart/cello_service_${latest_release}_linux_x86_64.tar.gz -C quickstart/ &> /dev/null
+  rm quickstart/cello_service_${latest_release}_linux_x86_64.tar.gz &> /dev/null
 fi
 
 set +e
@@ -165,7 +165,7 @@ EOF
 kubectl exec vault-0 -- mkdir -p /home/vault/.aws
 kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 
-echo "Argo Cloudops started, forwarding to port 8443"
+echo "Cello started, forwarding to port 8443"
 export ACO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
 kubectl port-forward $ACO_POD 8443:8443
 
