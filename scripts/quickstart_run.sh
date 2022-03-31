@@ -19,7 +19,7 @@ function executable_check()  {
 }
 
 executable_check "brew" '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-executable_check "docker" 'brew cask install docker'
+executable_check "docker" 'brew install docker --cask'
 executable_check "kubectl" 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl"'
 executable_check "argo" 'brew install argo'
 executable_check "aws" 'brew install awscli'
