@@ -74,8 +74,8 @@ func IsValidImageURI(imageURI string) bool {
 // IsApprovedImageURI determines if the image URI is approved for use. Default is allow-all. Full filepath matching
 // rules are applied to allow varying levels of globbing and wildcards.
 // Examples:
-// - Direct match: docker.myco.com/argocloups/cdk:1234
-// - Direct image, any tag: docker.myco.com/argocloudops/cdk:*
+// - Direct match: docker.myco.com/cello/cdk:1234
+// - Direct image, any tag: docker.myco.com/cello/cdk:*
 // - Any image within a specific registry: docker.myco.com/*/*
 func IsApprovedImageURI(imageURI string) bool {
 	// default to allow all if no restrictions set

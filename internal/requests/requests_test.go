@@ -21,7 +21,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -41,8 +41,8 @@ func TestCreateWorkflowValidate(t *testing.T) {
 				},
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
-					"pre_container_image_uri":     "argoproj-labs/argo-cloudops-pre",
+					"execute_container_image_uri": "cello-proj/cello-exec",
+					"pre_container_image_uri":     "cello-proj/cello-pre",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -55,7 +55,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -73,7 +73,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 				},
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -91,7 +91,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 				},
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -108,7 +108,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 				},
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -124,7 +124,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 				},
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -148,7 +148,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"pre_container_image_uri": "argoproj-labs/argo-cloudops-pre",
+					"pre_container_image_uri": "cello-proj/cello-pre",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -176,7 +176,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 					"pre_container_image_uri":     "./foo/bar",
 				},
 				ProjectName:          "project1",
@@ -191,7 +191,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "badactor-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "badactor-labs/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -205,8 +205,8 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
-					"pre_container_image_uri":     "badactor-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
+					"pre_container_image_uri":     "badactor-labs/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -219,7 +219,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			name: "missing framework",
 			req: CreateWorkflow{
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -233,7 +233,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "target1",
@@ -246,7 +246,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				TargetName:           "target1",
 				Type:                 "diff",
@@ -259,7 +259,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "abc",
 				TargetName:           "target1",
@@ -273,7 +273,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "a12345678901234567890123456789012",
 				TargetName:           "target1",
@@ -287,7 +287,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "this-is-invalid",
 				TargetName:           "target1",
@@ -301,7 +301,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				Type:                 "diff",
@@ -314,7 +314,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "abc",
@@ -328,7 +328,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1",
 				TargetName:           "a12345678901234567890123456789012",
@@ -342,7 +342,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 				},
 				ProjectName:          "project1this",
 				TargetName:           "this-is-invalid",
@@ -356,7 +356,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 			req: CreateWorkflow{
 				Framework: "cdk",
 				Parameters: map[string]string{
-					"execute_container_image_uri": "argoproj-labs/argo-cloudops-exec",
+					"execute_container_image_uri": "cello-proj/cello-exec",
 					"pre_container_image_uri":     "./foo/bar",
 				},
 				ProjectName: "project1",
@@ -367,7 +367,7 @@ func TestCreateWorkflowValidate(t *testing.T) {
 		},
 	}
 
-	validations.SetImageURIs([]string{"argoproj-labs/*"})
+	validations.SetImageURIs([]string{"cello-proj/*"})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
