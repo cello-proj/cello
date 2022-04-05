@@ -77,6 +77,15 @@ fi
 set +e
 echo "Building docker image"
 docker build --pull --rm -f "Dockerfile" --build-arg BINARY=quickstart/service -t argocloudops:latest "."
+echo "Checking for Argo Workflows"
+kubectl get ns | grep argo
+if [ $? != 0 ]; then
+  echo "Applying Argo Workflows manifest"
+  kubectl create ns argo
+  kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/quick-start-minimal.yaml
+else 
+  echo "Argo Workflows found"
+fi
 echo "Applying manifest"
 kubectl apply -f ./scripts/quickstart_manifest.yaml
 # Sleeping after applying manifest so pods have time to start
