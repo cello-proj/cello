@@ -109,9 +109,9 @@ set -e
 
 # setup workflow if it doesn't exist
 set +e
-argo template get -n argo argo-cloudops-single-step-vault-aws &> /dev/null
+argo template get -n argo cello-single-step-vault-aws &> /dev/null
 if [ $? != 0 ]; then
-  argo template create -n argo workflows/argo-cloudops-single-step-vault-aws.yaml
+  argo template create -n argo workflows/cello-single-step-vault-aws.yaml
 fi
 
 # setup aws credentials in vault
