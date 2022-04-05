@@ -24,7 +24,7 @@ else
   CLI=$SCRIPT_DIR/../quickstart/argo-cloudops
 fi
 
-$CLI sync \
+$CLI exec \
     -n $ARGO_CLOUDOPS_PROJECT_NAME \
     -t $ARGO_CLOUDOPS_TARGET_NAME \
     -p $GIT_PATH \
