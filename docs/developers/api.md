@@ -198,7 +198,7 @@ Request Body
   "project_name": "project1",
   "target_name": "target1",
   "type": "sync",
-  "workflow_template_name": "argo-cloudops-single-step-vault-aws"
+  "workflow_template_name": "cello-single-step-vault-aws"
 }
 ```
 
