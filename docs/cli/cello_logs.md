@@ -1,9 +1,9 @@
-## argo-cloudops logs
+## cello logs
 
 Gets logs from a workflow
 
 ```
-  argo-cloudops logs [workflow name] [flags]
+  cello logs [workflow name] [flags]
 ```
 
 ### Flags

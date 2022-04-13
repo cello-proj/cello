@@ -23,7 +23,7 @@ builds:
       # Don't use the default to avoid passing in 'BuildBy'.
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
   - id: cli
-    binary: argo-cloudops
+    binary: cello
     main: ./cli/
     env:
       - CGO_ENABLED=0

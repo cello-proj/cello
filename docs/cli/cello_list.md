@@ -1,8 +1,8 @@
-## argo-cloudops list
+## cello list
 List workflow executions for a given project and target
 
 ```
-  argo-cloudops list [flags]
+  cello list [flags]
 ```
 
 ### Flags

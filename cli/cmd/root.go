@@ -9,7 +9,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "argo-cloudops",
+	Use:   "cello",
 	Short: "Cello Command Line Interface",
 	Long:  "Cello Command Line Interface",
 }
