@@ -9,7 +9,7 @@ environment_variables:
   VAULT_ADDR: http://vault.default.svc.cluster.local:8200
 framework: terraform
 parameters:
-  execute_container_image_uri: celloproj/terraform:0.15.1
+  execute_container_image_uri: celloproj/cello-terraform:0.15.1
 project_name: project1
 target_name: target1
 type: diff

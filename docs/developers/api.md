@@ -193,7 +193,7 @@ Request Body
   },
   "framework": "terraform",
   "parameters": {
-    "execute_container_image_uri": "a80addc4/terraform:0.14.5"
+    "execute_container_image_uri": "a80addc4/cello-terraform:0.14.5"
   },
   "project_name": "project1",
   "target_name": "target1",
