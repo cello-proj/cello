@@ -1,7 +1,7 @@
 apiVersion: v1 #argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: argo-cloudops-single-step-vault-aws
+  name: cello-single-step-vault-aws
   labels:
     workflows.argoproj.io/archive-strategy: "false"
 
