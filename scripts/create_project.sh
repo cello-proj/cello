@@ -3,7 +3,7 @@
 GIT_REPO=$1
 ACCOUNT_ID=$2
 
-ROLE_NAME=ArgoCloudOpsSampleRole
+ROLE_NAME=CelloSampleRole
 
 if [ -z $ARGO_CLOUDOPS_PROJECT_NAME ]; then
     export ARGO_CLOUDOPS_PROJECT_NAME=project1
