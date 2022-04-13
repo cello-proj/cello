@@ -929,7 +929,7 @@ var (
 		},
 		Framework: "cdk",
 		Parameters: map[string]string{
-			"execute_container_image_uri": "a80addc4/argo-cloudops-cdk:0.14.5",
+			"execute_container_image_uri": "a80addc4/cdk:0.14.5",
 		},
 		ProjectName:          "project1",
 		TargetName:           "target1",

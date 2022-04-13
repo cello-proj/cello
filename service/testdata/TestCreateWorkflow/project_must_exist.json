@@ -7,7 +7,7 @@
   },
   "framework": "cdk",
   "parameters" : {
-    "execute_container_image_uri": "argocloudops/argo-cloudops-cdk:1.87.1"
+    "execute_container_image_uri": "celloproj/cdk:1.87.1"
   },
   "project_name": "PROJECT_DOES_NOT_EXIST",
   "target_name": "TARGET_ALREADY_EXISTS",

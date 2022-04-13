@@ -120,12 +120,12 @@ func TestIsValidImageURI(t *testing.T) {
 	}{
 		{
 			name:       "valid execute container image",
-			testString: "argocloudops/argo-cloudops-cdk:1.87.1",
+			testString: "celloproj/cdk:1.87.1",
 			want:       true,
 		},
 		{
 			name:       "invalid execute container image",
-			testString: "()argocloudops  -- /argo-cloudops-cdk:1.87.1",
+			testString: "()argocloudops  -- /cdk:1.87.1",
 		},
 		{
 			name: "no image provided",
@@ -148,12 +148,12 @@ func TestIsApprovedImageURI(t *testing.T) {
 	}{
 		{
 			name:       "default allow-all passes",
-			testString: "argocloudops/argo-cloudops-cdk:1.87.1",
+			testString: "celloproj/cdk:1.87.1",
 			want:       true,
 		},
 		{
 			name:       "default allow-all passes with multi-separator",
-			testString: "docker.myco.com/slash1/argo-cloudops/slash2/argo-cloudops-cdk:latest",
+			testString: "docker.myco.com/slash1/celloproj/slash2/cdk:latest",
 			want:       true,
 			uris:       []string{},
 		},
