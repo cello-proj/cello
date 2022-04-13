@@ -672,25 +672,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: argocloudops
-  name: argocloudops
+    app: cello
+  name: cello
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: argocloudops
+      app: cello
   template:
     metadata:
       labels:
-        app: argocloudops
+        app: cello
     spec:
       volumes:
         - name: vault-home
           persistentVolumeClaim:
             claimName: 'vault-pv-claim'
       containers:
-      - image: argocloudops:latest
-        name: argocloudops
+      - image: cello:latest
+        name: cello
         imagePullPolicy: Never
         command:
         - "/bin/sh"

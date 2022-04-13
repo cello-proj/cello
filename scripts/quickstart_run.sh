@@ -45,7 +45,7 @@ fi
 
 # create iam role if it doesn't already exist
 set +e
-aws cloudformation describe-stacks --stack-name ArgoCloudOpsSampleRole --region us-west-2 &> /dev/null
+aws cloudformation describe-stacks --stack-name CelloSampleRole --region us-west-2 &> /dev/null
 if [ $? != 0 ]; then
   echo "creating iam role"
   bash scripts/create_iam_role.sh
@@ -76,7 +76,7 @@ fi
 
 set +e
 echo "Building docker image"
-docker build --pull --rm -f "Dockerfile" --build-arg BINARY=quickstart/service -t argocloudops:latest "."
+docker build --pull --rm -f "Dockerfile" --build-arg BINARY=quickstart/service -t cello:latest "."
 echo "Checking for Argo Workflows"
 kubectl get ns | grep argo
 if [ $? != 0 ]; then
@@ -89,7 +89,7 @@ fi
 echo "Applying manifest"
 kubectl apply -f ./scripts/quickstart_manifest.yaml
 # Sleeping after applying manifest so pods have time to start
-while [ "$(kubectl get pods -l=app='argocloudops' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+while [ "$(kubectl get pods -l=app='cello' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
    sleep 5
    echo "Waiting for Cello to be ready."
 done
@@ -175,7 +175,7 @@ kubectl exec vault-0 -- mkdir -p /home/vault/.aws
 kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 
 echo "Cello started, forwarding to port 8443"
-export ACO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
-kubectl port-forward $ACO_POD 8443:8443
+export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
+kubectl port-forward $CELLO_POD 8443:8443
 
 

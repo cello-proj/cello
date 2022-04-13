@@ -6,8 +6,8 @@
     "foobar": "barfoo"
   },
   "framework": "cdk",
-  "parameters": {
-    "execute_container_image_uri": "argocloudops/argo-cloudops-cdk:1.87.1"
+  "parameters" : {
+    "execute_container_image_uri": "celloproj/cello-cdk:1.87.1"
   },
   "project_name": "PROJECT",
   "target_name": "TARGET",

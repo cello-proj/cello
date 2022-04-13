@@ -1,6 +1,6 @@
-DOCKER_HUB_USER ?= argocloudops
-CDK_REPO := ${DOCKER_HUB_USER}/argo-cloudops-cdk
-TERRAFORM_REPO := ${DOCKER_HUB_USER}/argo-cloudops-terraform
+DOCKER_HUB_USER ?= celloproj
+CDK_REPO := ${DOCKER_HUB_USER}/cello-cdk
+TERRAFORM_REPO := ${DOCKER_HUB_USER}/cello-terraform
 
 CDK_VERSION := 1.99.0
 TERRAFORM_VERSION := 0.15.1

@@ -120,7 +120,7 @@ func TestIsValidImageURI(t *testing.T) {
 	}{
 		{
 			name:       "valid execute container image",
-			testString: "cello/cello-cdk:1.87.1",
+			testString: "celloproj/cello-cdk:1.87.1",
 			want:       true,
 		},
 		{
@@ -148,12 +148,12 @@ func TestIsApprovedImageURI(t *testing.T) {
 	}{
 		{
 			name:       "default allow-all passes",
-			testString: "cello/cello-cdk:1.87.1",
+			testString: "celloproj/cello-cdk:1.87.1",
 			want:       true,
 		},
 		{
 			name:       "default allow-all passes with multi-separator",
-			testString: "docker.myco.com/slash1/cello/slash2/cello-cdk:latest",
+			testString: "docker.myco.com/slash1/celloproj/slash2/cello-cdk:latest",
 			want:       true,
 			uris:       []string{},
 		},
