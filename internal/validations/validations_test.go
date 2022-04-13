@@ -91,7 +91,7 @@ func TestIsValidGitURI(t *testing.T) {
 		},
 		{
 			name:       "valid git",
-			testString: "git@github.com:argoproj-labs/argo-cloudops.git",
+			testString: "git@github.com:cello-proj/cello.git",
 			want:       true,
 		},
 		{
@@ -101,7 +101,7 @@ func TestIsValidGitURI(t *testing.T) {
 		},
 		{
 			name:       "invalid shorthand",
-			testString: "argoproj-labs/argo-cloudops",
+			testString: "cello-proj/cello",
 		},
 	}
 
@@ -125,7 +125,7 @@ func TestIsValidImageURI(t *testing.T) {
 		},
 		{
 			name:       "invalid execute container image",
-			testString: "()argocloudops  -- /cello-cdk:1.87.1",
+			testString: "()cello  -- /cello-cdk:1.87.1",
 		},
 		{
 			name: "no image provided",
@@ -159,25 +159,25 @@ func TestIsApprovedImageURI(t *testing.T) {
 		},
 		{
 			name:       "direct matched image from config passes",
-			testString: "argocloudops/match:1.87.1",
+			testString: "cello/match:1.87.1",
 			want:       true,
-			uris:       []string{"argocloudops/match:1.87.1"},
+			uris:       []string{"cello/match:1.87.1"},
 		},
 		{
 			name:       "rejects non-approved image",
-			testString: "argocloudops/nomatch:1.87.1",
+			testString: "cello/nomatch:1.87.1",
 			want:       false,
-			uris:       []string{"argocloudops/match:1.87.1"},
+			uris:       []string{"cello/match:1.87.1"},
 		},
 		{
 			name:       "matches globbing on tag",
-			testString: "argocloudops/match:1.87.1",
+			testString: "cello/match:1.87.1",
 			want:       true,
-			uris:       []string{"argocloudops/match:*"},
+			uris:       []string{"cello/match:*"},
 		},
 		{
 			name:       "matches globbing on any image within a registry",
-			testString: "docker.myco.com/argocloudops/match:1.87.1",
+			testString: "docker.myco.com/cello/match:1.87.1",
 			want:       true,
 			uris:       []string{"docker.myco.com/*/*"},
 		},

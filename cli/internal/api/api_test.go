@@ -934,6 +934,6 @@ var (
 		ProjectName:          "project1",
 		TargetName:           "target1",
 		Type:                 "sync",
-		WorkflowTemplateName: "argo-cloudops-single-step-vault-aws",
+		WorkflowTemplateName: "cello-single-step-vault-aws",
 	}
 )

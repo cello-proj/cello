@@ -67,7 +67,7 @@ You will need two windows
 
   ```sh
   # CDK Example
-  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc`
+  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547`
 
   # Get the status/follow the logs
   ./quickstart/argo-cloudops get $CDK_WORKFLOW_NAME
@@ -78,7 +78,7 @@ You will need two windows
 
   ```sh
   # Terraform Example
-  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc`
+  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547`
 
   # Get the status/follow the logs
   ./quickstart/argo-cloudops get $TERRAFORM_WORKFLOW_NAME

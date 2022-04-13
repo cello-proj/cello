@@ -483,7 +483,7 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns a new token
-func newArgoCloudOpsToken(provider, key, secret string) *token {
+func newCelloToken(provider, key, secret string) *token {
 	return &token{
 		Token: fmt.Sprintf("%s:%s:%s", provider, key, secret),
 	}
@@ -566,7 +566,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "retrieving Cello token")
-	t := newArgoCloudOpsToken("vault", role, secret)
+	t := newCelloToken("vault", role, secret)
 	jsonResult, err := json.Marshal(t)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing token", "error", err)

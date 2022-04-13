@@ -1,9 +1,6 @@
 {
   "arguments": {
-    "execute": [
-      "--no-color",
-      "--require-approval never"
-    ]
+    "execute": ["--no-color", "--require-approval never"]
   },
   "environment_variables": {
     "AWS_REGION": "us-west-2",
@@ -17,5 +14,5 @@
   "project_name": "project1",
   "target_name": "target1",
   "type": "sync",
-  "workflow_template_name": "argo-cloudops-single-step-vault-aws"
+  "workflow_template_name": "cello-single-step-vault-aws"
 }

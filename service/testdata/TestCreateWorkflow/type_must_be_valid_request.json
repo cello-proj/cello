@@ -12,6 +12,5 @@
   "project_name": "PROJECT",
   "target_name": "TARGET",
   "type": "FOOBAR",
-  "workflow_template_name": "argo-cloudops-single-step-vault-aws"
+  "workflow_template_name": "cello-single-step-vault-aws"
 }
-
