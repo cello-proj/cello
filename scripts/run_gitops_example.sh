@@ -19,9 +19,9 @@ fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 if [ "${MODE}" == "dev" ]; then
-  CLI=$SCRIPT_DIR/../build/argo-cloudops
+  CLI=$SCRIPT_DIR/../build/cello
 else
-  CLI=$SCRIPT_DIR/../quickstart/argo-cloudops
+  CLI=$SCRIPT_DIR/../quickstart/cello
 fi
 
 $CLI exec \

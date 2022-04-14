@@ -70,8 +70,8 @@ You will need two windows
   CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547`
 
   # Get the status/follow the logs
-  ./quickstart/argo-cloudops get $CDK_WORKFLOW_NAME
-  ./quickstart/argo-cloudops logs -f $CDK_WORKFLOW_NAME
+  ./quickstart/cello get $CDK_WORKFLOW_NAME
+  ./quickstart/cello logs -f $CDK_WORKFLOW_NAME
   ```
 
 - TERRAFORM Example
@@ -81,6 +81,6 @@ You will need two windows
   TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547`
 
   # Get the status/follow the logs
-  ./quickstart/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
-  ./quickstart/argo-cloudops logs -f $TERRAFORM_WORKFLOW_NAME
+  ./quickstart/cello get $TERRAFORM_WORKFLOW_NAME
+  ./quickstart/cello logs -f $TERRAFORM_WORKFLOW_NAME
   ```

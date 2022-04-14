@@ -1,8 +1,8 @@
-## argo-cloudops get
+## cello get
 Gets status of workflow
 
 ```
-  argo-cloudops get [workflow name] [flags]
+  cello get [workflow name] [flags]
 ```
 
 ### Flags

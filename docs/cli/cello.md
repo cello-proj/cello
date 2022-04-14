@@ -1,9 +1,9 @@
-## argo-cloudops
+## cello
 
-argo-cloudops is the command line interface to Cello
+cello is the command line interface to Cello
 
 ```
-argo-cloudops [command]
+cello [command]
 ```
 
 ### Options
@@ -22,12 +22,12 @@ Available Commands:
   workflow    Creates a workflow execution with provided arguments
 
 Flags:
-  -h, --help   help for argo-cloudops
+  -h, --help   help for cello
 ```
 
 ### SEE ALSO
 
-* [argo-cloudops logs](argo-cloudops_logs.md) - gets logs from a workflow
+* [cello logs](cello_logs.md) - gets logs from a workflow
 
 
 

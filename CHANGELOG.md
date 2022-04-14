@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Default workflow renamed from argo-cloudops-single-step-vault-aws.yaml to cello-single-step-vault-aws.yaml
 * Example manifests now point to cello-single-step-vault-aws workflow
+* Images moved to from argocloudops to celloproj
+* BREAKING cli binary renamed from argo-cloudops to cello
 
 ## [0.12.1] - 2022-03-14
 ### Changed

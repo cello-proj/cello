@@ -25,13 +25,13 @@ nav:
       - Environment Variables: users/envvars.md
       - Examples: https://github.com/cello-proj/cello/blob/master/examples/README.md
       - CLI Reference:
-          - argo-cloudops: cli/argo-cloudops.md
-          - argo-cloudops sync: cli/argo-cloudops_sync.md
-          - argo-cloudops diff: cli/argo-cloudops_diff.md
-          - argo-cloudops get: cli/argo-cloudops_get.md
-          - argo-cloudops list: cli/argo-cloudops_list.md
-          - argo-cloudops workflow: cli/argo-cloudops_workflow.md
-          - argo-cloudops logs: cli/argo-cloudops_logs.md
+          - cello: cli/cello.md
+          - cello sync: cli/cello_sync.md
+          - cello diff: cli/cello_diff.md
+          - cello get: cli/cello_get.md
+          - cello list: cli/cello_list.md
+          - cello workflow: cli/cello_workflow.md
+          - cello logs: cli/cello_logs.md
   - Developer Guide:
       - Local Development Environment: developers/development-env.md
       - Contributing: developers/CONTRIBUTING.md

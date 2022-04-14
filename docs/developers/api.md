@@ -109,7 +109,7 @@ Response Body
       "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
     ],
     "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-    "role_arn": "arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
+    "role_arn": "arn:aws:iam::123456789012:role/CelloSampleRole"
   }
 }
 ```
@@ -154,7 +154,7 @@ Response Body
       "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
     ],
     "policy_document": "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-    "role_arn": "arn:aws:iam::123456789012:role/ArgoCloudOpsSampleRole"
+    "role_arn": "arn:aws:iam::123456789012:role/CelloSampleRole"
   }
 }
 ```
@@ -188,7 +188,7 @@ Request Body
   },
   "environment_variables": {
     "AWS_REGION": "us-west-2",
-    "CODE_URI": "s3://argo-cloudops-cet-dev/terraform-example.zip",
+    "CODE_URI": "s3://cello-cet-dev/terraform-example.zip",
     "VAULT_ADDR": "http://docker.for.mac.localhost:8200"
   },
   "framework": "terraform",

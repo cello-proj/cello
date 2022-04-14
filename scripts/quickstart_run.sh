@@ -61,7 +61,7 @@ latest_release=$(curl --silent "https://api.github.com/repos/cello-proj/cello/re
 latest_release="${latest_release//v}"
 
 # download Cello CLI if it doesn't exist
-if [ ! -f quickstart/argo-cloudops ]; then
+if [ ! -f quickstart/cello ]; then
     curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/cello_cli_${latest_release}_darwin_x86_64.tar.gz -o quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
       tar -xzf quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz -C quickstart/ #&> /dev/null
         rm quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null

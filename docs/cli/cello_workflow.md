@@ -1,8 +1,8 @@
-## argo-cloudops workflow
+## cello workflow
 Creates a workflow execution with provided arguments
 
 ```
-  argo-cloudops workflow [flags]
+  cello workflow [flags]
 ```
 
 ### Flags
