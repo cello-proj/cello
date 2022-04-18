@@ -528,9 +528,9 @@ spec:
                     vault read auth/approle/role/argo-cloudops/role-id -field=role_id | sed -En "s/role_id\s+(.*)/\1/p" > /home/vault/roleid.txt
                     vault write -f auth/approle/role/argo-cloudops/secret-id | sed -En "s/secret_id\s+(.*)/\1/p" > /home/vault/secretid.txt
 
-                    ARGO_CLOUDOPS_VAULT_ROLE_ID=$(cat /home/vault/roleid.txt)
-                    ARGO_CLOUDOPS_VAULT_SECRET_ID=$(cat /home/vault/secretid.txt)
-                    vault write auth/approle/login role_id="${ARGO_CLOUDOPS_VAULT_ROLE_ID}" secret_id="${ARGO_CLOUDOPS_VAULT_SECRET_ID}" | sed -En "s/token\s+(.*)/\1/p" > /home/vault/vaulttoken.txt
+                    CELLO_VAULT_ROLE_ID=$(cat /home/vault/roleid.txt)
+                    CELLO_VAULT_SECRET_ID=$(cat /home/vault/secretid.txt)
+                    vault write auth/approle/login role_id="${CELLO_VAULT_ROLE_ID}" secret_id="${CELLO_VAULT_SECRET_ID}" | sed -En "s/token\s+(.*)/\1/p" > /home/vault/vaulttoken.txt
                     exit 0
             # Vault container doesn't receive SIGTERM from Kubernetes
             # and after the grace period ends, Kube sends SIGKILL.  This
@@ -718,17 +718,17 @@ spec:
 
           ./service
         env:
-          - name: ARGO_CLOUDOPS_ADMIN_SECRET
+          - name: CELLO_ADMIN_SECRET
             value: abcd1234abcd1234
-          - name: ARGO_CLOUDOPS_DB_HOST
+          - name: CELLO_DB_HOST
             value: $(POSTGRES_SERVICE_HOST)
-          - name: ARGO_CLOUDOPS_DB_NAME
+          - name: CELLO_DB_NAME
             value: argocloudops
-          - name: ARGO_CLOUDOPS_DB_USER
+          - name: CELLO_DB_USER
             value: argoco
-          - name: ARGO_CLOUDOPS_DB_PASSWORD
+          - name: CELLO_DB_PASSWORD
             value: "1234"
-          - name: ARGO_CLOUDOPS_GIT_AUTH_METHOD
+          - name: CELLO_GIT_AUTH_METHOD
             value: https
           - name: VAULT_ADDR
             value: http://vault.default.svc.cluster.local:8200
@@ -736,7 +736,7 @@ spec:
             value: http://127.0.0.1:9000
           - name: UPPER_DB_LOG
             value: DEBUG
-          - name: ARGO_CLOUDOPS_LOG_LEVEL
+          - name: CELLO_LOG_LEVEL
             value: DEBUG
         volumeMounts:
           - name: vault-home

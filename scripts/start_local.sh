@@ -6,24 +6,24 @@ export ARGO_ADDR='http://127.0.0.1:9000'
 
 MODE=${1}
 
-if [ -z "$ARGO_CLOUDOPS_DB_HOST" ]; then
-    export ARGO_CLOUDOPS_DB_HOST=localhost
+if [ -z "$CELLO_DB_HOST" ]; then
+    export CELLO_DB_HOST=localhost
 fi
 
-if [ -z "$ARGO_CLOUDOPS_DB_NAME" ]; then
-    export ARGO_CLOUDOPS_DB_NAME=argocloudops
+if [ -z "$CELLO_DB_NAME" ]; then
+    export CELLO_DB_NAME=cello
 fi
 
-if [ -z "$ARGO_CLOUDOPS_DB_USER" ]; then
-    export ARGO_CLOUDOPS_DB_USER=argoco
+if [ -z "$CELLO_DB_USER" ]; then
+    export CELLO_DB_USER=argoco
 fi
 
-if [ -z "$ARGO_CLOUDOPS_DB_PASSWORD" ]; then
-    export ARGO_CLOUDOPS_DB_PASSWORD=1234
+if [ -z "$CELLO_DB_PASSWORD" ]; then
+    export CELLO_DB_PASSWORD=1234
 fi
 
-if [ -z "$ARGO_CLOUDOPS_GIT_AUTH_METHOD" ]; then
-    export ARGO_CLOUDOPS_GIT_AUTH_METHOD=https
+if [ -z "$CELLO_GIT_AUTH_METHOD" ]; then
+    export CELLO_GIT_AUTH_METHOD=https
 fi
 
 # Vault was not loading credentials from the default chain, try to fetch from profile
@@ -51,8 +51,8 @@ if [ -n "${AWS_PROFILE}" ]; then
     fi
 fi
 
-if [ -z "$ARGO_CLOUDOPS_CONFIG" ]; then
-    export ARGO_CLOUDOPS_CONFIG=argo-cloudops.yaml
+if [ -z "$CELLO_CONFIG" ]; then
+    export CELLO_CONFIG=argo-cloudops.yaml
 fi
 
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then
@@ -124,23 +124,23 @@ vault policy write argo-cloudops-service /tmp/argo-cloudops-policy.hcl
 
 vault write auth/approle/role/argo-cloudops policies=argo-cloudops-service secret_id_ttl=8766h
 
-ARGO_CLOUDOPS_VAULT_ROLE_ID=$(vault read -format json \
+CELLO_VAULT_ROLE_ID=$(vault read -format json \
     auth/approle/role/argo-cloudops/role-id \
     | jq -r '.data.role_id')
 
-ARGO_CLOUDOPS_VAULT_SECRET_ID=$(vault write -f -format json \
+CELLO_VAULT_SECRET_ID=$(vault write -f -format json \
     auth/approle/role/argo-cloudops/secret-id \
     | jq -r '.data.secret_id')
 
 export service_vault_token=$(vault write --format json \
     auth/approle/login \
-    role_id="${ARGO_CLOUDOPS_VAULT_ROLE_ID}" \
-    secret_id="${ARGO_CLOUDOPS_VAULT_SECRET_ID}" \
+    role_id="${CELLO_VAULT_ROLE_ID}" \
+    secret_id="${CELLO_VAULT_SECRET_ID}" \
     | jq -r '.auth.client_token')
 
 # Set to env values expected by service to start
-export VAULT_ROLE=${ARGO_CLOUDOPS_VAULT_ROLE_ID}
-export VAULT_SECRET=${ARGO_CLOUDOPS_VAULT_SECRET_ID}
+export VAULT_ROLE=${CELLO_VAULT_ROLE_ID}
+export VAULT_SECRET=${CELLO_VAULT_SECRET_ID}
 export VAULT_TOKEN=$service_vault_token
 
 mkdir -p ./ssl
