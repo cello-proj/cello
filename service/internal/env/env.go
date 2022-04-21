@@ -16,7 +16,7 @@ type Vars struct {
 	VaultAddress   string   `envconfig:"VAULT_ADDR" required:"true"`
 	ArgoAddress    string   `envconfig:"ARGO_ADDR" required:"true"`
 	ArgoNamespace  string   `envconfig:"WORKFLOW_EXECUTION_NAMESPACE" default:"argo"`
-	ConfigFilePath string   `envconfig:"CONFIG" default:"argo-cloudops.yaml"`
+	ConfigFilePath string   `envconfig:"CONFIG" default:"cello.yaml"`
 	SSHPEMFile     string   `envconfig:"SSH_PEM_FILE"`
 	GitAuthMethod  string   `split_words:"true" required:"true"`
 	GitHTTPSUser   string   `envconfig:"GIT_HTTPS_USER"`
