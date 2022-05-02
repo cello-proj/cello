@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Images moved to from argocloudops to celloproj
 * BREAKING cli binary renamed from argo-cloudops to cello
 
-## [0.13] - 2022-03-14
+## [0.13] - 2022-05-02
 ### Changed
 * POTENTIALLY BREAKING The default config file has been renamed to chello.yaml (when CONFIG env var is NOT specified)
 
