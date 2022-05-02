@@ -46,7 +46,9 @@ func init() {
 
 // TODO refactor
 func argoCloudOpsServiceAddr() string {
-	addr := os.Getenv("ARGO_CLOUDOPS_SERVICE_ADDR")
+	legacyKey := "ARGO_CLOUDOPS_SERVICE_ADDR"
+	key := "CELLO_SERVICE_ADDR"
+	addr := envOrLegacy(key, legacyKey)
 	if addr == "" {
 		addr = "https://localhost:8443"
 	}
@@ -55,10 +57,19 @@ func argoCloudOpsServiceAddr() string {
 
 // TODO refactor
 func argoCloudOpsUserToken() (string, error) {
-	key := "ARGO_CLOUDOPS_USER_TOKEN"
-	result := os.Getenv(key)
+	legacyKey := "ARGO_CLOUDOPS_USER_TOKEN"
+	key := "CELLO_USER_TOKEN"
+	result := envOrLegacy(key, legacyKey)
 	if len(result) == 0 {
 		return "", fmt.Errorf("%s not found", key)
 	}
 	return result, nil
+}
+
+func envOrLegacy(key, legacyKey string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+
+	return os.Getenv(legacyKey)
 }
