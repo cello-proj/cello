@@ -33,8 +33,8 @@ if [ $? != 0 ]; then
 fi
 set -e
 
-if [ -z $ARGO_CLOUDOPS_ADMIN_SECRET ]; then
-  echo "ARGO_CLOUDOPS_ADMIN_SECRET environment variable must be set"
+if [ -z $CELLO_ADMIN_SECRET ]; then
+  echo "CELLO_ADMIN_SECRET environment variable must be set"
   exit 1
 fi
 
