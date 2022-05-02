@@ -2,12 +2,19 @@ package env
 
 import (
 	"errors"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/kelseyhightower/envconfig"
 )
 
-const appPrefix = "ARGO_CLOUDOPS"
+func init() {
+	migrateLegacyPrefix()
+}
+
+const legacyAppPrefix = "ARGO_CLOUDOPS"
+const appPrefix = "CELLO"
 
 type Vars struct {
 	AdminSecret    string   `split_words:"true" required:"true"`
@@ -52,4 +59,16 @@ func (values Vars) validate() error {
 		return errors.New("admin secret must be at least 16 characers long")
 	}
 	return nil
+}
+
+func migrateLegacyPrefix() {
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, legacyAppPrefix) {
+			continue
+		}
+
+		kv := strings.SplitN(entry, "=", 2)
+		k, v := strings.TrimPrefix(kv[0], legacyAppPrefix), kv[1]
+		os.Setenv(appPrefix+k, v)
+	}
 }
