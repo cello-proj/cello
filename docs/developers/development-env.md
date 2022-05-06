@@ -59,13 +59,13 @@ You will need two windows
 - Create a new postgres database. This can be done using the command:
 
   ```sh
-  createdb argocloudops
+  createdb cello
   ```
 
 - Use the `createdbtables.sql` script to create the relevant tables and create a new user with read/write permissions. This can be done using the command:
 
   ```sh
-  psql -d argocloudops -f scripts/createdbtables.sql
+  psql -d cello -f scripts/createdbtables.sql
   ```
 
 - Create the default workflow template in Argo.
@@ -76,12 +76,12 @@ You will need two windows
 
 ### Start Vault & Cello Service
 
-- In window **#1** first set the **ARGO_CLOUDOPS_ADMIN_SECRET** to a 16
+- In window **#1** first set the **CELLO_ADMIN_SECRET** to a 16
   character string, this will be used to authorize admin commands against
   the Cello service.
 
       ```sh
-      export ARGO_CLOUDOPS_ADMIN_SECRET=abcd1234abcd1234
+      export CELLO_ADMIN_SECRET=abcd1234abcd1234
       ```
 
 - Start the Cello Service (includes vault)
@@ -93,17 +93,17 @@ You will need two windows
 - To run in debug mode set log level DEBUG before running
 
   ```
-  export ARGO_CLOUDOPS_LOG_LEVEL=DEBUG
+  export CELLO_LOG_LEVEL=DEBUG
   make ; make up
   ```
 
 ### Create Cello Project And Target (One Time Setup)
 
-- In window **#2**, ensure you have the **ARGO_CLOUDOPS_ADMIN_SECRET**
+- In window **#2**, ensure you have the **CELLO_ADMIN_SECRET**
   env set to the same value used above.
 
 - Ensure your credentials are set for the **target account** and create your first
-  project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
+  project and target. This returns the **CELLO_USER_TOKEN** for the new project.
 
       ```sh
       bash scripts/create_project.sh https://github.com/cello-proj/cello.git
@@ -111,7 +111,7 @@ You will need two windows
 
 ### Run Workflow
 
-- Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified
+- Ensure the **CELLO_USER_TOKEN** for the project is specified
 
 - CDK Example
 
