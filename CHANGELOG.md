@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1] - 2022-05-02
+### Changed
+* The default config file has been renamed to cello.yaml (when the CONFIG env var is NOT specified)
+
 ## [0.13.0] - 2022-05-02
 ### Changed
 * Default workflow renamed from argo-cloudops-single-step-vault-aws.yaml to cello-single-step-vault-aws.yaml
@@ -11,10 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Images moved to from argocloudops to celloproj
 * BREAKING cli binary renamed from argo-cloudops to cello
 * Environment variables prefix changed from ARGO_CLOUDOPS to CELLO (backwards compatible)
-
-## [0.13] - 2022-05-02
-### Changed
-* POTENTIALLY BREAKING The default config file has been renamed to cello.yaml (when CONFIG env var is NOT specified)
 
 ## [0.12.1] - 2022-03-14
 ### Changed
