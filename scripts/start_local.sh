@@ -15,7 +15,7 @@ if [ -z "$CELLO_DB_NAME" ]; then
 fi
 
 if [ -z "$CELLO_DB_USER" ]; then
-    export CELLO_DB_USER=argoco
+    export CELLO_DB_USER=cello
 fi
 
 if [ -z "$CELLO_DB_PASSWORD" ]; then
