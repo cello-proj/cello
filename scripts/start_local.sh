@@ -52,7 +52,7 @@ if [ -n "${AWS_PROFILE}" ]; then
 fi
 
 if [ -z "$CELLO_CONFIG" ]; then
-    export CELLO_CONFIG=argo-cloudops.yaml
+    export CELLO_CONFIG=cello.yaml
 fi
 
 if [ -z "$AWS_ACCESS_KEY_ID" ]; then
