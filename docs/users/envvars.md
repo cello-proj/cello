@@ -10,7 +10,7 @@ Cello uses a number of environment variables for configuration. In addition to t
 | VAULT_ADDR                                 | Endpoint for the Vault instance                                                                                                     |
 | ARGO_ADDR                                  | Argo Endpoint                                                                                                                       |
 | CELLO_WORKFLOW_EXECUTION_NAMESPACE | Namespace to use to execute the deployments in Argo Workflows (Default: argo)                                                       |
-| CELLO_CONFIG                       | File that contains cello command configuration. [Example](https://github.com/cello-proj/cello/blob/main/argo-cloudops.yaml) |
+| CELLO_CONFIG                       | File that contains cello command configuration. [Example](https://github.com/cello-proj/cello/blob/main/cello.yaml)
 | SSH_PEM_FILE                               | PEM file to use for GITHUB access authentication                                                                                    |
 | CELLO_GIT_AUTH_METHOD              | A value of SSH or HTTPS depending on which authentication method prefered.                                                          |
 | CELLO_GIT_HTTPS_USER               | User name for GITHUB access authentication via HTTPS.                                                                               |

@@ -96,7 +96,7 @@ func TestDefaults(t *testing.T) {
 
 	// Then
 	assert.Equal(t, "argo", vars.ArgoNamespace)
-	assert.Equal(t, "argo-cloudops.yaml", vars.ConfigFilePath)
+	assert.Equal(t, "cello.yaml", vars.ConfigFilePath)
 	assert.Equal(t, 8443, vars.Port)
 }
 

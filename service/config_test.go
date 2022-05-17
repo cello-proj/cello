@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	testConfigPath = "../service/testdata/argo-cloudops.yaml"
+	testConfigPath = "../service/testdata/cello.yaml"
 )
 
 // TODO refactor to table driven tests
