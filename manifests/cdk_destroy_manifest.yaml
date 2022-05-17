@@ -1,0 +1,14 @@
+arguments:
+  execute:
+    - "--no-color --force"
+environment_variables:
+  AWS_REGION: us-west-2
+  CODE_URI: https://github.com/cello-proj/cello/releases/download/v0.4.6/cdk-typescript-example.tar.gz
+  VAULT_ADDR: http://docker.for.mac.localhost:8200
+framework: cdk
+parameters:
+  execute_container_image_uri: celloproj/cello-cdk:1.99.0
+project_name: project1
+target_name: target1
+type: destroy
+workflow_template_name: cello-single-step-vault-aws

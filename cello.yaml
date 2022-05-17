@@ -6,6 +6,7 @@
 version: "0.0.1"
 commands:
   cdk:
+    destroy: "{{.EnvironmentVariables}} cdk bootstrap && {{.EnvironmentVariables}} cdk destroy {{.ExecuteArguments}}"
     diff: "{{.EnvironmentVariables}} cdk bootstrap && {{.EnvironmentVariables}} cdk diff {{.ExecuteArguments}}"
     sync: "{{.EnvironmentVariables}} cdk bootstrap && {{.EnvironmentVariables}} cdk deploy {{.ExecuteArguments}}"
   terraform:
