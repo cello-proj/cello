@@ -1,6 +1,6 @@
 arguments:
   execute:
-    - "--no-color --require-approval never --force"
+    - "--no-color --force"
 environment_variables:
   AWS_REGION: us-west-2
   CODE_URI: https://github.com/cello-proj/cello/releases/download/v0.4.6/cdk-typescript-example.tar.gz
