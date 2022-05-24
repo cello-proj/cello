@@ -175,7 +175,5 @@ kubectl exec vault-0 -- mkdir -p /home/vault/.aws
 kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 
 echo "Cello started, forwarding to port 8443"
-export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
+export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep cello)"
 kubectl port-forward $CELLO_POD 8443:8443
-
-
