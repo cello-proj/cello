@@ -108,11 +108,11 @@ set -e
 # dont fail if alredy exists
 set +e
 export POSTGRES_POD="$(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep postgres)"
-kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep argocloudops
+kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep cello
 if [ $? != 0 ]; then
+  kubectl exec $POSTGRES_POD -- createdb cello -U postgres
   kubectl cp ./scripts/createdbtables.sql $POSTGRES_POD:./createdbtables.sql
-  kubectl exec $POSTGRES_POD -- createdb argocloudops -U postgres
-  kubectl exec $POSTGRES_POD -- psql -U postgres -d argocloudops -f ./createdbtables.sql
+  kubectl exec $POSTGRES_POD -- psql -U postgres -d cello -f ./createdbtables.sql
 fi
 set -e
 

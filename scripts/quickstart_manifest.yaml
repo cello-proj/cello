@@ -723,9 +723,9 @@ spec:
           - name: CELLO_DB_HOST
             value: $(POSTGRES_SERVICE_HOST)
           - name: CELLO_DB_NAME
-            value: argocloudops
+            value: cello
           - name: CELLO_DB_USER
-            value: argoco
+            value: cello
           - name: CELLO_DB_PASSWORD
             value: "1234"
           - name: CELLO_GIT_AUTH_METHOD
