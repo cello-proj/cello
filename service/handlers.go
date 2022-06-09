@@ -554,6 +554,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		Repository: capp.Repository,
 	})
 	if err != nil {
+		level.Error(l).Log("message", "error inserting project to db", "error", err)
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
 		return
 	}
