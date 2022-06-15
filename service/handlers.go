@@ -604,13 +604,24 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	level.Debug(l).Log("message", "getting project")
+	level.Debug(l).Log("message", "getting project from credentials provider")
 	resp, err := cp.GetProject(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project", "error", err)
 		h.errorResponse(w, "error retrieving project", http.StatusNotFound)
 		return
 	}
+
+	level.Debug(l).Log("message", "getting project from database")
+	ctx := r.Context()
+	projectEntry, err := h.dbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving project from database", "error", err)
+		h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		return
+	}
+
+	resp.Repository = projectEntry.Repository
 
 	data, err := json.Marshal(resp)
 	if err != nil {

@@ -18,7 +18,8 @@ type GetLogs struct {
 
 // GetProject represents the responses for GetProject.
 type GetProject struct {
-	Name string `json:"name"`
+	Name       string `json:"name"`
+	Repository string `json:"repository"`
 }
 
 // GetWorkflows represents the responses for GetWorkflows.
