@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/cello-proj/cello/internal/requests"
+	"github.com/cello-proj/cello/internal/responses"
 	"github.com/cello-proj/cello/internal/types"
 	"github.com/cello-proj/cello/service/internal/credentials"
 	"github.com/cello-proj/cello/service/internal/db"
@@ -19,6 +21,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/gorilla/mux"
+	upper "github.com/upper/db/v4"
 	"gopkg.in/yaml.v2"
 )
 
@@ -596,32 +599,23 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	level.Debug(l).Log("message", "creating credential provider")
-	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
-	if err != nil {
-		level.Error(l).Log("message", "error creating credentials provider", "error", err)
-		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
-		return
-	}
-
-	level.Debug(l).Log("message", "getting project from credentials provider")
-	resp, err := cp.GetProject(projectName)
-	if err != nil {
-		level.Error(l).Log("message", "error retrieving project", "error", err)
-		h.errorResponse(w, "error retrieving project", http.StatusNotFound)
-		return
-	}
-
 	level.Debug(l).Log("message", "getting project from database")
 	ctx := r.Context()
 	projectEntry, err := h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error retrieving project from database", "error", err)
-		h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error retrieving project", "error", err)
+		if errors.Is(err, upper.ErrNoMoreRows) {
+			h.errorResponse(w, "error retrieving project", http.StatusNotFound)
+		} else {
+			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		}
 		return
 	}
 
-	resp.Repository = projectEntry.Repository
+	resp := responses.GetProject{
+		Name:       projectName,
+		Repository: projectEntry.Repository,
+	}
 
 	data, err := json.Marshal(resp)
 	if err != nil {
