@@ -10,6 +10,7 @@ import (
 type ProjectEntry struct {
 	ProjectID  string `db:"project"`
 	Repository string `db:"repository"`
+	TokenID string `db:"token"`
 }
 
 // Client allows for db crud operations
