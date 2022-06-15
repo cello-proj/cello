@@ -15,7 +15,7 @@ Request Body
 
 Response Body
 
-```
+```json
 {
   "token": "abcd-1234"
 }
@@ -27,9 +27,10 @@ GET /projects/<project_name>
 
 Response Body
 
-```
+```json
 {
-  "name": "myproject"
+  "name": "myproject",
+  "repository": "git@github.com:myorg/myrepo.git"
 }
 ```
 
