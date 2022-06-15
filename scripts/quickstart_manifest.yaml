@@ -605,6 +605,7 @@ spec:
     - ReadWriteMany
   hostPath:
     path: "/mnt/data/postgres"
+  persistentVolumeReclaimPolicy: Recycle
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1

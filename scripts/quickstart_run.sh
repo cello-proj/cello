@@ -77,6 +77,7 @@ fi
 set +e
 echo "Building docker image"
 docker build --pull --rm -f "Dockerfile" --build-arg BINARY=quickstart/service -t cello:latest "."
+docker build --pull --rm -f "Dockerfile.db_migration" -t cello-db-migration:latest "."
 echo "Checking for Argo Workflows"
 kubectl get ns | grep argo
 if [ $? != 0 ]; then
@@ -111,10 +112,13 @@ export POSTGRES_POD="$(kubectl get pods --no-headers -o custom-columns=":metadat
 kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep cello
 if [ $? != 0 ]; then
   kubectl exec $POSTGRES_POD -- createdb cello -U postgres
-  kubectl cp ./scripts/createdbtables.sql $POSTGRES_POD:./createdbtables.sql
-  kubectl exec $POSTGRES_POD -- psql -U postgres -d cello -f ./createdbtables.sql
 fi
 set -e
+
+# run DB migration job after Postgres DB is fully stood up
+echo "Applying DB migration manifest"
+kubectl apply -f ./scripts/quickstart_db_migration_manifest.yaml
+# TODO: check if migration is successfull
 
 # setup workflow if it doesn't exist
 set +e
