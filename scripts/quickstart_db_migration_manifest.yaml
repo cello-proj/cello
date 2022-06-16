@@ -18,7 +18,7 @@ spec:
         imagePullPolicy: IfNotPresent
         command: ['/migrate']
         # TODO: get user and pass from configmap
-        args: ['-path', '/db_migration', '-database', "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_SERVICE_HOST):$(POSTGRES_SERVICE_PORT)/cello?sslmode=disable", 'up']
+        args: ['-path', '/db_migrations', '-database', "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_SERVICE_HOST):$(POSTGRES_SERVICE_PORT)/cello?sslmode=disable", 'up']
         envFrom:
           - configMapRef:
               name: postgres-config
