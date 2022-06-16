@@ -106,7 +106,7 @@ echo "Pods ready. Initializing environment"
 set -e
 
 # setup postgres db
-# dont fail if alredy exists
+# don't fail if already exists
 set +e
 export POSTGRES_POD="$(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep postgres)"
 kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep cello
@@ -118,7 +118,22 @@ set -e
 # run DB migration job after Postgres DB is fully stood up
 echo "Applying DB migration manifest"
 kubectl apply -f ./scripts/quickstart_db_migration_manifest.yaml
-# TODO: check if migration is successfull
+
+while : ; do
+  echo "Waiting for DB migration job to complete"
+  status=$(kubectl get job migrate-db -o jsonpath='{.status.conditions[].type}')
+  if [ -z $status ]; then
+    sleep 5
+    continue
+  fi
+  if [ $status == 'Complete' ]; then
+    break
+  fi
+  if [ $status == 'Failed' ]; then
+    echo "ERROR: migration job failed. Please check pod logs and ."
+    exit 1
+  fi
+done
 
 # setup workflow if it doesn't exist
 set +e
