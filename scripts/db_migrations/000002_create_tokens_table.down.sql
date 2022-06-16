@@ -1,4 +1,2 @@
-ALTER TABLE projects DROP COLUMN token_ids;
-
 REVOKE ALL PRIVILEGES ON tokens FROM cello;
 DROP TABLE IF EXISTS tokens;
