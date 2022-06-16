@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
+	upper "github.com/upper/db/v4"
 )
 
 const (
@@ -48,6 +49,9 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 }
 
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
+	if project == "projectdoesnotexist" {
+		return db.ProjectEntry{}, upper.ErrNoMoreRows
+	}
 	return db.ProjectEntry{}, nil
 }
 
