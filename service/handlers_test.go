@@ -48,6 +48,13 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 	return nil
 }
 
+func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
+	if project == "projectdoesnotexist" {
+		return []db.TokenEntry{}, upper.ErrNoMoreRows
+	}
+	return []db.TokenEntry{}, nil
+}
+
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
 	if project == "projectdoesnotexist" {
 		return db.ProjectEntry{}, upper.ErrNoMoreRows

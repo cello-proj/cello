@@ -12,11 +12,18 @@ type ProjectEntry struct {
 	Repository string `db:"repository"`
 }
 
+type TokenEntry struct {
+	CreatedAt string `db:"created_at"`
+	ProjectID string `db:"project"`
+	TokenID   string `db:"token_id"`
+}
+
 // Client allows for db crud operations
 type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
-	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	DeleteProjectEntry(ctx context.Context, project string) error
+	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
+	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 }
 
 // SQLClient allows for db crud operations using postgres db
@@ -28,6 +35,7 @@ type SQLClient struct {
 }
 
 const ProjectEntryDB = "projects"
+const TokenEntryDB = "tokens"
 
 func NewSQLClient(host, database, user, password string) (SQLClient, error) {
 	return SQLClient{
@@ -67,6 +75,19 @@ func (d SQLClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) erro
 
 		return nil
 	})
+}
+
+func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
+	res := []TokenEntry{}
+
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
+	return res, err
 }
 
 func (d SQLClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
