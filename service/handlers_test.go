@@ -28,10 +28,11 @@ import (
 
 const (
 	// #nosec
-	testPassword      = "D34DB33FD34DB33FD34DB33FD34DB33F"
-	userAuthHeader    = "vault:user:" + testPassword
-	invalidAuthHeader = "bad auth header"
-	adminAuthHeader   = "vault:admin:" + testPassword
+	testPassword        = "D34DB33FD34DB33FD34DB33FD34DB33F"
+	userAuthHeader      = "vault:user:" + testPassword
+	invalidAuthHeader   = "bad auth header"
+	adminAuthHeader     = "vault:admin:" + testPassword
+	projectDoesNotExist = "projectdoesnotexist"
 )
 
 type mockDB struct{}
@@ -49,14 +50,14 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 }
 
 func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
-	if project == "projectdoesnotexist" {
+	if project == projectDoesNotExist {
 		return []db.TokenEntry{}, upper.ErrNoMoreRows
 	}
 	return []db.TokenEntry{}, nil
 }
 
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
-	if project == "projectdoesnotexist" {
+	if project == projectDoesNotExist {
 		return db.ProjectEntry{}, upper.ErrNoMoreRows
 	}
 	return db.ProjectEntry{}, nil
@@ -130,7 +131,7 @@ func (m mockCredentialsProvider) DeleteProject(name string) error {
 }
 
 func (m mockCredentialsProvider) GetProject(proj string) (responses.GetProject, error) {
-	if proj == "projectdoesnotexist" {
+	if proj == projectDoesNotExist {
 		return responses.GetProject{}, credentials.ErrNotFound
 	}
 	return responses.GetProject{Name: "project1"}, nil
