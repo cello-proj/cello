@@ -33,6 +33,13 @@ type GetWorkflowStatus struct {
 	Finished string `json:"finished"`
 }
 
+// ListTokens represents the responses for ListTokens.
+type ListTokens struct {
+	CreatedAt string `json:"created_at"`
+	ProjectID string `json:"project"`
+	TokenID   string `json:"token_id"`
+}
+
 // Sync represents the responses for Sync.
 type Sync TargetOperation
 

@@ -53,7 +53,28 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 	if project == projectDoesNotExist {
 		return []db.TokenEntry{}, upper.ErrNoMoreRows
 	}
-	return []db.TokenEntry{}, nil
+
+	if project == "projectnotokens" {
+		return []db.TokenEntry{}, nil
+	}
+
+	return []db.TokenEntry{
+		{
+			CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+			ProjectID: "project1",
+			TokenID:   "ghi789",
+		},
+		{
+			CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+			ProjectID: "project1",
+			TokenID:   "def456",
+		},
+		{
+			CreatedAt: "2022-06-21T14:42:50.182037-07:00",
+			ProjectID: "project1",
+			TokenID:   "abc123",
+		},
+	}, nil
 }
 
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
@@ -691,6 +712,44 @@ func TestListWorkflows(t *testing.T) {
 			authHeader: userAuthHeader,
 			method:     "GET",
 			url:        "/projects/projects1/targets/target1/workflows",
+		},
+	}
+	runTests(t, tests)
+}
+
+func TestListTokens(t *testing.T) {
+	tests := []test{
+		{
+			name:       "fails to list tokens when not admin",
+			want:       http.StatusUnauthorized,
+			respFile:   "TestListTokens/fails_to_list_tokens_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "can list tokens",
+			want:       http.StatusOK,
+			respFile:   "TestListTokens/can_list_tokens_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "project not found",
+			want:       http.StatusNotFound,
+			respFile:   "TestListTokens/project_not_found_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectdoesnotexist/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "no tokens",
+			want:       http.StatusOK,
+			respFile:   "TestListTokens/no_tokens_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectnotokens/tokens",
+			method:     "GET",
 		},
 	}
 	runTests(t, tests)

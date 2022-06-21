@@ -1006,7 +1006,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project", "error", err)
 		if errors.Is(err, upper.ErrNoMoreRows) {
-			h.errorResponse(w, "error retrieving project", http.StatusNotFound)
+			h.errorResponse(w, "project does not exist", http.StatusNotFound)
 		} else {
 			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
 		}
@@ -1020,7 +1020,16 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := json.Marshal(tokens)
+	resp := []responses.ListTokens{}
+	for _, tokenEntry := range tokens {
+		resp = append(resp, responses.ListTokens{
+			CreatedAt: tokenEntry.CreatedAt,
+			ProjectID: tokenEntry.ProjectID,
+			TokenID:   tokenEntry.TokenID,
+		})
+	}
+
+	data, err := json.Marshal(resp)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing project tokens", "error", err)
 		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
