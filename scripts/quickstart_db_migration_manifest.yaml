@@ -1,0 +1,23 @@
+# golang-migrate cello DB migration job
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-db
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 30
+  template:
+    metadata:
+      name: migrate-db-job
+    spec:
+      containers:
+      - name: migrate-db
+        image: cello-db-migration:latest
+        imagePullPolicy: IfNotPresent
+        command: ['/migrate']
+        args: ['-path', '/db_migrations', '-database', "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_SERVICE_HOST):$(POSTGRES_SERVICE_PORT)/cello?sslmode=disable", 'up']
+        envFrom:
+          - configMapRef:
+              name: postgres-config
+      restartPolicy: Never
