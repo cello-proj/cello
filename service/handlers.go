@@ -981,6 +981,37 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
+// Delete a token
+func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+	tokenID := vars["tokenID"]
+
+	l := h.requestLogger(r, "op", "delete-token", "project", projectName, "tokenID", tokenID)
+
+	level.Debug(l).Log("message", "validating authorization header for delete token")
+
+	ah := r.Header.Get("Authorization")
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
+	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	ctx := r.Context()
+
+	level.Debug(l).Log("message", "deleting token from database")
+	if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
+		level.Error(l).Log("message", "error deleting token in database", "error", err)
+		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+		return
+	}
+}
+
 // Lists tokens for a project
 func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

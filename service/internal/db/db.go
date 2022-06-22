@@ -22,8 +22,9 @@ type TokenEntry struct {
 type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
 	DeleteProjectEntry(ctx context.Context, project string) error
-	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
+	DeleteTokenEntry(ctx context.Context, token string) error
+	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 }
 
 // SQLClient allows for db crud operations using postgres db
@@ -77,19 +78,6 @@ func (d SQLClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) erro
 	})
 }
 
-func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
-	res := []TokenEntry{}
-
-	sess, err := d.createSession()
-	if err != nil {
-		return res, err
-	}
-	defer sess.Close()
-
-	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
-	return res, err
-}
-
 func (d SQLClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
 	res := ProjectEntry{}
 
@@ -111,4 +99,27 @@ func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error
 	defer sess.Close()
 
 	return sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).Delete()
+}
+
+func (d SQLClient) DeleteTokenEntry(ctx context.Context, token string) error {
+	sess, err := d.createSession()
+	if err != nil {
+		return err
+	}
+	defer sess.Close()
+
+	return sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).Delete()
+}
+
+func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
+	res := []TokenEntry{}
+
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
+	return res, err
 }

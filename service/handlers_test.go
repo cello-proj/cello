@@ -50,6 +50,33 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 	return nil
 }
 
+func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
+	if project == projectDoesNotExist {
+		return db.ProjectEntry{}, upper.ErrNoMoreRows
+	}
+
+	if project == "projectreaderror" {
+		return db.ProjectEntry{}, errors.New("error reading DB")
+	}
+
+	return db.ProjectEntry{}, nil
+}
+
+func (d mockDB) DeleteProjectEntry(ctx context.Context, project string) error {
+	if project == "somedeletedberror" {
+		return fmt.Errorf("some db error")
+	}
+
+	return nil
+}
+
+func (d mockDB) DeleteTokenEntry(ctx context.Context, token string) error {
+	if token == "deletetokenerror" {
+		return errors.New("error deleting entry")
+	}
+	return nil
+}
+
 func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
 	if project == projectDoesNotExist {
 		return []db.TokenEntry{}, upper.ErrNoMoreRows
@@ -81,26 +108,6 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 			TokenID:   "abc123",
 		},
 	}, nil
-}
-
-func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
-	if project == projectDoesNotExist {
-		return db.ProjectEntry{}, upper.ErrNoMoreRows
-	}
-
-	if project == "projectreaderror" {
-		return db.ProjectEntry{}, errors.New("error reading DB")
-	}
-
-	return db.ProjectEntry{}, nil
-}
-
-func (d mockDB) DeleteProjectEntry(ctx context.Context, project string) error {
-	if project == "somedeletedberror" {
-		return fmt.Errorf("some db error")
-	}
-
-	return nil
 }
 
 type mockGitClient struct{}
@@ -728,6 +735,51 @@ func TestListWorkflows(t *testing.T) {
 	runTests(t, tests)
 }
 
+func TestDeleteToken(t *testing.T) {
+	tests := []test{
+		{
+			name:       "fails to delete tokens when not admin",
+			want:       http.StatusUnauthorized,
+			respFile:   "TestDeleteToken/fails_to_delete_token_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/project/tokens/existingtoken",
+			method:     "DELETE",
+		},
+		{
+			name:       "can delete token",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project/tokens/existingtoken",
+			method:     "DELETE",
+		},
+		{
+			name:       "project does not exist",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectdoesnotexist/tokens/tokendoesnotexist",
+			method:     "DELETE",
+		},
+		{
+			name:       "tokens does not exist",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project/tokens/tokendoesnotexist",
+			method:     "DELETE",
+		},
+		{
+			name:       "token delete error",
+			want:       http.StatusInternalServerError,
+			respFile:   "TestDeleteToken/token_delete_error_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project/tokens/deletetokenerror",
+			method:     "GET",
+		},
+	}
+	runTests(t, tests)
+}
 func TestListTokens(t *testing.T) {
 	tests := []test{
 		{
@@ -917,8 +969,23 @@ func runTests(t *testing.T, tests []test) {
 				assert.Nil(t, err)
 
 				defer resp.Body.Close()
+				if tt.name == "can delete token" {
+					fmt.Println("Printing wantbody")
+					fmt.Printf("%+v", string(wantBody))
+					fmt.Println("Printing body")
+					fmt.Printf("%+v", string(body))
+				}
 
-				assert.JSONEq(t, string(wantBody), string(body))
+				stringWantBody := string(wantBody)
+				stringBody := string(body)
+
+				if stringWantBody == "" && stringBody == "" {
+					assert.Equal(t, stringWantBody, stringBody)
+				} else if (stringWantBody == "" && stringBody != "") || (stringWantBody != "" && stringBody == "") {
+					assert.Fail(t, "want and expected do not match")
+				} else {
+					assert.JSONEq(t, string(wantBody), string(body))
+				}
 			}
 		})
 	}
