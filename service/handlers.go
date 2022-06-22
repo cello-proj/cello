@@ -1015,8 +1015,8 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error listing targets", "error", err)
-		h.errorResponse(w, "error listing targets", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error listing tokens", "error", err)
+		h.errorResponse(w, "error listing tokens", http.StatusInternalServerError)
 		return
 	}
 
@@ -1024,7 +1024,6 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	for _, tokenEntry := range tokens {
 		resp = append(resp, responses.ListTokens{
 			CreatedAt: tokenEntry.CreatedAt,
-			ProjectID: tokenEntry.ProjectID,
 			TokenID:   tokenEntry.TokenID,
 		})
 	}

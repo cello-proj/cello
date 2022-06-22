@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -54,6 +55,14 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 		return []db.TokenEntry{}, upper.ErrNoMoreRows
 	}
 
+	if project == "projectreaderror" {
+		return []db.TokenEntry{}, errors.New("error reading DB")
+	}
+
+	if project == "projectlisttokenserror" {
+		return []db.TokenEntry{}, errors.New("error reading DB")
+	}
+
 	if project == "projectnotokens" {
 		return []db.TokenEntry{}, nil
 	}
@@ -61,17 +70,14 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 	return []db.TokenEntry{
 		{
 			CreatedAt: "2022-06-21T14:56:10.341066-07:00",
-			ProjectID: "project1",
 			TokenID:   "ghi789",
 		},
 		{
 			CreatedAt: "2022-06-21T14:43:16.172896-07:00",
-			ProjectID: "project1",
 			TokenID:   "def456",
 		},
 		{
 			CreatedAt: "2022-06-21T14:42:50.182037-07:00",
-			ProjectID: "project1",
 			TokenID:   "abc123",
 		},
 	}, nil
@@ -81,6 +87,11 @@ func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.Projec
 	if project == projectDoesNotExist {
 		return db.ProjectEntry{}, upper.ErrNoMoreRows
 	}
+
+	if project == "projectreaderror" {
+		return db.ProjectEntry{}, errors.New("error reading DB")
+	}
+
 	return db.ProjectEntry{}, nil
 }
 
@@ -749,6 +760,22 @@ func TestListTokens(t *testing.T) {
 			respFile:   "TestListTokens/no_tokens_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectnotokens/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "project read error",
+			want:       http.StatusInternalServerError,
+			respFile:   "TestListTokens/project_read_error_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectreaderror/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "list tokens read error",
+			want:       http.StatusInternalServerError,
+			respFile:   "TestListTokens/list_tokens_error_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectlisttokenserror/tokens",
 			method:     "GET",
 		},
 	}

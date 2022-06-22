@@ -36,7 +36,7 @@ type GetWorkflowStatus struct {
 // ListTokens represents the responses for ListTokens.
 type ListTokens struct {
 	CreatedAt string `json:"created_at"`
-	ProjectID string `json:"project"`
+	ProjectID string `json:"project,omitempty"`
 	TokenID   string `json:"token_id"`
 }
 
