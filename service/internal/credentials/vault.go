@@ -22,6 +22,7 @@ const (
 type Provider interface {
 	CreateProject(string) (string, string, error)
 	CreateTarget(string, types.Target) error
+	CreateToken(string) (string, string, error)
 	UpdateTarget(string, types.Target) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
@@ -186,11 +187,7 @@ func genProjectAppRole(name string) string {
 	return fmt.Sprintf("%s/%s-%s", vaultAppRolePrefix, vaultProjectPrefix, name)
 }
 
-func (v VaultProvider) CreateProject(name string) (string, string, error) {
-	if !v.isAdmin() {
-		return "", "", errors.New("admin credentials must be used to create project")
-	}
-
+func (v VaultProvider) CreateToken(name string) (string, string, error) {
 	policy := defaultVaultReadonlyPolicyAWS(name)
 	err := v.createPolicyState(name, policy)
 	if err != nil {
@@ -207,6 +204,20 @@ func (v VaultProvider) CreateProject(name string) (string, string, error) {
 	}
 
 	roleID, err := v.readRoleID(name)
+	if err != nil {
+		return "", "", err
+	}
+
+	return roleID, secretID, nil
+}
+
+func (v VaultProvider) CreateProject(name string) (string, string, error) {
+	if !v.isAdmin() {
+		return "", "", errors.New("admin credentials must be used to create project")
+	}
+
+	roleID, secretID, err := v.CreateToken(name)
+
 	if err != nil {
 		return "", "", err
 	}

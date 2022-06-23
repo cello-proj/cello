@@ -2,15 +2,22 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
+	"github.com/google/uuid"
 )
 
 type ProjectEntry struct {
 	ProjectID  string `db:"project"`
 	Repository string `db:"repository"`
-	TokenID string `db:"token"`
+}
+
+type TokenEntry struct {
+	CreatedAt string `db:"created_at"`
+	ProjectID string `db:"project"`
+	TokenID   string `db:"token_id"`
 }
 
 // Client allows for db crud operations
@@ -18,6 +25,7 @@ type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	DeleteProjectEntry(ctx context.Context, project string) error
+	CreateTokenEntry(ctx context.Context, project string) (TokenEntry, error)
 }
 
 // SQLClient allows for db crud operations using postgres db
@@ -29,6 +37,7 @@ type SQLClient struct {
 }
 
 const ProjectEntryDB = "projects"
+const TokenEntryDB = "tokens"
 
 func NewSQLClient(host, database, user, password string) (SQLClient, error) {
 	return SQLClient{
@@ -91,4 +100,30 @@ func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error
 	defer sess.Close()
 
 	return sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).Delete()
+}
+
+func (d SQLClient) CreateTokenEntry(ctx context.Context, project string) (TokenEntry, error) {
+	res := TokenEntry{}
+	
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Tx(func(sess db.Session) error {
+		res = TokenEntry{
+			CreatedAt: time.Now().Format(time.RFC3339),
+			ProjectID: project,
+			TokenID: uuid.New().String(),
+		}
+
+		if _, err = sess.Collection(TokenEntryDB).Insert(res); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return res, err
 }

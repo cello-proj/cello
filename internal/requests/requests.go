@@ -118,6 +118,11 @@ type CreateProject struct {
 	Repository string `json:"repository" valid:"required~repository is required"`
 }
 
+// CreateToken request.
+type CreateToken struct {
+	Name       string `json:"name" valid:"required~name is required,alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
+}
+
 // Validate validates CreateProject.
 func (req CreateProject) Validate() error {
 	v := []func() error{

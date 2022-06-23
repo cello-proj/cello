@@ -976,6 +976,91 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
+// Creates a token
+func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
+	// REQUEST
+	// {
+
+	// }
+	
+	//  RESPONSE
+	// {
+	// 	"created_at": "$date/$time",
+	// 	"token": "baz",
+	// 	"token_id": "bar"
+	//   }
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+
+	l := h.requestLogger(r, "op", "create-token", "project", projectName)
+
+	level.Debug(l).Log("message", "validating authorization header for token list")
+	ah := r.Header.Get("Authorization")
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
+	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	ctx := r.Context()
+
+	var capp requests.CreateToken
+
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	projectExists, err := cp.ProjectExists(capp.Name)
+	if err != nil {
+		level.Error(l).Log("message", "error checking project", "error", err)
+		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
+		return
+	}
+
+	if !projectExists {
+		level.Error(l).Log("error", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusBadRequest)
+		return
+	}
+
+
+
+
+	level.Debug(l).Log("message", "creating token")
+	role, secret, err := cp.CreateProject(capp.Name)
+	if err != nil {
+		level.Error(l).Log("message", "error creating project", "error", err)
+		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
+		return
+	}
+
+	level.Debug(l).Log("message", "inserting into db")
+	_, err = h.dbClient.CreateTokenEntry(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error inserting token to db", "error", err)
+		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
+		return
+	}
+
+	level.Debug(l).Log("message", "retrieving Cello token")
+	t := newCelloToken("vault", role, secret)
+	jsonResult, err := json.Marshal(t)
+	if err != nil {
+		level.Error(l).Log("message", "error serializing token", "error", err)
+		h.errorResponse(w, "error serializing token", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w, string(jsonResult))
+}
+
 // Convenience method that writes a failure response in a standard manner
 func (h handler) errorResponse(w http.ResponseWriter, message string, httpStatus int) {
 	r := generateErrorResponseJSON(message)
