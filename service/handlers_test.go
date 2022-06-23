@@ -775,7 +775,7 @@ func TestDeleteToken(t *testing.T) {
 			respFile:   "TestDeleteToken/token_delete_error_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/deletetokenerror",
-			method:     "GET",
+			method:     "DELETE",
 		},
 	}
 	runTests(t, tests)
@@ -969,19 +969,15 @@ func runTests(t *testing.T, tests []test) {
 				assert.Nil(t, err)
 
 				defer resp.Body.Close()
-				if tt.name == "can delete token" {
-					fmt.Println("Printing wantbody")
-					fmt.Printf("%+v", string(wantBody))
-					fmt.Println("Printing body")
-					fmt.Printf("%+v", string(body))
-				}
 
 				stringWantBody := string(wantBody)
 				stringBody := string(body)
 
 				if stringWantBody == "" && stringBody == "" {
 					assert.Equal(t, stringWantBody, stringBody)
-				} else if (stringWantBody == "" && stringBody != "") || (stringWantBody != "" && stringBody == "") {
+				} else if stringWantBody == "" || stringBody == "" {
+					fmt.Println(stringBody)
+					fmt.Println(stringWantBody)
 					assert.Fail(t, "want and expected do not match")
 				} else {
 					assert.JSONEq(t, string(wantBody), string(body))
