@@ -1,3 +1,5 @@
+//go:generate go run -mod=vendor github.com/matryer/moq -out ../../test/testhelpers/dbClientMock.go -pkg testhelpers . Client:DBClientMock
+
 package db
 
 import (

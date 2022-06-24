@@ -21,6 +21,7 @@ import (
 	"github.com/cello-proj/cello/service/internal/env"
 	"github.com/cello-proj/cello/service/internal/git"
 	"github.com/cello-proj/cello/service/internal/workflow"
+	th "github.com/cello-proj/cello/service/test/testhelpers"
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
@@ -240,6 +241,7 @@ type test struct {
 	authHeader string
 	url        string
 	method     string
+	dbMock     *th.DBClientMock
 }
 
 func TestCreateProject(t *testing.T) {
@@ -753,6 +755,19 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectdoesnotexist/tokens",
 			method:     "GET",
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{}, upper.ErrNoMoreRows
+				},
+			},
+		},
+		{
+			name:       "project not found",
+			want:       http.StatusNotFound,
+			respFile:   "TestListTokens/project_not_found_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectdoesnotexist/tokens",
+			method:     "GET",
 		},
 		{
 			name:       "no tokens",
@@ -779,7 +794,8 @@ func TestListTokens(t *testing.T) {
 			method:     "GET",
 		},
 	}
-	runTests(t, tests)
+
+	runTestsV2(t, tests)
 }
 
 func TestHealthCheck(t *testing.T) {
@@ -924,6 +940,65 @@ func runTests(t *testing.T, tests []test) {
 	}
 }
 
+// Run tests, checking the response status codes.
+func runTestsV2(t *testing.T, tests []test) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config, err := loadConfig(testConfigPath)
+			if err != nil {
+				panic(fmt.Sprintf("Unable to load config %s", err))
+			}
+
+			h := handler{
+				logger:                 log.NewNopLogger(),
+				newCredentialsProvider: newMockProvider,
+				argo:                   mockWorkflowSvc{},
+				argoCtx:                context.Background(),
+				config:                 config,
+				gitClient:              newMockGitClient(),
+				env: env.Vars{
+					AdminSecret: testPassword,
+				},
+				dbClient: newMockDB(),
+			}
+
+			if tt.dbMock != nil {
+				h.dbClient = tt.dbMock
+			}
+
+			resp := executeRequestWithHandler(h, tt.method, tt.url, serialize(tt.req), tt.authHeader)
+			if resp.StatusCode != tt.want {
+				t.Errorf("Unexpected status code %d", resp.StatusCode)
+			}
+
+			if tt.body != "" {
+				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				if err != nil {
+					t.Errorf("Error loading body")
+				}
+				if tt.body != string(bodyBytes) {
+					t.Errorf("Unexpected body '%s', expected '%s'", bodyBytes, tt.body)
+				}
+			}
+
+			if tt.respFile != "" {
+				wantBody, err := loadFileBytes(tt.respFile)
+				if err != nil {
+					t.Fatalf("unable to read response file '%s', err: '%s'", tt.respFile, err)
+				}
+
+				body, err := io.ReadAll(resp.Body)
+				assert.Nil(t, err)
+
+				defer resp.Body.Close()
+
+				assert.JSONEq(t, string(wantBody), string(body))
+			}
+		})
+	}
+}
+
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
 func executeRequest(method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
 	config, err := loadConfig(testConfigPath)
@@ -953,9 +1028,19 @@ func executeRequest(method string, url string, body *bytes.Buffer, authHeader st
 	return w.Result()
 }
 
+func executeRequestWithHandler(h handler, method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
+	var router = setupRouter(h)
+	req, _ := http.NewRequest(method, url, serialize(body))
+
+	req.Header.Add("Authorization", authHeader)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	return w.Result()
+}
+
 // loadFileBytes returns the contents of a file in the 'testdata' directory.
 func loadFileBytes(filename string) ([]byte, error) {
-	file := filepath.Join("testdata", filename)
+	file := filepath.Join("test/testdata", filename)
 	return os.ReadFile(file)
 }
 
