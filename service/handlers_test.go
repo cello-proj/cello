@@ -127,7 +127,6 @@ func (m mockCredentialsProvider) CreateToken(name string) (string, string, strin
 	return "", "", "", nil
 }
 
-
 func (m mockCredentialsProvider) DeleteProject(name string) error {
 	if name == "undeletableproject" {
 		return fmt.Errorf("Some error occured deleting this project")
