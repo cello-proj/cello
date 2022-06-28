@@ -1024,29 +1024,31 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating token")
-	_, secret, secret_accessor, err := cp.CreateToken(projectName)
+	role, secret, secretAccessor, err := cp.CreateToken(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error creating token", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
 
+
 	level.Debug(l).Log("message", "inserting into db")
-	te, err := h.dbClient.CreateTokenEntry(ctx, projectName, secret_accessor)
+	te, err := h.dbClient.CreateTokenEntry(ctx, projectName, secretAccessor)
 	if err != nil {
 		level.Error(l).Log("message", "error inserting token to db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
 
-	resp := db.TokenResponse{
+	token := newCelloToken("vault", role, secret)
+
+	resp := responses.TokenResponse{
 		CreatedAt: te.CreatedAt,
-		Token:     secret,
+		Token:     token.Token,
 		TokenID:   te.TokenID,
 	}
 
-	level.Debug(l).Log("message", "retrieving Cello token")
-	// t := newCelloToken("vault", role, secret)
+
 	jsonResult, err := json.Marshal(resp)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing token", "error", err)

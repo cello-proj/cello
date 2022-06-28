@@ -188,7 +188,7 @@ func genProjectAppRole(name string) string {
 }
 
 func (v VaultProvider) CreateToken(name string) (string, string, string, error) {
-	secretID, secretIDAccessor, err := v.generateSecrets(name)
+	secretID, secretAccessor, err := v.generateSecrets(name)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -198,7 +198,7 @@ func (v VaultProvider) CreateToken(name string) (string, string, string, error) 
 		return "", "", "", err
 	}
 
-	return roleID, secretID, secretIDAccessor, nil
+	return roleID, secretID, secretAccessor, nil
 }
 
 func (v VaultProvider) CreateProject(name string) (string, string, error) {

@@ -19,18 +19,12 @@ type TokenEntry struct {
 	TokenID   string `db:"token_id"`
 }
 
-type TokenResponse struct {
-	CreatedAt string `json:"created_at"`
-	Token     string `json:"token"`
-	TokenID   string `json:"token_id"`
-}
-
 // Client allows for db crud operations
 type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	DeleteProjectEntry(ctx context.Context, project string) error
-	CreateTokenEntry(ctx context.Context, project string, secret_id_accessor string) (TokenEntry, error)
+	CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (TokenEntry, error)
 }
 
 // SQLClient allows for db crud operations using postgres db
@@ -107,7 +101,7 @@ func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error
 	return sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).Delete()
 }
 
-func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secret_id_accessor string) (TokenEntry, error) {
+func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (TokenEntry, error) {
 	res := TokenEntry{}
 
 	sess, err := d.createSession()
@@ -120,7 +114,7 @@ func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secret_
 		res = TokenEntry{
 			CreatedAt: time.Now().Format(time.RFC3339),
 			ProjectID: project,
-			TokenID:   secret_id_accessor,
+			TokenID:   secretAccessor,
 		}
 
 		if _, err = sess.Collection(TokenEntryDB).Insert(res); err != nil {

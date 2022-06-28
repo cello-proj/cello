@@ -48,9 +48,9 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 	return nil
 }
 
-func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secret_id_accessor string) (db.TokenEntry, error) {
-	if project == "somedberror" {
-		return db.TokenEntry{}, fmt.Errorf("some db error")
+func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error) {
+	if project == "tokendberror" {
+		return db.TokenEntry{}, fmt.Errorf("token db error")
 	}
 
 	return db.TokenEntry{}, nil
@@ -183,6 +183,7 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 		"undeletableprojecttargets",
 		"undeletableproject",
 		"somedeletedberror",
+		"tokendberror",
 	}
 	for _, existingProjects := range existingProjects {
 		if name == existingProjects {
@@ -286,10 +287,19 @@ func TestCreateToken(t *testing.T) {
 		},
 		{
 			name:       "fails to create token when not admin",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
 			want:       http.StatusUnauthorized,
 			respFile:   "TestCreateToken/fails_to_create_token_when_not_admin_response.json",
 			authHeader: userAuthHeader,
 			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "token fails to create db entry",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects/tokendberror/tokens",
 			method:     "POST",
 		},
 	}
