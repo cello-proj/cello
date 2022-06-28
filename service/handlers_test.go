@@ -87,7 +87,6 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 	return []db.TokenEntry{}, upper.ErrNoMoreRows
 }
 
-// TODO: is this needed?
 func (d mockDB) DeleteTokenEntry(ctx context.Context, token string) error {
 	return nil
 }
