@@ -44,6 +44,9 @@ type DBClientMock struct {
 	// DeleteProjectEntryFunc mocks the DeleteProjectEntry method.
 	DeleteProjectEntryFunc func(ctx context.Context, project string) error
 
+	// CreateTokenEntryFunc mocks the CreateTokenEntry method.
+	CreateTokenEntryFunc func(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error)
+
 	// ListTokenEntriesFunc mocks the ListTokenEntries method.
 	ListTokenEntriesFunc func(ctx context.Context, project string) ([]db.TokenEntry, error)
 
@@ -66,6 +69,15 @@ type DBClientMock struct {
 			// Project is the project argument value.
 			Project string
 		}
+		// CreateTokenEntry holds details about calls to the CreateTokenEntry method.
+		CreateTokenEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
+			// SecretAccessor is the secretAccessor argument value.
+			SecretAccessor string
+		}
 		// ListTokenEntries holds details about calls to the ListTokenEntries method.
 		ListTokenEntries []struct {
 			// Ctx is the ctx argument value.
@@ -83,6 +95,7 @@ type DBClientMock struct {
 	}
 	lockCreateProjectEntry sync.RWMutex
 	lockDeleteProjectEntry sync.RWMutex
+	lockCreateTokenEntry   sync.RWMutex
 	lockListTokenEntries   sync.RWMutex
 	lockReadProjectEntry   sync.RWMutex
 }
@@ -119,6 +132,45 @@ func (mock *DBClientMock) CreateProjectEntryCalls() []struct {
 	mock.lockCreateProjectEntry.RLock()
 	calls = mock.calls.CreateProjectEntry
 	mock.lockCreateProjectEntry.RUnlock()
+	return calls
+}
+
+// CreateTokenEntry calls CreateTokenEntryFunc.
+func (mock *DBClientMock) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error) {
+	if mock.CreateTokenEntryFunc == nil {
+		panic("DBClientMock.CreateTokenEntryFunc: method is nil but Client.CreateTokenEntry was just called")
+	}
+	callInfo := struct {
+		Ctx            context.Context
+		Project        string
+		SecretAccessor string
+	}{
+		Ctx:            ctx,
+		Project:        project,
+		SecretAccessor: secretAccessor,
+	}
+	mock.lockCreateTokenEntry.Lock()
+	mock.calls.CreateTokenEntry = append(mock.calls.CreateTokenEntry, callInfo)
+	mock.lockCreateTokenEntry.Unlock()
+	return mock.CreateTokenEntryFunc(ctx, project, secretAccessor)
+}
+
+// CreateTokenEntryCalls gets all the calls that were made to CreateTokenEntry.
+// Check the length with:
+//     len(mockedClient.CreateTokenEntryCalls())
+func (mock *DBClientMock) CreateTokenEntryCalls() []struct {
+	Ctx            context.Context
+	Project        string
+	SecretAccessor string
+} {
+	var calls []struct {
+		Ctx            context.Context
+		Project        string
+		SecretAccessor string
+	}
+	mock.lockCreateTokenEntry.RLock()
+	calls = mock.calls.CreateTokenEntry
+	mock.lockCreateTokenEntry.RUnlock()
 	return calls
 }
 
