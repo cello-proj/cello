@@ -1031,7 +1031,6 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	level.Debug(l).Log("message", "inserting into db")
 	te, err := h.dbClient.CreateTokenEntry(ctx, projectName, secretAccessor)
 	if err != nil {
@@ -1056,7 +1055,6 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, string(jsonResult))
 }
-
 
 // Lists tokens for a project
 func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
@@ -1111,7 +1109,6 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
 
 // Convenience method that writes a failure response in a standard manner
 func (h handler) errorResponse(w http.ResponseWriter, message string, httpStatus int) {
