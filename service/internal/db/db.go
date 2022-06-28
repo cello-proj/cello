@@ -21,7 +21,7 @@ type TokenEntry struct {
 
 type TokenResponse struct {
 	CreatedAt string `json:"created_at"`
-	Token 	  string `json:"token"`
+	Token     string `json:"token"`
 	TokenID   string `json:"token_id"`
 }
 
@@ -109,7 +109,7 @@ func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error
 
 func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secret_id_accessor string) (TokenEntry, error) {
 	res := TokenEntry{}
-	
+
 	sess, err := d.createSession()
 	if err != nil {
 		return res, err
@@ -120,7 +120,7 @@ func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secret_
 		res = TokenEntry{
 			CreatedAt: time.Now().Format(time.RFC3339),
 			ProjectID: project,
-			TokenID: secret_id_accessor,
+			TokenID:   secret_id_accessor,
 		}
 
 		if _, err = sess.Collection(TokenEntryDB).Insert(res); err != nil {

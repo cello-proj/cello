@@ -50,7 +50,6 @@ type vaultSys interface {
 const (
 	vaultAppRolePrefix = "auth/approle/role"
 	vaultProjectPrefix = "argo-cloudops-projects"
-	vaultSecretPrefix  = "secret-id"
 )
 
 var (

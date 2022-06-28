@@ -120,7 +120,7 @@ type CreateProject struct {
 
 // CreateToken request.
 type CreateToken struct {
-	Name       string `json:"name" valid:"required~name is required,alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
+	Name string `json:"name" valid:"required~name is required,alphanum~name must be alphanumeric,stringlength(4|32)~name must be between 4 and 32 characters"`
 }
 
 // Validate validates CreateProject.
