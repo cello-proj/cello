@@ -985,9 +985,8 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	// REQUEST
 	// {
-
 	// }
-	
+
 	//  RESPONSE
 	// {
 	// 	"created_at": "$date/$time",
@@ -1013,8 +1012,6 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	var capp requests.CreateToken
-
 	level.Debug(l).Log("message", "creating credential provider")
 	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
@@ -1022,8 +1019,8 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
-
-	projectExists, err := cp.ProjectExists(capp.Name)
+	level.Debug(l).Log("message", projectName)
+	projectExists, err := cp.ProjectExists(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error checking project", "error", err)
 		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
@@ -1036,28 +1033,31 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-
-
 	level.Debug(l).Log("message", "creating token")
-	role, secret, err := cp.CreateProject(capp.Name)
+	_, secret, secret_accessor, err := cp.CreateToken(projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error creating project", "error", err)
-		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error creating token", "error", err)
+		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
 
 	level.Debug(l).Log("message", "inserting into db")
-	_, err = h.dbClient.CreateTokenEntry(ctx, projectName)
+	te, err := h.dbClient.CreateTokenEntry(ctx, projectName, secret_accessor)
 	if err != nil {
 		level.Error(l).Log("message", "error inserting token to db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
 
+	resp := db.TokenResponse{
+		CreatedAt: te.CreatedAt,
+		Token:     secret,
+		TokenID:   te.TokenID,
+	}
+
 	level.Debug(l).Log("message", "retrieving Cello token")
-	t := newCelloToken("vault", role, secret)
-	jsonResult, err := json.Marshal(t)
+	// t := newCelloToken("vault", role, secret)
+	jsonResult, err := json.Marshal(resp)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing token", "error", err)
 		h.errorResponse(w, "error serializing token", http.StatusInternalServerError)

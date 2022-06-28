@@ -48,6 +48,14 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 	return nil
 }
 
+func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secret_id_accessor string) (db.TokenEntry, error) {
+	if project == "somedberror" {
+		return db.TokenEntry{}, fmt.Errorf("some db error")
+	}
+
+	return db.TokenEntry{}, nil
+}
+
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
 	if project == "projectdoesnotexist" {
 		return db.ProjectEntry{}, upper.ErrNoMoreRows
@@ -114,6 +122,11 @@ func (m mockCredentialsProvider) GetToken() (string, error) {
 func (m mockCredentialsProvider) CreateProject(name string) (string, string, error) {
 	return "", "", nil
 }
+
+func (m mockCredentialsProvider) CreateToken(name string) (string, string, string, error) {
+	return "", "", "", nil
+}
+
 
 func (m mockCredentialsProvider) DeleteProject(name string) error {
 	if name == "undeletableproject" {
