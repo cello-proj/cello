@@ -26,6 +26,7 @@ type Client interface {
 	DeleteProjectEntry(ctx context.Context, project string) error
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	DeleteTokenEntry(ctx context.Context, token string) error
+	ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error)
 	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 }
 
@@ -123,5 +124,18 @@ func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]Toke
 	defer sess.Close()
 
 	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
+	return res, err
+}
+
+func (d SQLClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error) {
+	res := TokenEntry{}
+
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).One(&res)
 	return res, err
 }

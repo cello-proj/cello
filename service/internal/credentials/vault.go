@@ -1,3 +1,5 @@
+//go:generate moq -out ../../test/testhelpers/credsProviderMock.go -pkg testhelpers . Provider:CredsProviderMock
+
 package credentials
 
 import (
@@ -28,6 +30,8 @@ type Provider interface {
 	GetProject(string) (responses.GetProject, error)
 	GetTarget(string, string) (types.Target, error)
 	GetToken() (string, error)
+	DeleteProjectToken(string) error
+	GetProjectToken(string) error
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
 	TargetExists(string, string) (bool, error)
@@ -334,6 +338,40 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, 
 			RoleArn:        roleArn,
 		},
 	}, nil
+}
+
+func (v VaultProvider) DeleteProjectToken(tokenID string) error {
+	if v.isAdmin() {
+		return errors.New("admin credentials must be used to delete tokens")
+	}
+
+	path := fmt.Sprintf("auth/approle/role/%s/secret-id-accessor/destroy", tokenID)
+	_, err := v.vaultLogicalSvc.Delete(path)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (v VaultProvider) GetProjectToken(tokenID string) error {
+	if v.isAdmin() {
+		return errors.New("admin credentials must be used to delete tokens")
+	}
+
+	params := map[string]interface{}{
+		"secret_id_accessor": tokenID,
+	}
+
+	path := fmt.Sprintf("auth/approle/role/%s/secret-id-accessor/lookup", tokenID)
+	projectToken, err := v.vaultLogicalSvc.Write(path, params)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (v VaultProvider) GetToken() (string, error) {

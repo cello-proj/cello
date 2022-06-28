@@ -135,6 +135,10 @@ func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f
 
 type mockCredentialsProvider struct{}
 
+func (m mockCredentialsProvider) DeleteToken(tokenID string) error {
+	return nil
+}
+
 func (m mockCredentialsProvider) GetToken() (string, error) {
 	return testPassword, nil
 }

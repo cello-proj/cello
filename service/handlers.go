@@ -981,6 +981,30 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
+func (h handler) projectExists(ctx context.Context, projectName string, cp credentials.Provider) (bool, error) {
+	// TODO: writing both to the creds provider and DB should be transactional, and this method would be more correct.
+	// If the project doesn't exist in one, we can safely assume that it doesn't exist in the other.
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		return false, err
+	}
+
+	if !projectExists {
+		return false, nil
+	}
+
+	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		if errors.Is(err, upper.ErrNoMoreRows) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
 // Delete a token
 func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -1002,11 +1026,43 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
 	ctx := r.Context()
+
+	level.Debug(l).Log("message", "checking if project exists")
+	projectExists, err := h.projectExists(ctx, projectName, cp)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving project", "error", err)
+		h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		return
+	}
+
+	if !projectExists {
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		return
+	}
+
+	// TODO: check if token exists in cp and db
+	cp.
+		h.dbClient.ReadTokenEntry(ctx, tokenID)
 
 	level.Debug(l).Log("message", "deleting token from database")
 	if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
-		level.Error(l).Log("message", "error deleting token in database", "error", err)
+		level.Error(l).Log("message", "error deleting token front database", "error", err)
+		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+		return
+	}
+
+	level.Debug(l).Log("message", "deleting token from credentials provider")
+	if err = cp.DeleteToken(tokenID); err != nil {
+		level.Error(l).Log("message", "error deleting token from credentials provider", "error", err)
 		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
 		return
 	}
