@@ -1,3 +1,5 @@
+//go:generate moq -out ../../test/testhelpers/dbClientMock.go -pkg testhelpers . Client:DBClientMock
+
 package db
 
 import (

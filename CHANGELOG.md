@@ -5,10 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-### Changed
+### Added
 * Added schema updates to create tokens table
 * Added golang-migrate to manage schema
 * Delete project token
+* List project tokens
 
 ## [0.13.3] - 2022-06-16
 ### Changed
@@ -18,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Fixed quickstart issues with standing up database
 * Added log statement to clarify issues with project creation
-
 
 ## [0.13.1] - 2022-05-24
 ### Changed

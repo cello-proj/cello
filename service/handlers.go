@@ -1059,14 +1059,11 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	data, err := json.Marshal(resp)
-	if err != nil {
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		level.Error(l).Log("message", "error serializing project tokens", "error", err)
 		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Fprint(w, string(data))
 }
 
 // Convenience method that writes a failure response in a standard manner
