@@ -112,7 +112,7 @@ func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secretA
 
 	err = sess.WithContext(ctx).Tx(func(sess db.Session) error {
 		res = TokenEntry{
-			CreatedAt: time.Now().Format(time.RFC3339),
+			CreatedAt: time.Now().UTC().Format(time.RFC3339),
 			ProjectID: project,
 			TokenID:   secretAccessor,
 		}
