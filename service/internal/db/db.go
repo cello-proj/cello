@@ -1,3 +1,5 @@
+//go:generate go run -mod=vendor github.com/matryer/moq -out ../../test/testhelpers/dbClientMock.go -pkg testhelpers . Client:DBClientMock
+
 package db
 
 import (
@@ -22,9 +24,10 @@ type TokenEntry struct {
 // Client allows for db crud operations
 type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
-	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	DeleteProjectEntry(ctx context.Context, project string) error
 	CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (TokenEntry, error)
+	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
+	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 }
 
 // SQLClient allows for db crud operations using postgres db
@@ -76,6 +79,19 @@ func (d SQLClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) erro
 
 		return nil
 	})
+}
+
+func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
+	res := []TokenEntry{}
+
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
+	return res, err
 }
 
 func (d SQLClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
