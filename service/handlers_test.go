@@ -87,10 +87,8 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 	return []db.TokenEntry{}, upper.ErrNoMoreRows
 }
 
+// TODO: is this needed?
 func (d mockDB) DeleteTokenEntry(ctx context.Context, token string) error {
-	if token == "deletetokenerror" {
-		return errors.New("error deleting entry")
-	}
 	return nil
 }
 
@@ -737,6 +735,11 @@ func TestDeleteToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/existingtoken",
 			method:     "DELETE",
+			dbMock: &th.DBClientMock{
+				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:       "project does not exist",
@@ -745,6 +748,11 @@ func TestDeleteToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectdoesnotexist/tokens/tokendoesnotexist",
 			method:     "DELETE",
+			dbMock: &th.DBClientMock{
+				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:       "tokens does not exist",
@@ -753,6 +761,11 @@ func TestDeleteToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/tokendoesnotexist",
 			method:     "DELETE",
+			dbMock: &th.DBClientMock{
+				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:       "token delete error",
@@ -761,9 +774,14 @@ func TestDeleteToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/deletetokenerror",
 			method:     "DELETE",
+			dbMock: &th.DBClientMock{
+				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
+					return errors.New("error deleting entry from DB")
+				},
+			},
 		},
 	}
-	runTests(t, tests)
+	runTestsV2(t, tests)
 }
 
 func TestListTokens(t *testing.T) {
@@ -1060,7 +1078,13 @@ func runTestsV2(t *testing.T, tests []test) {
 
 				defer resp.Body.Close()
 
-				assert.JSONEq(t, string(wantBody), string(body))
+				bodyStr := string(body)
+				wantBodyStr := string(wantBody)
+				if bodyStr == "" && wantBodyStr == "" {
+					assert.Equal(t, bodyStr, wantBodyStr)
+				} else {
+					assert.JSONEq(t, wantBodyStr, bodyStr)
+				}
 			}
 		})
 	}
