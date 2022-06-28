@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,6 +21,7 @@ import (
 	"github.com/cello-proj/cello/service/internal/env"
 	"github.com/cello-proj/cello/service/internal/git"
 	"github.com/cello-proj/cello/service/internal/workflow"
+	th "github.com/cello-proj/cello/service/test/testhelpers"
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
@@ -28,10 +30,11 @@ import (
 
 const (
 	// #nosec
-	testPassword      = "D34DB33FD34DB33FD34DB33FD34DB33F"
-	userAuthHeader    = "vault:user:" + testPassword
-	invalidAuthHeader = "bad auth header"
-	adminAuthHeader   = "vault:admin:" + testPassword
+	testPassword        = "D34DB33FD34DB33FD34DB33FD34DB33F"
+	userAuthHeader      = "vault:user:" + testPassword
+	invalidAuthHeader   = "bad auth header"
+	adminAuthHeader     = "vault:admin:" + testPassword
+	projectDoesNotExist = "projectdoesnotexist"
 )
 
 type mockDB struct{}
@@ -48,10 +51,48 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 	return nil
 }
 
+func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
+	if project == projectDoesNotExist {
+		return []db.TokenEntry{}, upper.ErrNoMoreRows
+	}
+
+	if project == "projectreaderror" {
+		return []db.TokenEntry{}, errors.New("error reading DB")
+	}
+
+	if project == "projectlisttokenserror" {
+		return []db.TokenEntry{}, errors.New("error reading DB")
+	}
+
+	if project == "projectnotokens" {
+		return []db.TokenEntry{}, nil
+	}
+
+	return []db.TokenEntry{
+		{
+			CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+			TokenID:   "ghi789",
+		},
+		{
+			CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+			TokenID:   "def456",
+		},
+		{
+			CreatedAt: "2022-06-21T14:42:50.182037-07:00",
+			TokenID:   "abc123",
+		},
+	}, nil
+}
+
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
-	if project == "projectdoesnotexist" {
+	if project == projectDoesNotExist {
 		return db.ProjectEntry{}, upper.ErrNoMoreRows
 	}
+
+	if project == "projectreaderror" {
+		return db.ProjectEntry{}, errors.New("error reading DB")
+	}
+
 	return db.ProjectEntry{}, nil
 }
 
@@ -123,7 +164,7 @@ func (m mockCredentialsProvider) DeleteProject(name string) error {
 }
 
 func (m mockCredentialsProvider) GetProject(proj string) (responses.GetProject, error) {
-	if proj == "projectdoesnotexist" {
+	if proj == projectDoesNotExist {
 		return responses.GetProject{}, credentials.ErrNotFound
 	}
 	return responses.GetProject{Name: "project1"}, nil
@@ -200,6 +241,7 @@ type test struct {
 	authHeader string
 	url        string
 	method     string
+	dbMock     *th.DBClientMock
 }
 
 func TestCreateProject(t *testing.T) {
@@ -688,6 +730,74 @@ func TestListWorkflows(t *testing.T) {
 	runTests(t, tests)
 }
 
+func TestListTokens(t *testing.T) {
+	tests := []test{
+		{
+			name:       "fails to list tokens when not admin",
+			want:       http.StatusUnauthorized,
+			respFile:   "TestListTokens/fails_to_list_tokens_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "can list tokens",
+			want:       http.StatusOK,
+			respFile:   "TestListTokens/can_list_tokens_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "project not found",
+			want:       http.StatusNotFound,
+			respFile:   "TestListTokens/project_not_found_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectdoesnotexist/tokens",
+			method:     "GET",
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{}, upper.ErrNoMoreRows
+				},
+			},
+		},
+		{
+			name:       "project not found",
+			want:       http.StatusNotFound,
+			respFile:   "TestListTokens/project_not_found_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectdoesnotexist/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "no tokens",
+			want:       http.StatusOK,
+			respFile:   "TestListTokens/no_tokens_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectnotokens/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "project read error",
+			want:       http.StatusInternalServerError,
+			respFile:   "TestListTokens/project_read_error_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectreaderror/tokens",
+			method:     "GET",
+		},
+		{
+			name:       "list tokens read error",
+			want:       http.StatusInternalServerError,
+			respFile:   "TestListTokens/list_tokens_error_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectlisttokenserror/tokens",
+			method:     "GET",
+		},
+	}
+
+	runTestsV2(t, tests)
+}
+
 func TestHealthCheck(t *testing.T) {
 	tests := []struct {
 		name                  string
@@ -830,6 +940,65 @@ func runTests(t *testing.T, tests []test) {
 	}
 }
 
+// Run tests, checking the response status codes.
+func runTestsV2(t *testing.T, tests []test) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config, err := loadConfig(testConfigPath)
+			if err != nil {
+				panic(fmt.Sprintf("Unable to load config %s", err))
+			}
+
+			h := handler{
+				logger:                 log.NewNopLogger(),
+				newCredentialsProvider: newMockProvider,
+				argo:                   mockWorkflowSvc{},
+				argoCtx:                context.Background(),
+				config:                 config,
+				gitClient:              newMockGitClient(),
+				env: env.Vars{
+					AdminSecret: testPassword,
+				},
+				dbClient: newMockDB(),
+			}
+
+			if tt.dbMock != nil {
+				h.dbClient = tt.dbMock
+			}
+
+			resp := executeRequestWithHandler(h, tt.method, tt.url, serialize(tt.req), tt.authHeader)
+			if resp.StatusCode != tt.want {
+				t.Errorf("Unexpected status code %d", resp.StatusCode)
+			}
+
+			if tt.body != "" {
+				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				defer resp.Body.Close()
+				if err != nil {
+					t.Errorf("Error loading body")
+				}
+				if tt.body != string(bodyBytes) {
+					t.Errorf("Unexpected body '%s', expected '%s'", bodyBytes, tt.body)
+				}
+			}
+
+			if tt.respFile != "" {
+				wantBody, err := loadFileBytes(tt.respFile)
+				if err != nil {
+					t.Fatalf("unable to read response file '%s', err: '%s'", tt.respFile, err)
+				}
+
+				body, err := io.ReadAll(resp.Body)
+				assert.Nil(t, err)
+
+				defer resp.Body.Close()
+
+				assert.JSONEq(t, string(wantBody), string(body))
+			}
+		})
+	}
+}
+
 // Execute a generic HTTP request, making sure to add the appropriate authorization header.
 func executeRequest(method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
 	config, err := loadConfig(testConfigPath)
@@ -859,9 +1028,19 @@ func executeRequest(method string, url string, body *bytes.Buffer, authHeader st
 	return w.Result()
 }
 
+func executeRequestWithHandler(h handler, method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
+	var router = setupRouter(h)
+	req, _ := http.NewRequest(method, url, serialize(body))
+
+	req.Header.Add("Authorization", authHeader)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	return w.Result()
+}
+
 // loadFileBytes returns the contents of a file in the 'testdata' directory.
 func loadFileBytes(filename string) ([]byte, error) {
-	file := filepath.Join("testdata", filename)
+	file := filepath.Join("test/testdata", filename)
 	return os.ReadFile(file)
 }
 

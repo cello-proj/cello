@@ -981,6 +981,60 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
+// Lists tokens for a project
+func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+
+	l := h.requestLogger(r, "op", "list-tokens", "project", projectName)
+
+	level.Debug(l).Log("message", "validating authorization header for token list")
+	ah := r.Header.Get("Authorization")
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
+	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	ctx := r.Context()
+
+	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving project", "error", err)
+		if errors.Is(err, upper.ErrNoMoreRows) {
+			h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		} else {
+			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	tokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error listing tokens", "error", err)
+		h.errorResponse(w, "error listing tokens", http.StatusInternalServerError)
+		return
+	}
+
+	resp := []responses.ListTokens{}
+	for _, tokenEntry := range tokens {
+		resp = append(resp, responses.ListTokens{
+			CreatedAt: tokenEntry.CreatedAt,
+			TokenID:   tokenEntry.TokenID,
+		})
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		level.Error(l).Log("message", "error serializing project tokens", "error", err)
+		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
+		return
+	}
+}
+
 // Convenience method that writes a failure response in a standard manner
 func (h handler) errorResponse(w http.ResponseWriter, message string, httpStatus int) {
 	r := generateErrorResponseJSON(message)

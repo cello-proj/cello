@@ -169,6 +169,24 @@ Response Body
 ```
 ```
 
+## List Project Tokens
+
+GET /projects/<project_name>/tokens
+
+Response Body
+
+```json
+[
+  {
+    "created_at": "2022-06-21T14:56:10.341066-07:00",
+    "token_id": "ghi789"
+  },
+  {
+    "created_at": "2022-06-21T14:43:16.172896-07:00",
+    "token_id": "def456"
+  },
+]
+```
 
 ## Create Workflow
 
