@@ -1007,17 +1007,13 @@ func runTests(t *testing.T, tests []test) {
 
 				defer resp.Body.Close()
 
-				stringWantBody := string(wantBody)
-				stringBody := string(body)
+				bodyStr := string(body)
+				wantBodyStr := string(wantBody)
 
-				if stringWantBody == "" && stringBody == "" {
-					assert.Equal(t, stringWantBody, stringBody)
-				} else if stringWantBody == "" || stringBody == "" {
-					fmt.Println(stringBody)
-					fmt.Println(stringWantBody)
-					assert.Fail(t, "want and expected do not match")
+				if bodyStr == "" && wantBodyStr == "" {
+					assert.Equal(t, bodyStr, wantBodyStr)
 				} else {
-					assert.JSONEq(t, string(wantBody), string(body))
+					assert.JSONEq(t, bodyStr, wantBodyStr)
 				}
 			}
 		})
