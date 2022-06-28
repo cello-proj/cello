@@ -264,6 +264,39 @@ func TestCreateProject(t *testing.T) {
 	runTests(t, tests)
 }
 
+func TestCreateToken(t *testing.T) {
+	tests := []test{
+
+		{
+			name:       "can create token",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestCreateToken/can_create_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "project does not exist",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusBadRequest,
+			respFile:   "TestCreateToken/project_does_not_exist.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project1234/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "fails to create token when not admin",
+			want:       http.StatusUnauthorized,
+			respFile:   "TestCreateToken/fails_to_create_token_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "POST",
+		},
+	}
+	runTests(t, tests)
+}
+
 func TestGetTarget(t *testing.T) {
 	tests := []test{
 		{

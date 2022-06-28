@@ -983,16 +983,6 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 
 // Creates a token
 func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
-	// REQUEST
-	// {
-	// }
-
-	//  RESPONSE
-	// {
-	// 	"created_at": "$date/$time",
-	// 	"token": "baz",
-	// 	"token_id": "bar"
-	//   }
 	vars := mux.Vars(r)
 	projectName := vars["projectName"]
 
