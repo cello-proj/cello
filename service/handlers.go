@@ -998,9 +998,8 @@ func (h handler) projectExists(ctx context.Context, projectName string, cp crede
 	if err != nil {
 		if errors.Is(err, upper.ErrNoMoreRows) {
 			return false, nil
-		} else {
-			return false, err
 		}
+		return false, err
 	}
 
 	return true, nil
@@ -1069,11 +1068,10 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 			level.Error(l).Log("message", "token does not exist in DB", "error", err)
 			h.errorResponse(w, "token does not exist", http.StatusNotFound)
 			return
-		} else {
-			level.Error(l).Log("message", "error retrieving token from DB", "error", err)
-			h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
-			return
 		}
+		level.Error(l).Log("message", "error retrieving token from DB", "error", err)
+		h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
+		return
 	}
 
 	level.Debug(l).Log("message", "deleting token from database")
