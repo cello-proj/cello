@@ -34,6 +34,9 @@ var _ db.Client = &DBClientMock{}
 // 			ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 // 				panic("mock out the ReadProjectEntry method")
 // 			},
+// 			ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+// 				panic("mock out the ReadTokenEntry method")
+// 			},
 // 		}
 //
 // 		// use mockedClient in code that requires db.Client
@@ -55,6 +58,9 @@ type DBClientMock struct {
 
 	// ReadProjectEntryFunc mocks the ReadProjectEntry method.
 	ReadProjectEntryFunc func(ctx context.Context, project string) (db.ProjectEntry, error)
+
+	// ReadTokenEntryFunc mocks the ReadTokenEntry method.
+	ReadTokenEntryFunc func(ctx context.Context, token string) (db.TokenEntry, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -93,12 +99,20 @@ type DBClientMock struct {
 			// Project is the project argument value.
 			Project string
 		}
+		// ReadTokenEntry holds details about calls to the ReadTokenEntry method.
+		ReadTokenEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Token is the token argument value.
+			Token string
+		}
 	}
 	lockCreateProjectEntry sync.RWMutex
 	lockDeleteProjectEntry sync.RWMutex
 	lockDeleteTokenEntry   sync.RWMutex
 	lockListTokenEntries   sync.RWMutex
 	lockReadProjectEntry   sync.RWMutex
+	lockReadTokenEntry     sync.RWMutex
 }
 
 // CreateProjectEntry calls CreateProjectEntryFunc.
@@ -273,5 +287,40 @@ func (mock *DBClientMock) ReadProjectEntryCalls() []struct {
 	mock.lockReadProjectEntry.RLock()
 	calls = mock.calls.ReadProjectEntry
 	mock.lockReadProjectEntry.RUnlock()
+	return calls
+}
+
+// ReadTokenEntry calls ReadTokenEntryFunc.
+func (mock *DBClientMock) ReadTokenEntry(ctx context.Context, token string) (db.TokenEntry, error) {
+	if mock.ReadTokenEntryFunc == nil {
+		panic("DBClientMock.ReadTokenEntryFunc: method is nil but Client.ReadTokenEntry was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Token string
+	}{
+		Ctx:   ctx,
+		Token: token,
+	}
+	mock.lockReadTokenEntry.Lock()
+	mock.calls.ReadTokenEntry = append(mock.calls.ReadTokenEntry, callInfo)
+	mock.lockReadTokenEntry.Unlock()
+	return mock.ReadTokenEntryFunc(ctx, token)
+}
+
+// ReadTokenEntryCalls gets all the calls that were made to ReadTokenEntry.
+// Check the length with:
+//     len(mockedClient.ReadTokenEntryCalls())
+func (mock *DBClientMock) ReadTokenEntryCalls() []struct {
+	Ctx   context.Context
+	Token string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Token string
+	}
+	mock.lockReadTokenEntry.RLock()
+	calls = mock.calls.ReadTokenEntry
+	mock.lockReadTokenEntry.RUnlock()
 	return calls
 }

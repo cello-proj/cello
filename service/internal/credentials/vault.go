@@ -31,7 +31,7 @@ type Provider interface {
 	GetTarget(string, string) (types.Target, error)
 	GetToken() (string, error)
 	DeleteProjectToken(string) error
-	GetProjectToken(string) error
+	GetProjectToken(string, string) (types.ProjectToken, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
 	TargetExists(string, string) (bool, error)
@@ -355,23 +355,30 @@ func (v VaultProvider) DeleteProjectToken(tokenID string) error {
 	return nil
 }
 
-func (v VaultProvider) GetProjectToken(tokenID string) error {
+func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.ProjectToken, error) {
+	token := types.ProjectToken{}
+
 	if v.isAdmin() {
-		return errors.New("admin credentials must be used to delete tokens")
+		return token, errors.New("admin credentials must be used to delete tokens")
 	}
 
-	params := map[string]interface{}{
+	data := map[string]interface{}{
 		"secret_id_accessor": tokenID,
 	}
 
-	path := fmt.Sprintf("auth/approle/role/%s/secret-id-accessor/lookup", tokenID)
-	projectToken, err := v.vaultLogicalSvc.Write(path, params)
+	path := fmt.Sprintf("auth/approle/role/%s/secret-id-accessor/lookup", projectName)
+	projectToken, err := v.vaultLogicalSvc.Write(path, data)
 	if err != nil {
-		fmt.Println(err.Error())
-		return err
+		return token, fmt.Errorf("vault get secret ID accessor error: %w", err)
 	}
 
-	return nil
+	if projectToken == nil {
+		return token, nil
+	}
+
+	return types.ProjectToken{
+		ID: projectToken.Data["secret_id_accessor"].(string),
+	}, nil
 }
 
 func (v VaultProvider) GetToken() (string, error) {

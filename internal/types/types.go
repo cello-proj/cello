@@ -64,3 +64,7 @@ func (properties TargetProperties) Validate() error {
 
 	return validations.Validate(v...)
 }
+
+type ProjectToken struct {
+	ID string `json:"token_id"`
+}

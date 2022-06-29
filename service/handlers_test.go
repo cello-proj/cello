@@ -91,6 +91,10 @@ func (d mockDB) DeleteTokenEntry(ctx context.Context, token string) error {
 	return nil
 }
 
+func (d mockDB) ReadTokenEntry(ctx context.Context, token string) (db.TokenEntry, error) {
+	return db.TokenEntry{}, nil
+}
+
 type mockGitClient struct{}
 
 func newMockGitClient() git.Client {
@@ -135,8 +139,12 @@ func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f
 
 type mockCredentialsProvider struct{}
 
-func (m mockCredentialsProvider) DeleteToken(tokenID string) error {
+func (m mockCredentialsProvider) DeleteProjectToken(tokenID string) error {
 	return nil
+}
+
+func (m mockCredentialsProvider) GetProjectToken(projectName, tokenID string) (types.ProjectToken, error) {
+	return types.ProjectToken{}, nil
 }
 
 func (m mockCredentialsProvider) GetToken() (string, error) {
@@ -233,6 +241,7 @@ type test struct {
 	url        string
 	method     string
 	dbMock     *th.DBClientMock
+	cpMock     *th.CredsProviderMock
 }
 
 func TestCreateProject(t *testing.T) {
@@ -738,35 +747,60 @@ func TestDeleteToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/existingtoken",
 			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+					return types.ProjectToken{ID: "1234"}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return true, nil
+				},
+				DeleteProjectTokenFunc: func(s string) error {
+					return nil
+				},
+			},
 			dbMock: &th.DBClientMock{
 				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
 					return nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
 				},
 			},
 		},
 		{
 			name:       "project does not exist",
-			want:       http.StatusOK,
-			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			want:       http.StatusNotFound,
+			respFile:   "TestDeleteToken/project_does_not_exist_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectdoesnotexist/tokens/tokendoesnotexist",
 			method:     "DELETE",
-			dbMock: &th.DBClientMock{
-				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
-					return nil
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return false, nil
 				},
 			},
 		},
 		{
-			name:       "tokens does not exist",
-			want:       http.StatusOK,
-			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			name:       "token does not exist",
+			want:       http.StatusNotFound,
+			respFile:   "TestDeleteToken/token_does_not_exist_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/tokendoesnotexist",
 			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+					return types.ProjectToken{}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return true, nil
+				},
+			},
 			dbMock: &th.DBClientMock{
-				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
-					return nil
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
 			},
 		},
@@ -777,9 +811,23 @@ func TestDeleteToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/deletetokenerror",
 			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+					return types.ProjectToken{ID: "1234"}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return true, nil
+				},
+			},
 			dbMock: &th.DBClientMock{
 				DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
 					return errors.New("error deleting entry from DB")
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
 				},
 			},
 		},
@@ -1050,6 +1098,15 @@ func runTestsV2(t *testing.T, tests []test) {
 				h.dbClient = tt.dbMock
 			}
 
+			if tt.cpMock != nil {
+				defaultCPFunc := func(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
+					// TODO: probably best to create a base/default CP mock struct here
+					return tt.cpMock, nil
+				}
+
+				h.newCredentialsProvider = defaultCPFunc
+			}
+
 			resp := executeRequestWithHandler(h, tt.method, tt.url, serialize(tt.req), tt.authHeader)
 			if resp.StatusCode != tt.want {
 				t.Errorf("Unexpected status code %d", resp.StatusCode)
@@ -1079,9 +1136,14 @@ func runTestsV2(t *testing.T, tests []test) {
 
 				bodyStr := string(body)
 				wantBodyStr := string(wantBody)
+
+				// don't use assert.JSONEq for empty strings
 				if bodyStr == "" && wantBodyStr == "" {
 					assert.Equal(t, bodyStr, wantBodyStr)
 				} else {
+					fmt.Println("NAME: ", tt.name)
+					fmt.Println("BODY: ", bodyStr)
+					fmt.Println("WANT: ", wantBodyStr)
 					assert.JSONEq(t, wantBodyStr, bodyStr)
 				}
 			}

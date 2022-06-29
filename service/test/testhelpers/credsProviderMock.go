@@ -29,14 +29,17 @@ var _ credentials.Provider = &CredsProviderMock{}
 // 			DeleteProjectFunc: func(s string) error {
 // 				panic("mock out the DeleteProject method")
 // 			},
+// 			DeleteProjectTokenFunc: func(s string) error {
+// 				panic("mock out the DeleteProjectToken method")
+// 			},
 // 			DeleteTargetFunc: func(s1 string, s2 string) error {
 // 				panic("mock out the DeleteTarget method")
 // 			},
-// 			DeleteTokenFunc: func(s string) error {
-// 				panic("mock out the DeleteToken method")
-// 			},
 // 			GetProjectFunc: func(s string) (responses.GetProject, error) {
 // 				panic("mock out the GetProject method")
+// 			},
+// 			GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+// 				panic("mock out the GetProjectToken method")
 // 			},
 // 			GetTargetFunc: func(s1 string, s2 string) (types.Target, error) {
 // 				panic("mock out the GetTarget method")
@@ -72,14 +75,17 @@ type CredsProviderMock struct {
 	// DeleteProjectFunc mocks the DeleteProject method.
 	DeleteProjectFunc func(s string) error
 
+	// DeleteProjectTokenFunc mocks the DeleteProjectToken method.
+	DeleteProjectTokenFunc func(s string) error
+
 	// DeleteTargetFunc mocks the DeleteTarget method.
 	DeleteTargetFunc func(s1 string, s2 string) error
 
-	// DeleteTokenFunc mocks the DeleteToken method.
-	DeleteTokenFunc func(s string) error
-
 	// GetProjectFunc mocks the GetProject method.
 	GetProjectFunc func(s string) (responses.GetProject, error)
+
+	// GetProjectTokenFunc mocks the GetProjectToken method.
+	GetProjectTokenFunc func(s1 string, s2 string) (types.ProjectToken, error)
 
 	// GetTargetFunc mocks the GetTarget method.
 	GetTargetFunc func(s1 string, s2 string) (types.Target, error)
@@ -118,6 +124,11 @@ type CredsProviderMock struct {
 			// S is the s argument value.
 			S string
 		}
+		// DeleteProjectToken holds details about calls to the DeleteProjectToken method.
+		DeleteProjectToken []struct {
+			// S is the s argument value.
+			S string
+		}
 		// DeleteTarget holds details about calls to the DeleteTarget method.
 		DeleteTarget []struct {
 			// S1 is the s1 argument value.
@@ -125,15 +136,17 @@ type CredsProviderMock struct {
 			// S2 is the s2 argument value.
 			S2 string
 		}
-		// DeleteToken holds details about calls to the DeleteToken method.
-		DeleteToken []struct {
-			// S is the s argument value.
-			S string
-		}
 		// GetProject holds details about calls to the GetProject method.
 		GetProject []struct {
 			// S is the s argument value.
 			S string
+		}
+		// GetProjectToken holds details about calls to the GetProjectToken method.
+		GetProjectToken []struct {
+			// S1 is the s1 argument value.
+			S1 string
+			// S2 is the s2 argument value.
+			S2 string
 		}
 		// GetTarget holds details about calls to the GetTarget method.
 		GetTarget []struct {
@@ -170,18 +183,19 @@ type CredsProviderMock struct {
 			Target types.Target
 		}
 	}
-	lockCreateProject sync.RWMutex
-	lockCreateTarget  sync.RWMutex
-	lockDeleteProject sync.RWMutex
-	lockDeleteTarget  sync.RWMutex
-	lockDeleteToken   sync.RWMutex
-	lockGetProject    sync.RWMutex
-	lockGetTarget     sync.RWMutex
-	lockGetToken      sync.RWMutex
-	lockListTargets   sync.RWMutex
-	lockProjectExists sync.RWMutex
-	lockTargetExists  sync.RWMutex
-	lockUpdateTarget  sync.RWMutex
+	lockCreateProject      sync.RWMutex
+	lockCreateTarget       sync.RWMutex
+	lockDeleteProject      sync.RWMutex
+	lockDeleteProjectToken sync.RWMutex
+	lockDeleteTarget       sync.RWMutex
+	lockGetProject         sync.RWMutex
+	lockGetProjectToken    sync.RWMutex
+	lockGetTarget          sync.RWMutex
+	lockGetToken           sync.RWMutex
+	lockListTargets        sync.RWMutex
+	lockProjectExists      sync.RWMutex
+	lockTargetExists       sync.RWMutex
+	lockUpdateTarget       sync.RWMutex
 }
 
 // CreateProject calls CreateProjectFunc.
@@ -281,6 +295,37 @@ func (mock *CredsProviderMock) DeleteProjectCalls() []struct {
 	return calls
 }
 
+// DeleteProjectToken calls DeleteProjectTokenFunc.
+func (mock *CredsProviderMock) DeleteProjectToken(s string) error {
+	if mock.DeleteProjectTokenFunc == nil {
+		panic("CredsProviderMock.DeleteProjectTokenFunc: method is nil but Provider.DeleteProjectToken was just called")
+	}
+	callInfo := struct {
+		S string
+	}{
+		S: s,
+	}
+	mock.lockDeleteProjectToken.Lock()
+	mock.calls.DeleteProjectToken = append(mock.calls.DeleteProjectToken, callInfo)
+	mock.lockDeleteProjectToken.Unlock()
+	return mock.DeleteProjectTokenFunc(s)
+}
+
+// DeleteProjectTokenCalls gets all the calls that were made to DeleteProjectToken.
+// Check the length with:
+//     len(mockedProvider.DeleteProjectTokenCalls())
+func (mock *CredsProviderMock) DeleteProjectTokenCalls() []struct {
+	S string
+} {
+	var calls []struct {
+		S string
+	}
+	mock.lockDeleteProjectToken.RLock()
+	calls = mock.calls.DeleteProjectToken
+	mock.lockDeleteProjectToken.RUnlock()
+	return calls
+}
+
 // DeleteTarget calls DeleteTargetFunc.
 func (mock *CredsProviderMock) DeleteTarget(s1 string, s2 string) error {
 	if mock.DeleteTargetFunc == nil {
@@ -316,37 +361,6 @@ func (mock *CredsProviderMock) DeleteTargetCalls() []struct {
 	return calls
 }
 
-// DeleteToken calls DeleteTokenFunc.
-func (mock *CredsProviderMock) DeleteToken(s string) error {
-	if mock.DeleteTokenFunc == nil {
-		panic("CredsProviderMock.DeleteTokenFunc: method is nil but Provider.DeleteToken was just called")
-	}
-	callInfo := struct {
-		S string
-	}{
-		S: s,
-	}
-	mock.lockDeleteToken.Lock()
-	mock.calls.DeleteToken = append(mock.calls.DeleteToken, callInfo)
-	mock.lockDeleteToken.Unlock()
-	return mock.DeleteTokenFunc(s)
-}
-
-// DeleteTokenCalls gets all the calls that were made to DeleteToken.
-// Check the length with:
-//     len(mockedProvider.DeleteTokenCalls())
-func (mock *CredsProviderMock) DeleteTokenCalls() []struct {
-	S string
-} {
-	var calls []struct {
-		S string
-	}
-	mock.lockDeleteToken.RLock()
-	calls = mock.calls.DeleteToken
-	mock.lockDeleteToken.RUnlock()
-	return calls
-}
-
 // GetProject calls GetProjectFunc.
 func (mock *CredsProviderMock) GetProject(s string) (responses.GetProject, error) {
 	if mock.GetProjectFunc == nil {
@@ -375,6 +389,41 @@ func (mock *CredsProviderMock) GetProjectCalls() []struct {
 	mock.lockGetProject.RLock()
 	calls = mock.calls.GetProject
 	mock.lockGetProject.RUnlock()
+	return calls
+}
+
+// GetProjectToken calls GetProjectTokenFunc.
+func (mock *CredsProviderMock) GetProjectToken(s1 string, s2 string) (types.ProjectToken, error) {
+	if mock.GetProjectTokenFunc == nil {
+		panic("CredsProviderMock.GetProjectTokenFunc: method is nil but Provider.GetProjectToken was just called")
+	}
+	callInfo := struct {
+		S1 string
+		S2 string
+	}{
+		S1: s1,
+		S2: s2,
+	}
+	mock.lockGetProjectToken.Lock()
+	mock.calls.GetProjectToken = append(mock.calls.GetProjectToken, callInfo)
+	mock.lockGetProjectToken.Unlock()
+	return mock.GetProjectTokenFunc(s1, s2)
+}
+
+// GetProjectTokenCalls gets all the calls that were made to GetProjectToken.
+// Check the length with:
+//     len(mockedProvider.GetProjectTokenCalls())
+func (mock *CredsProviderMock) GetProjectTokenCalls() []struct {
+	S1 string
+	S2 string
+} {
+	var calls []struct {
+		S1 string
+		S2 string
+	}
+	mock.lockGetProjectToken.RLock()
+	calls = mock.calls.GetProjectToken
+	mock.lockGetProjectToken.RUnlock()
 	return calls
 }
 
