@@ -492,6 +492,39 @@ func newCelloToken(provider, key, secret string) *token {
 	}
 }
 
+// Convenience method that checks if a project exists using both the credential provider and database 
+func (h handler) checkProject(l log.Logger, ctx context.Context, cp credentials.Provider, w http.ResponseWriter, a credentials.Authorization, projectName string) (bool, error) {
+
+	// Checking credential provider createToken
+	level.Debug(l).Log("message", "checking if project exists")
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error checking project", "error", err)
+		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
+		return false, err
+	}
+
+	if !projectExists {
+		level.Debug(l).Log("message", "project does not exist")
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		return false, err
+	}
+
+	// Checking database listTokens
+	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving project", "error", err)
+		if errors.Is(err, upper.ErrNoMoreRows) {
+			h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		} else {
+			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		}
+		return false, err
+	}
+
+	return true, err
+}
+
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-project")
@@ -1009,17 +1042,9 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
-	level.Debug(l).Log("message", projectName)
-	projectExists, err := cp.ProjectExists(projectName)
-	if err != nil {
-		level.Error(l).Log("message", "error checking project", "error", err)
-		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
-		return
-	}
+	projectExists, err := h.checkProject(l, ctx, cp, w, *a, projectName)
 
-	if !projectExists {
-		level.Error(l).Log("error", "project does not exist")
-		h.errorResponse(w, "project does not exist", http.StatusBadRequest)
+	if err != nil || !projectExists {
 		return
 	}
 
@@ -1077,14 +1102,17 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
-		level.Error(l).Log("message", "error retrieving project", "error", err)
-		if errors.Is(err, upper.ErrNoMoreRows) {
-			h.errorResponse(w, "project does not exist", http.StatusNotFound)
-		} else {
-			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
-		}
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	projectExists, err := h.checkProject(l, ctx, cp, w, *a, projectName)
+
+	if err != nil || !projectExists {
 		return
 	}
 

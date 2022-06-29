@@ -225,6 +225,9 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 		"undeletableproject",
 		"somedeletedberror",
 		"tokendberror",
+		"projectnotokens",
+		"projectreaderror",
+		"projectlisttokenserror",
 	}
 	for _, existingProjects := range existingProjects {
 		if name == existingProjects {
@@ -321,7 +324,7 @@ func TestCreateToken(t *testing.T) {
 		{
 			name:       "project does not exist",
 			req:        loadJSON(t, "TestCreateToken/request.json"),
-			want:       http.StatusBadRequest,
+			want:       http.StatusNotFound,
 			respFile:   "TestCreateToken/project_does_not_exist.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/project1234/tokens",
