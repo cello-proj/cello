@@ -341,7 +341,7 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, 
 }
 
 func (v VaultProvider) DeleteProjectToken(tokenID string) error {
-	if v.isAdmin() {
+	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to delete tokens")
 	}
 
@@ -358,7 +358,7 @@ func (v VaultProvider) DeleteProjectToken(tokenID string) error {
 func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.ProjectToken, error) {
 	token := types.ProjectToken{}
 
-	if v.isAdmin() {
+	if !v.isAdmin() {
 		return token, errors.New("admin credentials must be used to delete tokens")
 	}
 
