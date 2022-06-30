@@ -51,6 +51,14 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 	return nil
 }
 
+func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error) {
+	if project == "tokendberror" {
+		return db.TokenEntry{}, fmt.Errorf("token db error")
+	}
+
+	return db.TokenEntry{}, nil
+}
+
 func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
 	if project == projectDoesNotExist {
 		return []db.TokenEntry{}, upper.ErrNoMoreRows
@@ -156,6 +164,10 @@ func (m mockCredentialsProvider) CreateProject(name string) (string, string, err
 	return "", "", nil
 }
 
+func (m mockCredentialsProvider) CreateToken(name string) (string, string, string, error) {
+	return "", "", "", nil
+}
+
 func (m mockCredentialsProvider) DeleteProject(name string) error {
 	if name == "undeletableproject" {
 		return fmt.Errorf("Some error occured deleting this project")
@@ -212,6 +224,10 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 		"undeletableprojecttargets",
 		"undeletableproject",
 		"somedeletedberror",
+		"tokendberror",
+		"projectnotokens",
+		"projectreaderror",
+		"projectlisttokenserror",
 	}
 	for _, existingProjects := range existingProjects {
 		if name == existingProjects {
@@ -287,6 +303,48 @@ func TestCreateProject(t *testing.T) {
 			want:       http.StatusInternalServerError,
 			authHeader: adminAuthHeader,
 			url:        "/projects",
+			method:     "POST",
+		},
+	}
+	runTests(t, tests)
+}
+
+func TestCreateToken(t *testing.T) {
+	tests := []test{
+
+		{
+			name:       "can create token",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestCreateToken/can_create_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "project does not exist",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusNotFound,
+			respFile:   "TestCreateToken/project_does_not_exist.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project1234/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "fails to create token when not admin",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusUnauthorized,
+			respFile:   "TestCreateToken/fails_to_create_token_when_not_admin_response.json",
+			authHeader: userAuthHeader,
+			url:        "/projects/undeletableprojecttargets/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "token fails to create db entry",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects/tokendberror/tokens",
 			method:     "POST",
 		},
 	}

@@ -1,5 +1,12 @@
 package responses
 
+// CreateToken represents the output for CreateToken.
+type CreateToken struct {
+	CreatedAt string `json:"created_at"`
+	Token     string `json:"token"`
+	TokenID   string `json:"token_id"`
+}
+
 // Diff represents the responses for Diff.
 type Diff TargetOperation
 
