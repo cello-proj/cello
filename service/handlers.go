@@ -577,13 +577,11 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		TokenID: secretAccessor,
 	}
 
-	jsonResult, err := json.Marshal(resp)
-	if err != nil {
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		level.Error(l).Log("message", "error serializing token", "error", err)
 		h.errorResponse(w, "error serializing token", http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprint(w, string(jsonResult))
 }
 
 // Get a project
@@ -623,14 +621,11 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		Repository: projectEntry.Repository,
 	}
 
-	data, err := json.Marshal(resp)
-	if err != nil {
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		level.Error(l).Log("message", "error creating response", "error", err)
 		h.errorResponse(w, "error creating response object", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Fprint(w, string(data))
 }
 
 // Delete a project
@@ -785,7 +780,6 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating target", http.StatusInternalServerError)
 		return
 	}
-
 	fmt.Fprint(w, "{}")
 }
 
