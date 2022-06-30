@@ -188,6 +188,9 @@ func genProjectAppRole(name string) string {
 }
 
 func (v VaultProvider) CreateToken(name string) (string, string, string, error) {
+	if !v.isAdmin() {
+		return "", "", "", errors.New("admin credentials must be used to create project")
+	}
 	secretID, secretAccessor, err := v.generateSecrets(name)
 	if err != nil {
 		return "", "", "", err

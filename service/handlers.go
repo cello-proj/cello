@@ -492,32 +492,32 @@ func newCelloToken(provider, key, secret string) *token {
 	}
 }
 
-// Convenience method that checks if a project exists using both the credential provider and database
+// projectExists checks if a project exists using both the credential provider and database
 func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials.Provider, w http.ResponseWriter, projectName string) (bool, error) {
 
 	// Checking credential provider
 	level.Debug(l).Log("message", "checking if project exists")
 	projectExists, err := cp.ProjectExists(projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error checking project", "error", err)
-		h.errorResponse(w, "error checking project", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error checking credentials provider for project", "error", err)
+		h.errorResponse(w, "error checking credentials provider for project", http.StatusInternalServerError)
 		return false, err
 	}
 
 	if !projectExists {
-		level.Debug(l).Log("message", "project does not exist")
-		h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		level.Debug(l).Log("message", "project does not exist in credentials provider")
+		h.errorResponse(w, "project does not exist in credentials provider", http.StatusNotFound)
 		return false, err
 	}
 
 	// Checking database
 	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error retrieving project", "error", err)
+		level.Error(l).Log("message", "error retrieving project from database", "error", err)
 		if errors.Is(err, upper.ErrNoMoreRows) {
-			h.errorResponse(w, "project does not exist", http.StatusNotFound)
+			h.errorResponse(w, "project does not exist in database", http.StatusNotFound)
 		} else {
-			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+			h.errorResponse(w, "error retrieving project from database", http.StatusInternalServerError)
 		}
 		return false, err
 	}
@@ -1051,8 +1051,8 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "creating token")
 	role, secret, secretAccessor, err := cp.CreateToken(projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error creating token", "error", err)
-		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error creating token with credentials provider", "error", err)
+		h.errorResponse(w, "error creating token with credentials provider", http.StatusInternalServerError)
 		return
 	}
 
@@ -1066,19 +1066,17 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 
 	token := newCelloToken("vault", role, secret)
 
-	resp := responses.TokenResponse{
+	resp := responses.CreateToken{
 		CreatedAt: te.CreatedAt,
 		Token:     token.Token,
 		TokenID:   te.TokenID,
 	}
 
-	jsonResult, err := json.Marshal(resp)
-	if err != nil {
-		level.Error(l).Log("message", "error serializing token", "error", err)
-		h.errorResponse(w, "error serializing token", http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		level.Error(l).Log("message", "error serializing project token", "error", err)
+		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprint(w, string(jsonResult))
 }
 
 // Lists tokens for a project
