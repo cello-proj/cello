@@ -493,7 +493,7 @@ func newCelloToken(provider, key, secret string) *token {
 }
 
 // Convenience method that checks if a project exists using both the credential provider and database
-func (h handler) checkProject(ctx context.Context, l log.Logger, cp credentials.Provider, w http.ResponseWriter, projectName string) (bool, error) {
+func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials.Provider, w http.ResponseWriter, projectName string) (bool, error) {
 
 	// Checking credential provider
 	level.Debug(l).Log("message", "checking if project exists")
@@ -1042,7 +1042,7 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
 		return
 	}
-	projectExists, err := h.checkProject(ctx, l, cp, w, projectName)
+	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
 
 	if err != nil || !projectExists {
 		return
@@ -1110,7 +1110,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectExists, err := h.checkProject(ctx, l, cp, w, projectName)
+	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
 
 	if err != nil || !projectExists {
 		return
