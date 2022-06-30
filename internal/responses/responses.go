@@ -1,5 +1,11 @@
 package responses
 
+// CreateProject represents the responses for CreateProjecta.
+type CreateProject struct {
+	Token   string `json:"token"`
+	TokenID string `json:"token_id"`
+}
+
 // Diff represents the responses for Diff.
 type Diff TargetOperation
 

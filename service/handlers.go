@@ -562,7 +562,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	level.Debug(l).Log("message", "creating project")
-	role, secret, err := cp.CreateProject(capp.Name)
+	role, secret, secretAccessor, err := cp.CreateProject(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error creating project", "error", err)
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
@@ -570,8 +570,14 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "retrieving Cello token")
-	t := newCelloToken("vault", role, secret)
-	jsonResult, err := json.Marshal(t)
+	token := newCelloToken("vault", role, secret)
+
+	resp := responses.CreateProject{
+		Token:   token.Token,
+		TokenID: secretAccessor,
+	}
+
+	jsonResult, err := json.Marshal(resp)
 	if err != nil {
 		level.Error(l).Log("message", "error serializing token", "error", err)
 		h.errorResponse(w, "error serializing token", http.StatusInternalServerError)

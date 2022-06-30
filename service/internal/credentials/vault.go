@@ -20,8 +20,9 @@ const (
 
 // Provider defines the interface required by providers.
 type Provider interface {
-	CreateProject(string) (string, string, error)
+	CreateProject(string) (string, string, string, error)
 	CreateTarget(string, types.Target) error
+	CreateToken(string) (string, string, string, error)
 	UpdateTarget(string, types.Target) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
@@ -186,32 +187,40 @@ func genProjectAppRole(name string) string {
 	return fmt.Sprintf("%s/%s-%s", vaultAppRolePrefix, vaultProjectPrefix, name)
 }
 
-func (v VaultProvider) CreateProject(name string) (string, string, error) {
+func (v VaultProvider) CreateToken(name string) (string, string, string, error) {
 	if !v.isAdmin() {
-		return "", "", errors.New("admin credentials must be used to create project")
+		return "", "", "", errors.New("admin credentials must be used to create token")
+	}
+
+	secretID, secretAccessor, err := v.generateSecrets(name)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	roleID, err := v.readRoleID(name)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return roleID, secretID, secretAccessor, nil
+}
+
+func (v VaultProvider) CreateProject(name string) (string, string, string, error) {
+	if !v.isAdmin() {
+		return "", "", "", errors.New("admin credentials must be used to create project")
 	}
 
 	policy := defaultVaultReadonlyPolicyAWS(name)
 	err := v.createPolicyState(name, policy)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	if err := v.writeProjectState(name); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	secretID, err := v.readSecretID(name)
-	if err != nil {
-		return "", "", err
-	}
-
-	roleID, err := v.readRoleID(name)
-	if err != nil {
-		return "", "", err
-	}
-
-	return roleID, secretID, nil
+	return v.CreateToken(name)
 }
 
 // CreateTarget creates a target for the project.
@@ -406,15 +415,15 @@ func (v VaultProvider) readRoleID(appRoleName string) (string, error) {
 	return secret.Data["role_id"].(string), nil
 }
 
-func (v VaultProvider) readSecretID(appRoleName string) (string, error) {
+func (v VaultProvider) generateSecrets(appRoleName string) (string, string, error) {
 	options := map[string]interface{}{
 		"force": true,
 	}
 	secret, err := v.vaultLogicalSvc.Write(fmt.Sprintf("%s/secret-id", genProjectAppRole(appRoleName)), options)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return secret.Data["secret_id"].(string), nil
+	return secret.Data["secret_id"].(string), secret.Data["secret_id_accessor"].(string), nil
 }
 
 func (v VaultProvider) TargetExists(projectName, targetName string) (bool, error) {

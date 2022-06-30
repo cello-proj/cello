@@ -152,8 +152,12 @@ func (m mockCredentialsProvider) GetToken() (string, error) {
 	return testPassword, nil
 }
 
-func (m mockCredentialsProvider) CreateProject(name string) (string, string, error) {
-	return "", "", nil
+func (m mockCredentialsProvider) CreateProject(name string) (string, string, string, error) {
+	return "", "", "", nil
+}
+
+func (m mockCredentialsProvider) CreateToken(name string) (string, string, string, error) {
+	return "", "", "", nil
 }
 
 func (m mockCredentialsProvider) DeleteProject(name string) error {
