@@ -1014,7 +1014,6 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
-// Delete a token
 func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectName := vars["projectName"]
@@ -1047,13 +1046,8 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "checking if project exists")
 	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
-	if err != nil {
-		level.Error(l).Log("message", "error retrieving project", "error", err)
-		h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
-		return
-	}
 
-	if !projectExists {
+	if err != nil || !projectExists {
 		return
 	}
 
@@ -1082,6 +1076,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// delete token from DB and CP
 	level.Debug(l).Log("message", "deleting token from database")
 	if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
 		level.Error(l).Log("message", "error deleting token front database", "error", err)

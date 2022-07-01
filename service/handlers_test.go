@@ -59,6 +59,22 @@ func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secretAcce
 	return db.TokenEntry{}, nil
 }
 
+func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
+	if project == projectDoesNotExist {
+		return []db.TokenEntry{}, upper.ErrNoMoreRows
+	}
+
+	if project == "projectreaderror" {
+		return []db.TokenEntry{}, errors.New("error reading DB")
+	}
+
+	if project == "projectlisttokenserror" {
+		return []db.TokenEntry{}, errors.New("error reading DB")
+	}
+
+	return []db.TokenEntry{}, upper.ErrNoMoreRows
+}
+
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
 	if project == projectDoesNotExist {
 		return db.ProjectEntry{}, upper.ErrNoMoreRows
@@ -77,22 +93,6 @@ func (d mockDB) DeleteProjectEntry(ctx context.Context, project string) error {
 	}
 
 	return nil
-}
-
-func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
-	if project == projectDoesNotExist {
-		return []db.TokenEntry{}, upper.ErrNoMoreRows
-	}
-
-	if project == "projectreaderror" {
-		return []db.TokenEntry{}, errors.New("error reading DB")
-	}
-
-	if project == "projectlisttokenserror" {
-		return []db.TokenEntry{}, errors.New("error reading DB")
-	}
-
-	return []db.TokenEntry{}, upper.ErrNoMoreRows
 }
 
 func (d mockDB) DeleteTokenEntry(ctx context.Context, token string) error {
