@@ -1051,7 +1051,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check if token exists in cp and db
+	// check if token exists in CP and DB
 	projectToken, err := cp.GetProjectToken(projectName, tokenID)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving token from credentials provider", "error", err)
@@ -1085,7 +1085,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "deleting token from credentials provider")
-	if err = cp.DeleteProjectToken(tokenID); err != nil {
+	if err = cp.DeleteProjectToken(projectName, tokenID); err != nil {
 		level.Error(l).Log("message", "error deleting token from credentials provider", "error", err)
 		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
 	}

@@ -32,7 +32,7 @@ var _ credentials.Provider = &CredsProviderMock{}
 // 			DeleteProjectFunc: func(s string) error {
 // 				panic("mock out the DeleteProject method")
 // 			},
-// 			DeleteProjectTokenFunc: func(s string) error {
+// 			DeleteProjectTokenFunc: func(s1 string, s2 string) error {
 // 				panic("mock out the DeleteProjectToken method")
 // 			},
 // 			DeleteTargetFunc: func(s1 string, s2 string) error {
@@ -82,7 +82,7 @@ type CredsProviderMock struct {
 	DeleteProjectFunc func(s string) error
 
 	// DeleteProjectTokenFunc mocks the DeleteProjectToken method.
-	DeleteProjectTokenFunc func(s string) error
+	DeleteProjectTokenFunc func(s1 string, s2 string) error
 
 	// DeleteTargetFunc mocks the DeleteTarget method.
 	DeleteTargetFunc func(s1 string, s2 string) error
@@ -137,8 +137,10 @@ type CredsProviderMock struct {
 		}
 		// DeleteProjectToken holds details about calls to the DeleteProjectToken method.
 		DeleteProjectToken []struct {
-			// S is the s argument value.
-			S string
+			// S1 is the s1 argument value.
+			S1 string
+			// S2 is the s2 argument value.
+			S2 string
 		}
 		// DeleteTarget holds details about calls to the DeleteTarget method.
 		DeleteTarget []struct {
@@ -339,29 +341,33 @@ func (mock *CredsProviderMock) DeleteProjectCalls() []struct {
 }
 
 // DeleteProjectToken calls DeleteProjectTokenFunc.
-func (mock *CredsProviderMock) DeleteProjectToken(s string) error {
+func (mock *CredsProviderMock) DeleteProjectToken(s1 string, s2 string) error {
 	if mock.DeleteProjectTokenFunc == nil {
 		panic("CredsProviderMock.DeleteProjectTokenFunc: method is nil but Provider.DeleteProjectToken was just called")
 	}
 	callInfo := struct {
-		S string
+		S1 string
+		S2 string
 	}{
-		S: s,
+		S1: s1,
+		S2: s2,
 	}
 	mock.lockDeleteProjectToken.Lock()
 	mock.calls.DeleteProjectToken = append(mock.calls.DeleteProjectToken, callInfo)
 	mock.lockDeleteProjectToken.Unlock()
-	return mock.DeleteProjectTokenFunc(s)
+	return mock.DeleteProjectTokenFunc(s1, s2)
 }
 
 // DeleteProjectTokenCalls gets all the calls that were made to DeleteProjectToken.
 // Check the length with:
 //     len(mockedProvider.DeleteProjectTokenCalls())
 func (mock *CredsProviderMock) DeleteProjectTokenCalls() []struct {
-	S string
+	S1 string
+	S2 string
 } {
 	var calls []struct {
-		S string
+		S1 string
+		S2 string
 	}
 	mock.lockDeleteProjectToken.RLock()
 	calls = mock.calls.DeleteProjectToken

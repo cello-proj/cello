@@ -147,7 +147,7 @@ func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f
 
 type mockCredentialsProvider struct{}
 
-func (m mockCredentialsProvider) DeleteProjectToken(tokenID string) error {
+func (m mockCredentialsProvider) DeleteProjectToken(projectName, tokenID string) error {
 	return nil
 }
 
@@ -812,7 +812,7 @@ func TestDeleteToken(t *testing.T) {
 				ProjectExistsFunc: func(s string) (bool, error) {
 					return true, nil
 				},
-				DeleteProjectTokenFunc: func(s string) error {
+				DeleteProjectTokenFunc: func(p, t string) error {
 					return nil
 				},
 			},
@@ -1152,7 +1152,7 @@ func runTestsV2(t *testing.T, tests []test) {
 				dbClient: newMockDB(),
 			}
 
-			if tt.dbMock != nil {
+			if tt.dbMock == nil {
 				h.dbClient = tt.dbMock
 			}
 

@@ -31,7 +31,7 @@ type Provider interface {
 	GetProject(string) (responses.GetProject, error)
 	GetTarget(string, string) (types.Target, error)
 	GetToken() (string, error)
-	DeleteProjectToken(string) error
+	DeleteProjectToken(string, string) error
 	GetProjectToken(string, string) (types.ProjectToken, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
@@ -349,15 +349,18 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, 
 	}, nil
 }
 
-func (v VaultProvider) DeleteProjectToken(tokenID string) error {
+func (v VaultProvider) DeleteProjectToken(projectName, tokenID string) error {
 	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to delete tokens")
 	}
 
-	path := fmt.Sprintf("auth/approle/role/%s/secret-id-accessor/destroy", tokenID)
-	_, err := v.vaultLogicalSvc.Delete(path)
+	data := map[string]interface{}{
+		"secret_id_accessor": tokenID,
+	}
+
+	path := fmt.Sprintf("%s/secret-id-accessor/destroy", genProjectAppRole(projectName))
+	_, err := v.vaultLogicalSvc.Write(path, data)
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
 
@@ -375,7 +378,7 @@ func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.Proje
 		"secret_id_accessor": tokenID,
 	}
 
-	path := fmt.Sprintf("auth/approle/role/%s/secret-id-accessor/lookup", projectName)
+	path := fmt.Sprintf("%s/secret-id-accessor/lookup", genProjectAppRole(projectName))
 	projectToken, err := v.vaultLogicalSvc.Write(path, data)
 	if err != nil {
 		return token, fmt.Errorf("vault get secret ID accessor error: %w", err)
