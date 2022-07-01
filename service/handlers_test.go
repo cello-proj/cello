@@ -984,13 +984,6 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenserror/tokens",
 			method:     "GET",
-			/*
-				cpMock: &th.CredsProviderMock{
-					ProjectExistsFunc: func(s string) (bool, error) {
-						return false, errors.New("error retrieving project")
-					},
-				},
-			*/
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
@@ -1221,11 +1214,6 @@ func runTestsV2(t *testing.T, tests []test) {
 				if bodyStr == "" && wantBodyStr == "" {
 					assert.Equal(t, bodyStr, wantBodyStr)
 				} else {
-					if tt.name == "project does not exist" {
-						fmt.Println("BODY: ", bodyStr)
-						fmt.Println("WANT: ", wantBodyStr)
-					}
-					//1fmt.Println("NAME: ", tt.name)
 					assert.JSONEq(t, wantBodyStr, bodyStr)
 				}
 			}
