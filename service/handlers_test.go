@@ -870,6 +870,9 @@ func TestDeleteToken(t *testing.T) {
 			url:        "/projects/project/tokens/deletetokenerror",
 			method:     "DELETE",
 			cpMock: &th.CredsProviderMock{
+				DeleteProjectTokenFunc: func(s1, s2 string) error {
+					return errors.New("error deleting token from Vault")
+				},
 				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
 					return types.ProjectToken{ID: "1234"}, nil
 				},
@@ -968,6 +971,11 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectreaderror/tokens",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return false, errors.New("error retrieving project")
+				},
+			},
 		},
 		{
 			name:       "list tokens read error",
@@ -976,6 +984,21 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenserror/tokens",
 			method:     "GET",
+			/*
+				cpMock: &th.CredsProviderMock{
+					ProjectExistsFunc: func(s string) (bool, error) {
+						return false, errors.New("error retrieving project")
+					},
+				},
+			*/
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{}, errors.New("error from DB")
+				},
+			},
 		},
 	}
 	runTestsV2(t, tests)
@@ -1130,7 +1153,6 @@ func runTests(t *testing.T, tests []test) {
 	}
 }
 
-// Run tests, checking the response status codes.
 func runTestsV2(t *testing.T, tests []test) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1152,7 +1174,7 @@ func runTestsV2(t *testing.T, tests []test) {
 				dbClient: newMockDB(),
 			}
 
-			if tt.dbMock == nil {
+			if tt.dbMock != nil {
 				h.dbClient = tt.dbMock
 			}
 

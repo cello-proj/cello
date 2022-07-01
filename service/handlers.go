@@ -1193,8 +1193,8 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error listing tokens", "error", err)
-		h.errorResponse(w, "error listing tokens", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error listing project tokens", "error", err)
+		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
 	}
 
