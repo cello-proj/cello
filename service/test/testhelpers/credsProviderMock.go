@@ -26,6 +26,9 @@ var _ credentials.Provider = &CredsProviderMock{}
 // 			CreateTargetFunc: func(s string, target types.Target) error {
 // 				panic("mock out the CreateTarget method")
 // 			},
+// 			CreateTokenFunc: func(s string) (string, string, string, error) {
+// 				panic("mock out the CreateToken method")
+// 			},
 // 			DeleteProjectFunc: func(s string) error {
 // 				panic("mock out the DeleteProject method")
 // 			},
@@ -71,6 +74,9 @@ type CredsProviderMock struct {
 
 	// CreateTargetFunc mocks the CreateTarget method.
 	CreateTargetFunc func(s string, target types.Target) error
+
+	// CreateTokenFunc mocks the CreateToken method.
+	CreateTokenFunc func(s string) (string, string, string, error)
 
 	// DeleteProjectFunc mocks the DeleteProject method.
 	DeleteProjectFunc func(s string) error
@@ -118,6 +124,11 @@ type CredsProviderMock struct {
 			S string
 			// Target is the target argument value.
 			Target types.Target
+		}
+		// CreateToken holds details about calls to the CreateToken method.
+		CreateToken []struct {
+			// S is the s argument value.
+			S string
 		}
 		// DeleteProject holds details about calls to the DeleteProject method.
 		DeleteProject []struct {
@@ -185,6 +196,7 @@ type CredsProviderMock struct {
 	}
 	lockCreateProject      sync.RWMutex
 	lockCreateTarget       sync.RWMutex
+	lockCreateToken        sync.RWMutex
 	lockDeleteProject      sync.RWMutex
 	lockDeleteProjectToken sync.RWMutex
 	lockDeleteTarget       sync.RWMutex
@@ -261,6 +273,37 @@ func (mock *CredsProviderMock) CreateTargetCalls() []struct {
 	mock.lockCreateTarget.RLock()
 	calls = mock.calls.CreateTarget
 	mock.lockCreateTarget.RUnlock()
+	return calls
+}
+
+// CreateToken calls CreateTokenFunc.
+func (mock *CredsProviderMock) CreateToken(s string) (string, string, string, error) {
+	if mock.CreateTokenFunc == nil {
+		panic("CredsProviderMock.CreateTokenFunc: method is nil but Provider.CreateToken was just called")
+	}
+	callInfo := struct {
+		S string
+	}{
+		S: s,
+	}
+	mock.lockCreateToken.Lock()
+	mock.calls.CreateToken = append(mock.calls.CreateToken, callInfo)
+	mock.lockCreateToken.Unlock()
+	return mock.CreateTokenFunc(s)
+}
+
+// CreateTokenCalls gets all the calls that were made to CreateToken.
+// Check the length with:
+//     len(mockedProvider.CreateTokenCalls())
+func (mock *CredsProviderMock) CreateTokenCalls() []struct {
+	S string
+} {
+	var calls []struct {
+		S string
+	}
+	mock.lockCreateToken.RLock()
+	calls = mock.calls.CreateToken
+	mock.lockCreateToken.RUnlock()
 	return calls
 }
 

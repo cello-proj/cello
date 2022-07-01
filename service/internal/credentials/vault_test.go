@@ -14,18 +14,20 @@ var errTest = fmt.Errorf("error")
 
 func TestVaultCreateProject(t *testing.T) {
 	tests := []struct {
-		name           string
-		admin          bool
-		expectedRole   string
-		expectedSecret string
-		vaultErr       error
-		errResult      bool
+		name                   string
+		admin                  bool
+		expectedRole           string
+		expectedSecret         string
+		expectedSecretAccessor string
+		vaultErr               error
+		errResult              bool
 	}{
 		{
-			name:           "create project success",
-			admin:          true,
-			expectedSecret: "test-secret",
-			expectedRole:   "test-role",
+			name:                   "create project success",
+			admin:                  true,
+			expectedSecret:         "test-secret",
+			expectedSecretAccessor: "test-secret-accessor",
+			expectedRole:           "test-role",
 		},
 		{
 			name:      "create project admin error",
@@ -50,8 +52,9 @@ func TestVaultCreateProject(t *testing.T) {
 			v := VaultProvider{
 				roleID: role,
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: map[string]interface{}{
-					"secret_id": tt.expectedSecret,
-					"role_id":   tt.expectedRole,
+					"secret_id":          tt.expectedSecret,
+					"secret_id_accessor": tt.expectedSecretAccessor,
+					"role_id":            tt.expectedRole,
 				}},
 				vaultSysSvc: &mockVaultSys{},
 			}

@@ -492,6 +492,39 @@ func newCelloToken(provider, key, secret string) *token {
 	}
 }
 
+// projectExists checks if a project exists using both the credential provider and database
+func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials.Provider, w http.ResponseWriter, projectName string) (bool, error) {
+
+	// Checking credential provider
+	level.Debug(l).Log("message", "checking if project exists")
+	projectExists, err := cp.ProjectExists(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error checking credentials provider for project", "error", err)
+		h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		return false, err
+	}
+
+	if !projectExists {
+		level.Debug(l).Log("message", "project does not exist in credentials provider")
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		return false, err
+	}
+
+	// Checking database
+	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving project from database", "error", err)
+		if errors.Is(err, upper.ErrNoMoreRows) {
+			h.errorResponse(w, "project does not exist", http.StatusNotFound)
+		} else {
+			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
+		}
+		return false, err
+	}
+
+	return true, err
+}
+
 // Creates a project
 func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "create-project")
@@ -981,30 +1014,6 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
-func (h handler) projectExists(ctx context.Context, projectName string, cp credentials.Provider) (bool, error) {
-	// TODO: writing both to the creds provider and DB should be transactional. Currently, there could be where a project
-	// exists in one store and not the other, orphaned items.
-	// If transactional, if the project doesn't exist in one store, we can safely assume that it doesn't exist in the other.
-	projectExists, err := cp.ProjectExists(projectName)
-	if err != nil {
-		return false, err
-	}
-
-	if !projectExists {
-		return false, nil
-	}
-
-	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
-	if err != nil {
-		if errors.Is(err, upper.ErrNoMoreRows) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
-}
-
 // Delete a token
 func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -1037,7 +1046,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	level.Debug(l).Log("message", "checking if project exists")
-	projectExists, err := h.projectExists(ctx, projectName, cp)
+	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project", "error", err)
 		h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
@@ -1045,7 +1054,6 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !projectExists {
-		h.errorResponse(w, "project does not exist", http.StatusNotFound)
 		return
 	}
 
@@ -1085,6 +1093,70 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	if err = cp.DeleteProjectToken(tokenID); err != nil {
 		level.Error(l).Log("message", "error deleting token from credentials provider", "error", err)
 		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+	}
+}
+
+// Creates a token
+func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+
+	l := h.requestLogger(r, "op", "create-token", "project", projectName)
+
+	level.Debug(l).Log("message", "validating authorization header for token create")
+	ah := r.Header.Get("Authorization")
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
+	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	ctx := r.Context()
+
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
+
+	if err != nil || !projectExists {
+		return
+	}
+
+	level.Debug(l).Log("message", "creating token")
+	role, secret, secretAccessor, err := cp.CreateToken(projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error creating token with credentials provider", "error", err)
+		h.errorResponse(w, "error creating token with credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	level.Debug(l).Log("message", "inserting into db")
+	te, err := h.dbClient.CreateTokenEntry(ctx, projectName, secretAccessor)
+	if err != nil {
+		level.Error(l).Log("message", "error inserting token to db", "error", err)
+		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
+		return
+	}
+
+	token := newCelloToken("vault", role, secret)
+
+	resp := responses.CreateToken{
+		CreatedAt: te.CreatedAt,
+		Token:     token.Token,
+		TokenID:   te.TokenID,
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		level.Error(l).Log("message", "error serializing project token", "error", err)
+		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
 	}
 }
@@ -1110,14 +1182,17 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
 	if err != nil {
-		level.Error(l).Log("message", "error retrieving project", "error", err)
-		if errors.Is(err, upper.ErrNoMoreRows) {
-			h.errorResponse(w, "project does not exist", http.StatusNotFound)
-		} else {
-			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
-		}
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
+
+	if err != nil || !projectExists {
 		return
 	}
 
