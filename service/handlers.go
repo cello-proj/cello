@@ -1079,7 +1079,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	// delete token from DB and CP
 	level.Debug(l).Log("message", "deleting token from database")
 	if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
-		level.Error(l).Log("message", "error deleting token front database", "error", err)
+		level.Error(l).Log("message", "error deleting token from database", "error", err)
 		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
 		return
 	}
