@@ -189,6 +189,15 @@ Response Body
 ```
 ```
 
+## Delete Project Token
+
+DELETE /projects/<project_name>/tokens/<token_id>
+
+Response Body
+
+```
+```
+
 ## List Project Tokens
 
 GET /projects/<project_name>/tokens

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Added schema updates to create tokens table
 * Added golang-migrate to manage schema
+* Delete project token
 * List project tokens
 * Create project token
 

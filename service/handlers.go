@@ -500,13 +500,13 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 	projectExists, err := cp.ProjectExists(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error checking credentials provider for project", "error", err)
-		h.errorResponse(w, "error checking credentials provider for project", http.StatusInternalServerError)
+		h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
 		return false, err
 	}
 
 	if !projectExists {
 		level.Debug(l).Log("message", "project does not exist in credentials provider")
-		h.errorResponse(w, "project does not exist in credentials provider", http.StatusNotFound)
+		h.errorResponse(w, "project does not exist", http.StatusNotFound)
 		return false, err
 	}
 
@@ -515,9 +515,9 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project from database", "error", err)
 		if errors.Is(err, upper.ErrNoMoreRows) {
-			h.errorResponse(w, "project does not exist in database", http.StatusNotFound)
+			h.errorResponse(w, "project does not exist", http.StatusNotFound)
 		} else {
-			h.errorResponse(w, "error retrieving project from database", http.StatusInternalServerError)
+			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
 		}
 		return false, err
 	}
@@ -1014,6 +1014,83 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(data))
 }
 
+func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	projectName := vars["projectName"]
+	tokenID := vars["tokenID"]
+
+	l := h.requestLogger(r, "op", "delete-token", "project", projectName, "tokenID", tokenID)
+
+	level.Debug(l).Log("message", "validating authorization header for delete token")
+
+	ah := r.Header.Get("Authorization")
+	a, err := credentials.NewAuthorization(ah)
+	if err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header format", http.StatusUnauthorized)
+		return
+	}
+	if err := a.Validate(a.ValidateAuthorizedAdmin(h.env.AdminSecret)); err != nil {
+		h.errorResponse(w, "error unauthorized, invalid authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	level.Debug(l).Log("message", "creating credential provider")
+	cp, err := h.newCredentialsProvider(*a, h.env, r.Header, credentials.NewVaultConfig, credentials.NewVaultSvc)
+	if err != nil {
+		level.Error(l).Log("message", "error creating credentials provider", "error", err)
+		h.errorResponse(w, "error creating credentials provider", http.StatusInternalServerError)
+		return
+	}
+
+	ctx := r.Context()
+
+	level.Debug(l).Log("message", "checking if project exists")
+	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
+
+	if err != nil || !projectExists {
+		return
+	}
+
+	// check if token exists in CP and DB
+	projectToken, err := cp.GetProjectToken(projectName, tokenID)
+	if err != nil {
+		level.Error(l).Log("message", "error retrieving token from credentials provider", "error", err)
+		h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
+		return
+	}
+
+	if projectToken == (types.ProjectToken{}) {
+		level.Error(l).Log("message", "token does not exist in credential provider", "error", err)
+		h.errorResponse(w, "token does not exist", http.StatusNotFound)
+		return
+	}
+
+	if _, err = h.dbClient.ReadTokenEntry(ctx, tokenID); err != nil {
+		if errors.Is(err, upper.ErrNoMoreRows) {
+			level.Error(l).Log("message", "token does not exist in DB", "error", err)
+			h.errorResponse(w, "token does not exist", http.StatusNotFound)
+			return
+		}
+		level.Error(l).Log("message", "error retrieving token from DB", "error", err)
+		h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
+		return
+	}
+
+	// delete token from DB and CP
+	level.Debug(l).Log("message", "deleting token from database")
+	if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
+		level.Error(l).Log("message", "error deleting token from database", "error", err)
+		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+		return
+	}
+
+	level.Debug(l).Log("message", "deleting token from credentials provider")
+	if err = cp.DeleteProjectToken(projectName, tokenID); err != nil {
+		level.Error(l).Log("message", "error deleting token from credentials provider", "error", err)
+		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+	}
+}
+
 // Creates a token
 func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -1116,8 +1193,8 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
 	if err != nil {
-		level.Error(l).Log("message", "error listing tokens", "error", err)
-		h.errorResponse(w, "error listing tokens", http.StatusInternalServerError)
+		level.Error(l).Log("message", "error listing project tokens", "error", err)
+		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
 	}
 
