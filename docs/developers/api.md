@@ -17,7 +17,8 @@ Response Body
 
 ```json
 {
-  "token": "abcd-1234"
+  "token": "abcd-1234",
+  "token_id": "dcba-4321"
 }
 ```
 

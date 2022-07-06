@@ -1,6 +1,12 @@
 package responses
 
-// CreateToken represents the output for CreateToken.
+// CreateProject represents the responses for CreateProject.
+type CreateProject struct {
+	Token   string `json:"token"`
+	TokenID string `json:"token_id"`
+}
+
+// CreateToken represents the responses for CreateToken.
 type CreateToken struct {
 	CreatedAt string `json:"created_at"`
 	Token     string `json:"token"`

@@ -70,7 +70,7 @@ var _ credentials.Provider = &CredsProviderMock{}
 // 	}
 type CredsProviderMock struct {
 	// CreateProjectFunc mocks the CreateProject method.
-	CreateProjectFunc func(s string) (string, string, error)
+	CreateProjectFunc func(s string) (string, string, string, error)
 
 	// CreateTargetFunc mocks the CreateTarget method.
 	CreateTargetFunc func(s string, target types.Target) error
@@ -213,7 +213,7 @@ type CredsProviderMock struct {
 }
 
 // CreateProject calls CreateProjectFunc.
-func (mock *CredsProviderMock) CreateProject(s string) (string, string, error) {
+func (mock *CredsProviderMock) CreateProject(s string) (string, string, string, error) {
 	if mock.CreateProjectFunc == nil {
 		panic("CredsProviderMock.CreateProjectFunc: method is nil but Provider.CreateProject was just called")
 	}

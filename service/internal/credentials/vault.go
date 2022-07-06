@@ -22,7 +22,7 @@ const (
 
 // Provider defines the interface required by providers.
 type Provider interface {
-	CreateProject(string) (string, string, error)
+	CreateProject(string) (string, string, string, error)
 	CreateTarget(string, types.Target) error
 	CreateToken(string) (string, string, string, error)
 	UpdateTarget(string, types.Target) error
@@ -193,8 +193,9 @@ func genProjectAppRole(name string) string {
 
 func (v VaultProvider) CreateToken(name string) (string, string, string, error) {
 	if !v.isAdmin() {
-		return "", "", "", errors.New("admin credentials must be used to create project")
+		return "", "", "", errors.New("admin credentials must be used to create token")
 	}
+
 	secretID, secretAccessor, err := v.generateSecrets(name)
 	if err != nil {
 		return "", "", "", err
@@ -208,23 +209,22 @@ func (v VaultProvider) CreateToken(name string) (string, string, string, error) 
 	return roleID, secretID, secretAccessor, nil
 }
 
-func (v VaultProvider) CreateProject(name string) (string, string, error) {
+func (v VaultProvider) CreateProject(name string) (string, string, string, error) {
 	if !v.isAdmin() {
-		return "", "", errors.New("admin credentials must be used to create project")
+		return "", "", "", errors.New("admin credentials must be used to create project")
 	}
 
 	policy := defaultVaultReadonlyPolicyAWS(name)
 	err := v.createPolicyState(name, policy)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	if err := v.writeProjectState(name); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	roleID, secretID, _, err := v.CreateToken(name)
-	return roleID, secretID, err
+	return v.CreateToken(name)
 }
 
 // CreateTarget creates a target for the project.

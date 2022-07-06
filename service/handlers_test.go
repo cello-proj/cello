@@ -56,7 +56,12 @@ func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secretAcce
 		return db.TokenEntry{}, fmt.Errorf("token db error")
 	}
 
-	return db.TokenEntry{}, nil
+	token := db.TokenEntry{
+		CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+		ProjectID: project,
+		TokenID:   secretAccessor,
+	}
+	return token, nil
 }
 
 func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
@@ -159,12 +164,12 @@ func (m mockCredentialsProvider) GetToken() (string, error) {
 	return testPassword, nil
 }
 
-func (m mockCredentialsProvider) CreateProject(name string) (string, string, error) {
-	return "", "", nil
+func (m mockCredentialsProvider) CreateProject(name string) (string, string, string, error) {
+	return "role-id", "secret", "secret-id-accessor", nil
 }
 
 func (m mockCredentialsProvider) CreateToken(name string) (string, string, string, error) {
-	return "", "", "", nil
+	return "role-id", "secret", "secret-id-accessor", nil
 }
 
 func (m mockCredentialsProvider) DeleteProject(name string) error {

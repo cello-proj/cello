@@ -59,7 +59,7 @@ func TestVaultCreateProject(t *testing.T) {
 				vaultSysSvc: &mockVaultSys{},
 			}
 
-			roleID, secretID, err := v.CreateProject("testProject")
+			roleID, secretID, _, err := v.CreateProject("testProject")
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)
