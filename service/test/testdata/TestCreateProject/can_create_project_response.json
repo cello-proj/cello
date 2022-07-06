@@ -1,4 +1,4 @@
 {
-  "token": "vault::",
-  "token_id": ""
+  "token": "vault:role-id:secret",
+  "token_id": "secret-id-accessor"
 }
