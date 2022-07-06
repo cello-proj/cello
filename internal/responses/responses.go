@@ -1,6 +1,6 @@
 package responses
 
-// CreateProject represents the responses for CreateProjecta.
+// CreateProject represents the responses for CreateProject.
 type CreateProject struct {
 	Token   string `json:"token"`
 	TokenID string `json:"token_id"`

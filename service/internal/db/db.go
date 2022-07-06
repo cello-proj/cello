@@ -1,9 +1,10 @@
-//go:generate go run -mod=vendor github.com/matryer/moq -out ../../test/testhelpers/dbClientMock.go -pkg testhelpers . Client:DBClientMock
+//go:generate moq -out ../../test/testhelpers/dbClientMock.go -pkg testhelpers . Client:DBClientMock
 
 package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
@@ -24,8 +25,11 @@ type TokenEntry struct {
 type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
 	DeleteProjectEntry(ctx context.Context, project string) error
-	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
+	CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (TokenEntry, error)
+	DeleteTokenEntry(ctx context.Context, token string) error
+	ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error)
+	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 }
 
 // SQLClient allows for db crud operations using postgres db
@@ -79,19 +83,6 @@ func (d SQLClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) erro
 	})
 }
 
-func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
-	res := []TokenEntry{}
-
-	sess, err := d.createSession()
-	if err != nil {
-		return res, err
-	}
-	defer sess.Close()
-
-	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
-	return res, err
-}
-
 func (d SQLClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
 	res := ProjectEntry{}
 
@@ -113,4 +104,66 @@ func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error
 	defer sess.Close()
 
 	return sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).Delete()
+}
+
+func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (TokenEntry, error) {
+	res := TokenEntry{}
+
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Tx(func(sess db.Session) error {
+		res = TokenEntry{
+			CreatedAt: time.Now().UTC().Format(time.RFC3339),
+			ProjectID: project,
+			TokenID:   secretAccessor,
+		}
+
+		if _, err = sess.Collection(TokenEntryDB).Insert(res); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return res, err
+}
+
+func (d SQLClient) DeleteTokenEntry(ctx context.Context, token string) error {
+	sess, err := d.createSession()
+	if err != nil {
+		return err
+	}
+	defer sess.Close()
+
+	return sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).Delete()
+}
+
+func (d SQLClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error) {
+	res := TokenEntry{}
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).One(&res)
+	return res, err
+
+}
+
+func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
+	res := []TokenEntry{}
+
+	sess, err := d.createSession()
+	if err != nil {
+		return res, err
+	}
+	defer sess.Close()
+
+	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
+	return res, err
 }

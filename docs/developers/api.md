@@ -46,6 +46,26 @@ Response Body
 ```
 ```
 
+## Create Token
+
+POST /projects/<project_name>/tokens
+
+Request Body
+
+```json
+```
+
+Response Body
+```json
+{
+  "created_at": "2022-06-27T21:59:58-07:00",
+  "token": "vault:98765432-abcd-1234-5678-abcdef123456:abcdef12-3456-7890-abcd-ef1234567890",
+  "token_id": "abcdef12-3456-7890-abcd-ef1234567890"
+}
+```
+
+
+
 ## Create Target
 
 POST /projects/<project_name>/targets
@@ -164,6 +184,15 @@ Response Body
 ## Delete Target
 
 DELETE /projects/<project_name>/targets/<target_name>
+
+Response Body
+
+```
+```
+
+## Delete Project Token
+
+DELETE /projects/<project_name>/tokens/<token_id>
 
 Response Body
 
