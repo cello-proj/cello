@@ -52,7 +52,7 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 }
 
 func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error) {
-	if project == "tokendberror" {
+	if project == "tokendberror" || project == "tokendbentryerror" {
 		return db.TokenEntry{}, fmt.Errorf("token db error")
 	}
 
@@ -305,6 +305,14 @@ func TestCreateProject(t *testing.T) {
 		{
 			name:       "project fails to create db entry",
 			req:        loadJSON(t, "TestCreateProject/project_fails_to_create_dbentry.json"),
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects",
+			method:     "POST",
+		},
+		{
+			name:       "project fails to create token entry",
+			req:        loadJSON(t, "TestCreateProject/project_fails_to_create_token_entry.json"),
 			want:       http.StatusInternalServerError,
 			authHeader: adminAuthHeader,
 			url:        "/projects",
