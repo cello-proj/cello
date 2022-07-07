@@ -81,7 +81,7 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 		return []db.TokenEntry{{ProjectID: "project1", TokenID: "1234"}, {ProjectID: "project1", TokenID: "5678"}}, nil
 	}
 
-	return []db.TokenEntry{}, upper.ErrNoMoreRows
+	return []db.TokenEntry{}, nil
 }
 
 func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
@@ -372,6 +372,15 @@ func TestCreateToken(t *testing.T) {
 			respFile:   "TestCreateToken/token_limit_reached_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenslimit/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "error listing tokens",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusInternalServerError,
+			respFile:   "TestCreateToken/error_listing_tokens_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectlisttokenserror/tokens",
 			method:     "POST",
 		},
 	}

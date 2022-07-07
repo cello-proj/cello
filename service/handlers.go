@@ -1138,6 +1138,12 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error listing tokens from DB", "error", err)
+		h.errorResponse(w, "error listing tokens", http.StatusInternalServerError)
+		return
+	}
+
 	if len(tokens) == numOfTokensLimit {
 		level.Error(l).Log("message", "number of tokens allowed per project has been reached")
 		h.errorResponse(w, "token limit reached", http.StatusInternalServerError)
