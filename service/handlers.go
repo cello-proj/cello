@@ -25,6 +25,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	numOfTokensLimit = 2
+)
+
 // Represents a JWT token.
 type token struct {
 	Token string `json:"token"`
@@ -1130,6 +1134,19 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
 
 	if err != nil || !projectExists {
+		return
+	}
+
+	tokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
+	if err != nil {
+		level.Error(l).Log("message", "error listing tokens from DB", "error", err)
+		h.errorResponse(w, "error listing tokens", http.StatusInternalServerError)
+		return
+	}
+
+	if len(tokens) >= numOfTokensLimit {
+		level.Error(l).Log("message", "number of tokens allowed per project has been reached")
+		h.errorResponse(w, "token limit reached", http.StatusInternalServerError)
 		return
 	}
 
