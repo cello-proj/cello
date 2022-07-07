@@ -77,6 +77,10 @@ func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.Toke
 		return []db.TokenEntry{}, errors.New("error reading DB")
 	}
 
+	if project == "projectlisttokenslimit" {
+		return []db.TokenEntry{{ProjectID: "project1", TokenID: "1234"}, {ProjectID: "project1", TokenID: "5678"}}, nil
+	}
+
 	return []db.TokenEntry{}, upper.ErrNoMoreRows
 }
 
@@ -232,6 +236,7 @@ func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
 		"projectnotokens",
 		"projectreaderror",
 		"projectlisttokenserror",
+		"projectlisttokenslimit",
 	}
 	for _, existingProjects := range existingProjects {
 		if name == existingProjects {
@@ -358,6 +363,15 @@ func TestCreateToken(t *testing.T) {
 			want:       http.StatusInternalServerError,
 			authHeader: adminAuthHeader,
 			url:        "/projects/tokendberror/tokens",
+			method:     "POST",
+		},
+		{
+			name:       "allowed tokens limit reached",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusInternalServerError,
+			respFile:   "TestCreateToken/token_limit_reached_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectlisttokenslimit/tokens",
 			method:     "POST",
 		},
 	}
@@ -1150,9 +1164,9 @@ func runTests(t *testing.T, tests []test) {
 				wantBodyStr := string(wantBody)
 
 				if bodyStr == "" && wantBodyStr == "" {
-					assert.Equal(t, bodyStr, wantBodyStr)
+					assert.Equal(t, wantBodyStr, bodyStr)
 				} else {
-					assert.JSONEq(t, bodyStr, wantBodyStr)
+					assert.JSONEq(t, wantBodyStr, bodyStr)
 				}
 			}
 		})
@@ -1225,7 +1239,7 @@ func runTestsV2(t *testing.T, tests []test) {
 
 				// don't use assert.JSONEq for empty strings
 				if bodyStr == "" && wantBodyStr == "" {
-					assert.Equal(t, bodyStr, wantBodyStr)
+					assert.Equal(t, wantBodyStr, bodyStr)
 				} else {
 					assert.JSONEq(t, wantBodyStr, bodyStr)
 				}
