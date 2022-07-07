@@ -1144,7 +1144,7 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(tokens) == numOfTokensLimit {
+	if len(tokens) >= numOfTokensLimit {
 		level.Error(l).Log("message", "number of tokens allowed per project has been reached")
 		h.errorResponse(w, "token limit reached", http.StatusInternalServerError)
 		return
