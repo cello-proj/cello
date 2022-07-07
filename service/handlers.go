@@ -607,13 +607,12 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "inserting token into DB")
-	te, err := h.dbClient.CreateTokenEntry(ctx, capp.Name, secretAccessor)
+	_, err = h.dbClient.CreateTokenEntry(ctx, capp.Name, secretAccessor)
 	if err != nil {
 		level.Error(l).Log("message", "error inserting token into DB", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("TOKEN::", te)
 
 	level.Debug(l).Log("message", "retrieving Cello token")
 	token := newCelloToken("vault", role, secret)
