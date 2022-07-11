@@ -957,14 +957,17 @@ func TestListTokens(t *testing.T) {
 					return []db.TokenEntry{
 						{
 							CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+							ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
 							TokenID:   "ghi789",
 						},
 						{
 							CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+							ExpiresAt: "2023-06-21T14:43:16.172896-07:00",
 							TokenID:   "def456",
 						},
 						{
 							CreatedAt: "2022-06-21T14:42:50.182037-07:00",
+							ExpiresAt: "2023-06-21T14:42:50.182037-07:00",
 							TokenID:   "abc123",
 						},
 					}, nil

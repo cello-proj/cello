@@ -1227,6 +1227,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	for _, tokenEntry := range tokens {
 		resp = append(resp, responses.ListTokens{
 			CreatedAt: tokenEntry.CreatedAt,
+			ExpiresAt: tokenEntry.ExpiresAt,
 			TokenID:   tokenEntry.TokenID,
 		})
 	}

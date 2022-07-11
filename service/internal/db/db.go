@@ -17,6 +17,7 @@ type ProjectEntry struct {
 
 type TokenEntry struct {
 	CreatedAt string `db:"created_at"`
+	ExpiresAt string `db:"expires_at"`
 	ProjectID string `db:"project"`
 	TokenID   string `db:"token_id"`
 }
