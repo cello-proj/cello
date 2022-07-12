@@ -65,6 +65,17 @@ func (properties TargetProperties) Validate() error {
 	return validations.Validate(v...)
 }
 
+// ProjectToken represents a project token.
 type ProjectToken struct {
 	ID string `json:"token_id"`
+}
+
+// Token represents a Token.
+type Token struct {
+	CreatedAt    string       `json:"created_at"`
+	ExpiresAt    string       `json:"expires_at"`
+	ProjectID    string       `json:"project_id"`
+	ProjectToken ProjectToken `json:"project_token"`
+	RoleID       string       `json:"role_id"`
+	Secret       string       `json:"secret"`
 }

@@ -51,18 +51,12 @@ func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) erro
 	return nil
 }
 
-func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error) {
-	if project == "tokendberror" || project == "tokendbentryerror" {
-		return db.TokenEntry{}, fmt.Errorf("token db error")
+func (d mockDB) CreateTokenEntry(ctx context.Context, token types.Token) error {
+	if token.ProjectID == "tokendberror" || token.ProjectID == "tokendbentryerror" {
+		return fmt.Errorf("token db error")
 	}
 
-	token := db.TokenEntry{
-		CreatedAt: "2022-06-21T14:56:10.341066-07:00",
-		ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
-		ProjectID: project,
-		TokenID:   secretAccessor,
-	}
-	return token, nil
+	return nil
 }
 
 func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
@@ -169,12 +163,26 @@ func (m mockCredentialsProvider) GetToken() (string, error) {
 	return testPassword, nil
 }
 
-func (m mockCredentialsProvider) CreateProject(name string) (string, string, string, error) {
-	return "role-id", "secret", "secret-id-accessor", nil
+func (m mockCredentialsProvider) CreateProject(name string) (types.Token, error) {
+	return types.Token{
+		CreatedAt:    "2022-06-22T14:56:10.341066-07:00",
+		ExpiresAt:    "2023-06-22T14:56:10.341066-07:00",
+		ProjectID:    name,
+		ProjectToken: types.ProjectToken{ID: "secret-id-accessor"},
+		RoleID:       "role-id",
+		Secret:       "secret",
+	}, nil
 }
 
-func (m mockCredentialsProvider) CreateToken(name string) (string, string, string, error) {
-	return "role-id", "secret", "secret-id-accessor", nil
+func (m mockCredentialsProvider) CreateToken(name string) (types.Token, error) {
+	return types.Token{
+		CreatedAt:    "2022-06-21T14:56:10.341066-07:00",
+		ExpiresAt:    "2023-06-21T14:56:10.341066-07:00",
+		ProjectID:    name,
+		ProjectToken: types.ProjectToken{ID: "secret-id-accessor"},
+		RoleID:       "role-id",
+		Secret:       "secret",
+	}, nil
 }
 
 func (m mockCredentialsProvider) DeleteProject(name string) error {
