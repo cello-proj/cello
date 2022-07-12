@@ -15,9 +15,10 @@ Request Body
 
 Response Body
 
-```
+```json
 {
-  "token": "abcd-1234"
+  "token": "abcd-1234",
+  "token_id": "dcba-4321"
 }
 ```
 
@@ -27,9 +28,10 @@ GET /projects/<project_name>
 
 Response Body
 
-```
+```json
 {
-  "name": "myproject"
+  "name": "myproject",
+  "repository": "git@github.com:myorg/myrepo.git"
 }
 ```
 
@@ -43,6 +45,26 @@ Response Body
 
 ```
 ```
+
+## Create Token
+
+POST /projects/<project_name>/tokens
+
+Request Body
+
+```json
+```
+
+Response Body
+```json
+{
+  "created_at": "2022-06-27T21:59:58-07:00",
+  "token": "vault:98765432-abcd-1234-5678-abcdef123456:abcdef12-3456-7890-abcd-ef1234567890",
+  "token_id": "abcdef12-3456-7890-abcd-ef1234567890"
+}
+```
+
+
 
 ## Create Target
 
@@ -168,6 +190,33 @@ Response Body
 ```
 ```
 
+## Delete Project Token
+
+DELETE /projects/<project_name>/tokens/<token_id>
+
+Response Body
+
+```
+```
+
+## List Project Tokens
+
+GET /projects/<project_name>/tokens
+
+Response Body
+
+```json
+[
+  {
+    "created_at": "2022-06-21T14:56:10.341066-07:00",
+    "token_id": "ghi789"
+  },
+  {
+    "created_at": "2022-06-21T14:43:16.172896-07:00",
+    "token_id": "def456"
+  },
+]
+```
 
 ## Create Workflow
 

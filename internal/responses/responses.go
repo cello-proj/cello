@@ -1,5 +1,18 @@
 package responses
 
+// CreateProject represents the responses for CreateProject.
+type CreateProject struct {
+	Token   string `json:"token"`
+	TokenID string `json:"token_id"`
+}
+
+// CreateToken represents the responses for CreateToken.
+type CreateToken struct {
+	CreatedAt string `json:"created_at"`
+	Token     string `json:"token"`
+	TokenID   string `json:"token_id"`
+}
+
 // Diff represents the responses for Diff.
 type Diff TargetOperation
 
@@ -18,7 +31,8 @@ type GetLogs struct {
 
 // GetProject represents the responses for GetProject.
 type GetProject struct {
-	Name string `json:"name"`
+	Name       string `json:"name"`
+	Repository string `json:"repository"`
 }
 
 // GetWorkflows represents the responses for GetWorkflows.
@@ -30,6 +44,13 @@ type GetWorkflowStatus struct {
 	Status   string `json:"status"`
 	Created  string `json:"created"`
 	Finished string `json:"finished"`
+}
+
+// ListTokens represents the responses for ListTokens.
+type ListTokens struct {
+	CreatedAt string `json:"created_at"`
+	ProjectID string `json:"project,omitempty"`
+	TokenID   string `json:"token_id"`
 }
 
 // Sync represents the responses for Sync.
