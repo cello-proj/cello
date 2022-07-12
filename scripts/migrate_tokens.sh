@@ -29,7 +29,6 @@ approle_response=$(curl -s \
 
 for approle in $(echo "$approle_response" | jq -r '.[]'); do
   # get list of accessors for each approle/project
-  #accessors_resp=$(curl -s \
   accessors_resp=$(curl -s -w "%{http_code}" \
     --header "X-Vault-Token: $vault_token" \
     --request LIST \
@@ -82,8 +81,8 @@ for approle in $(echo "$approle_response" | jq -r '.[]'); do
 
 	accessor_data=$(extract_body "$lookup_resp")
 
-	creation_time=$(jq -r '.creation_time' <<< "${accessor_data}")
-	expiration_time=$(jq -r '.expiration_time' <<< "${accessor_data}")
+	creation_time=$(echo $accessor_data | jq -r '.data.creation_time')
+	expiration_time=$(echo $accessor_data | jq -r '.data.expiration_time')
 
 	set +e
 	echo "Inserting accessor ID into Tokens table for project: $project"
