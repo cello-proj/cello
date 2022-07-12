@@ -203,12 +203,22 @@ func (v VaultProvider) CreateToken(name string) (types.Token, error) {
 		return token, err
 	}
 
-	token.CreatedAt = secret.Data["creation_time"].(string)
-	token.ExpiresAt = secret.Data["expiration_time"].(string)
+	roleID, err := v.readRoleID(name)
+	if err != nil {
+		return token, err
+	}
+
+	accessor, err := v.readSecretIDAccessor(name, secret.Data["secret_id_accessor"].(string))
+	if err != nil {
+		return token, err
+	}
+
 	token.ProjectID = name
-	token.RoleID = secret.Data["role_id"].(string)
 	token.Secret = secret.Data["secret_id"].(string)
 	token.ProjectToken.ID = secret.Data["secret_id_accessor"].(string)
+	token.RoleID = roleID
+	token.CreatedAt = accessor.Data["creation_time"].(string)
+	token.ExpiresAt = accessor.Data["expiration_time"].(string)
 
 	return token, nil
 }
@@ -466,6 +476,19 @@ func (v VaultProvider) readRoleID(appRoleName string) (string, error) {
 		return "", err
 	}
 	return secret.Data["role_id"].(string), nil
+}
+
+func (v VaultProvider) readSecretIDAccessor(appRoleName, accessor string) (*vault.Secret, error) {
+
+	options := map[string]interface{}{
+		"secret_id_accessor": accessor,
+	}
+
+	secret, err := v.vaultLogicalSvc.Write(fmt.Sprintf("%s/secret-id-accessor/lookup", genProjectAppRole(appRoleName)), options)
+	if err != nil {
+		return secret, err
+	}
+	return secret, nil
 }
 
 func (v VaultProvider) generateSecrets(appRoleName string) (*vault.Secret, error) {

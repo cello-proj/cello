@@ -70,7 +70,7 @@ type ProjectToken struct {
 	ID string `json:"token_id"`
 }
 
-// Token represents a Token.
+// Token represents a secrets object/type for a project.
 type Token struct {
 	CreatedAt    string       `json:"created_at"`
 	ExpiresAt    string       `json:"expires_at"`

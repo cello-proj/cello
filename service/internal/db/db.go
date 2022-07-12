@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/cello-proj/cello/internal/types"
+
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
 )
