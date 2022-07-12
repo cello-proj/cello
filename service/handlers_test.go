@@ -58,6 +58,7 @@ func (d mockDB) CreateTokenEntry(ctx context.Context, project string, secretAcce
 
 	token := db.TokenEntry{
 		CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+		ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
 		ProjectID: project,
 		TokenID:   secretAccessor,
 	}

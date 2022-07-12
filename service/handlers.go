@@ -1170,6 +1170,7 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 
 	resp := responses.CreateToken{
 		CreatedAt: te.CreatedAt,
+		ExpiresAt: te.ExpiresAt,
 		Token:     token.Token,
 		TokenID:   te.TokenID,
 	}

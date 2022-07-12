@@ -9,6 +9,7 @@ type CreateProject struct {
 // CreateToken represents the responses for CreateToken.
 type CreateToken struct {
 	CreatedAt string `json:"created_at"`
+	ExpiresAt string `json:"expires_at"`
 	Token     string `json:"token"`
 	TokenID   string `json:"token_id"`
 }
