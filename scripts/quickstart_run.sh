@@ -18,6 +18,11 @@ function executable_check()  {
   fi
 }
 
+# use this function by a trap on SIGINT (CTRL+C) to kill all background processes
+function kill_jobs {
+  jobs -p | xargs kill
+}
+
 executable_check "brew" '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
 executable_check "docker" 'brew cask install docker'
 executable_check "kubectl" 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl"'
@@ -201,6 +206,14 @@ EOF
 kubectl exec vault-0 -- mkdir -p /home/vault/.aws
 kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 
+# Trap to wait until user hits Ctrl-C, then kill child processes.
+trap kill_jobs SIGINT
+
+# Argo Workflows UI
+echo "Running Argo CLI to expose Argo UI & API on http://localhost:2746/"
+pkill argo; argo server --secure=false --auth-mode=server 2>&1 >/dev/null &
+
 echo "Cello started, forwarding to port 8443"
 export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep cello)"
-kubectl port-forward $CELLO_POD 8443:8443
+kubectl port-forward $CELLO_POD 8443:8443 2>&1 >/dev/null &
+wait
