@@ -211,7 +211,7 @@ trap kill_jobs SIGINT
 
 # Argo Workflows UI
 echo "Exposing Argo UI & API on http://localhost:2746/"
-pkill argo; argo server --secure=false --auth-mode=server 2>&1 >/dev/null &
+pkill argo; argo server --secure=false --auth-mode=server >/dev/null 2>&1 &
 
 echo "Cello started, forwarding to port 8443"
 export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep cello)"
