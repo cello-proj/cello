@@ -20,7 +20,7 @@ function executable_check()  {
 
 # use this function by a trap on SIGINT (CTRL+C) to kill all background processes
 function kill_jobs {
-  jobs -p | xargs kill
+  jobs -p | xargs -i  sh -c 'kill {} 2>/dev/null'
 }
 
 executable_check "brew" '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
