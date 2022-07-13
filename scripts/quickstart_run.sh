@@ -210,10 +210,10 @@ kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 trap kill_jobs SIGINT
 
 # Argo Workflows UI
-echo "Running Argo CLI to expose Argo UI & API on http://localhost:2746/"
+echo "Exposing Argo UI & API on http://localhost:2746/"
 pkill argo; argo server --secure=false --auth-mode=server 2>&1 >/dev/null &
 
 echo "Cello started, forwarding to port 8443"
 export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep cello)"
-kubectl port-forward $CELLO_POD 8443:8443 2>&1 >/dev/null &
+kubectl port-forward $CELLO_POD 8443:8443 &
 wait
