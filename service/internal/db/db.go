@@ -4,7 +4,8 @@ package db
 
 import (
 	"context"
-	"time"
+
+	"github.com/cello-proj/cello/internal/types"
 
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
@@ -17,6 +18,7 @@ type ProjectEntry struct {
 
 type TokenEntry struct {
 	CreatedAt string `db:"created_at"`
+	ExpiresAt string `db:"expires_at"`
 	ProjectID string `db:"project"`
 	TokenID   string `db:"token_id"`
 }
@@ -26,7 +28,7 @@ type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
 	DeleteProjectEntry(ctx context.Context, project string) error
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
-	CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (TokenEntry, error)
+	CreateTokenEntry(ctx context.Context, token types.Token) error
 	DeleteTokenEntry(ctx context.Context, token string) error
 	ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error)
 	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
@@ -106,30 +108,27 @@ func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error
 	return sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).Delete()
 }
 
-func (d SQLClient) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (TokenEntry, error) {
-	res := TokenEntry{}
-
+func (d SQLClient) CreateTokenEntry(ctx context.Context, token types.Token) error {
 	sess, err := d.createSession()
 	if err != nil {
-		return res, err
+		return err
 	}
 	defer sess.Close()
 
 	err = sess.WithContext(ctx).Tx(func(sess db.Session) error {
-		res = TokenEntry{
-			CreatedAt: time.Now().UTC().Format(time.RFC3339),
-			ProjectID: project,
-			TokenID:   secretAccessor,
+		res := TokenEntry{
+			CreatedAt: token.CreatedAt,
+			ExpiresAt: token.ExpiresAt,
+			ProjectID: token.ProjectID,
+			TokenID:   token.ProjectToken.ID,
 		}
 
 		if _, err = sess.Collection(TokenEntryDB).Insert(res); err != nil {
 			return err
 		}
-
 		return nil
 	})
-
-	return res, err
+	return err
 }
 
 func (d SQLClient) DeleteTokenEntry(ctx context.Context, token string) error {

@@ -489,10 +489,10 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns a new token
-func newCelloToken(provider, key, secret string) *token {
+// Returns a new Cello token
+func newCelloToken(provider string, tok types.Token) *token {
 	return &token{
-		Token: fmt.Sprintf("%s:%s:%s", provider, key, secret),
+		Token: fmt.Sprintf("%s:%s:%s", provider, tok.RoleID, tok.Secret),
 	}
 }
 
@@ -599,7 +599,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	level.Debug(l).Log("message", "creating project")
-	role, secret, secretAccessor, err := cp.CreateProject(capp.Name)
+	token, err := cp.CreateProject(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error creating project", "error", err)
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
@@ -607,7 +607,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "inserting token into DB")
-	_, err = h.dbClient.CreateTokenEntry(ctx, capp.Name, secretAccessor)
+	err = h.dbClient.CreateTokenEntry(ctx, token)
 	if err != nil {
 		level.Error(l).Log("message", "error inserting token into DB", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
@@ -615,11 +615,11 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "retrieving Cello token")
-	token := newCelloToken("vault", role, secret)
+	celloToken := newCelloToken("vault", token)
 
 	resp := responses.CreateProject{
-		Token:   token.Token,
-		TokenID: secretAccessor,
+		Token:   celloToken.Token,
+		TokenID: token.ProjectToken.ID,
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -1151,7 +1151,7 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating token")
-	role, secret, secretAccessor, err := cp.CreateToken(projectName)
+	token, err := cp.CreateToken(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error creating token with credentials provider", "error", err)
 		h.errorResponse(w, "error creating token with credentials provider", http.StatusInternalServerError)
@@ -1159,19 +1159,20 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "inserting into db")
-	te, err := h.dbClient.CreateTokenEntry(ctx, projectName, secretAccessor)
+	err = h.dbClient.CreateTokenEntry(ctx, token)
 	if err != nil {
 		level.Error(l).Log("message", "error inserting token to db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
 
-	token := newCelloToken("vault", role, secret)
+	celloToken := newCelloToken("vault", token)
 
 	resp := responses.CreateToken{
-		CreatedAt: te.CreatedAt,
-		Token:     token.Token,
-		TokenID:   te.TokenID,
+		CreatedAt: token.CreatedAt,
+		ExpiresAt: token.ExpiresAt,
+		Token:     celloToken.Token,
+		TokenID:   token.ProjectToken.ID,
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -1227,6 +1228,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	for _, tokenEntry := range tokens {
 		resp = append(resp, responses.ListTokens{
 			CreatedAt: tokenEntry.CreatedAt,
+			ExpiresAt: tokenEntry.ExpiresAt,
 			TokenID:   tokenEntry.TokenID,
 		})
 	}
