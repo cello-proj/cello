@@ -20,13 +20,13 @@ var _ credentials.Provider = &CredsProviderMock{}
 //
 // 		// make and configure a mocked credentials.Provider
 // 		mockedProvider := &CredsProviderMock{
-// 			CreateProjectFunc: func(s string) (string, string, error) {
+// 			CreateProjectFunc: func(s string) (types.Token, error) {
 // 				panic("mock out the CreateProject method")
 // 			},
 // 			CreateTargetFunc: func(s string, target types.Target) error {
 // 				panic("mock out the CreateTarget method")
 // 			},
-// 			CreateTokenFunc: func(s string) (string, string, string, error) {
+// 			CreateTokenFunc: func(s string) (types.Token, error) {
 // 				panic("mock out the CreateToken method")
 // 			},
 // 			DeleteProjectFunc: func(s string) error {
@@ -70,13 +70,13 @@ var _ credentials.Provider = &CredsProviderMock{}
 // 	}
 type CredsProviderMock struct {
 	// CreateProjectFunc mocks the CreateProject method.
-	CreateProjectFunc func(s string) (string, string, string, error)
+	CreateProjectFunc func(s string) (types.Token, error)
 
 	// CreateTargetFunc mocks the CreateTarget method.
 	CreateTargetFunc func(s string, target types.Target) error
 
 	// CreateTokenFunc mocks the CreateToken method.
-	CreateTokenFunc func(s string) (string, string, string, error)
+	CreateTokenFunc func(s string) (types.Token, error)
 
 	// DeleteProjectFunc mocks the DeleteProject method.
 	DeleteProjectFunc func(s string) error
@@ -213,7 +213,7 @@ type CredsProviderMock struct {
 }
 
 // CreateProject calls CreateProjectFunc.
-func (mock *CredsProviderMock) CreateProject(s string) (string, string, string, error) {
+func (mock *CredsProviderMock) CreateProject(s string) (types.Token, error) {
 	if mock.CreateProjectFunc == nil {
 		panic("CredsProviderMock.CreateProjectFunc: method is nil but Provider.CreateProject was just called")
 	}
@@ -279,7 +279,7 @@ func (mock *CredsProviderMock) CreateTargetCalls() []struct {
 }
 
 // CreateToken calls CreateTokenFunc.
-func (mock *CredsProviderMock) CreateToken(s string) (string, string, string, error) {
+func (mock *CredsProviderMock) CreateToken(s string) (types.Token, error) {
 	if mock.CreateTokenFunc == nil {
 		panic("CredsProviderMock.CreateTokenFunc: method is nil but Provider.CreateToken was just called")
 	}
