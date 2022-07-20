@@ -298,6 +298,31 @@ func TestCreateProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects",
 			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return false, nil
+				},
+				CreateProjectFunc: func(s string) (types.Token, error) {
+					return types.Token{
+						CreatedAt: "TODO",
+						ExpiresAt: "TODO",
+						ProjectID: "project1",
+						ProjectToken: types.ProjectToken{
+							ID: "secret-id-accessor",
+						},
+						RoleID: "role-id",
+						Secret: "secret",
+					}, nil
+				},
+			},
+			dbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
+					return nil
+				},
+				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:       "bad request",
@@ -315,6 +340,13 @@ func TestCreateProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects",
 			method:     "POST",
+			// TODO: maybe set a projectExists and have runTests set the mocks appropriately,
+			// not sure what this would look like in runTests
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return true, nil
+				},
+			},
 		},
 		{
 			name:       "project fails to create db entry",
@@ -323,6 +355,18 @@ func TestCreateProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects",
 			method:     "POST",
+			// TODO: ditto to above
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return false, nil
+				},
+			},
+			// TODO: maybe set a createProjectEntryFuncErr and have runTests set this appropriately?
+			dbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
+					return errors.New("db error")
+				},
+			},
 		},
 		{
 			name:       "project fails to create token entry",
@@ -331,6 +375,32 @@ func TestCreateProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects",
 			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				CreateProjectFunc: func(s string) (types.Token, error) {
+					return types.Token{
+						CreatedAt: "createdAt",
+						ExpiresAt: "expiresAt",
+						ProjectID: "project1",
+						ProjectToken: types.ProjectToken{
+							ID: "secret-id-accessor",
+						},
+						RoleID: "role-id",
+						Secret: "secret",
+					}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return false, nil
+				},
+			},
+			// TODO: maybe set a createProjectEntryFuncErr and have runTests set this appropriately?
+			dbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
+					return nil
+				},
+				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
+					return errors.New("db error")
+				},
+			},
 		},
 	}
 	runTests(t, tests)
@@ -938,7 +1008,7 @@ func TestDeleteToken(t *testing.T) {
 			},
 		},
 	}
-	runTestsV2(t, tests)
+	runTests(t, tests)
 }
 
 func TestListTokens(t *testing.T) {
@@ -1042,7 +1112,7 @@ func TestListTokens(t *testing.T) {
 			},
 		},
 	}
-	runTestsV2(t, tests)
+	runTests(t, tests)
 }
 
 func TestHealthCheck(t *testing.T) {
@@ -1150,51 +1220,7 @@ func serialize(toMarshal interface{}) *bytes.Buffer {
 	return bytes.NewBuffer(jsonStr)
 }
 
-// Run tests, checking the response status codes.
 func runTests(t *testing.T, tests []test) {
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			resp := executeRequest(tt.method, tt.url, serialize(tt.req), tt.authHeader)
-			if resp.StatusCode != tt.want {
-				t.Errorf("Unexpected status code %d", resp.StatusCode)
-			}
-
-			if tt.body != "" {
-				bodyBytes, err := ioutil.ReadAll(resp.Body)
-				defer resp.Body.Close()
-				if err != nil {
-					t.Errorf("Error loading body")
-				}
-				if tt.body != string(bodyBytes) {
-					t.Errorf("Unexpected body '%s', expected '%s'", bodyBytes, tt.body)
-				}
-			}
-
-			if tt.respFile != "" {
-				wantBody, err := loadFileBytes(tt.respFile)
-				if err != nil {
-					t.Fatalf("unable to read response file '%s', err: '%s'", tt.respFile, err)
-				}
-
-				body, err := io.ReadAll(resp.Body)
-				assert.Nil(t, err)
-
-				defer resp.Body.Close()
-
-				bodyStr := string(body)
-				wantBodyStr := string(wantBody)
-
-				if bodyStr == "" && wantBodyStr == "" {
-					assert.Equal(t, wantBodyStr, bodyStr)
-				} else {
-					assert.JSONEq(t, wantBodyStr, bodyStr)
-				}
-			}
-		})
-	}
-}
-
-func runTestsV2(t *testing.T, tests []test) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config, err := loadConfig(testConfigPath)
@@ -1221,7 +1247,6 @@ func runTestsV2(t *testing.T, tests []test) {
 
 			if tt.cpMock != nil {
 				defaultCPFunc := func(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
-					// TODO: probably best to create a base/default CP mock struct here
 					return tt.cpMock, nil
 				}
 
@@ -1269,38 +1294,9 @@ func runTestsV2(t *testing.T, tests []test) {
 	}
 }
 
-// Execute a generic HTTP request, making sure to add the appropriate authorization header.
-func executeRequest(method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
-	config, err := loadConfig(testConfigPath)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to load config %s", err))
-	}
-
-	h := handler{
-		logger:                 log.NewNopLogger(),
-		newCredentialsProvider: newMockProvider,
-		argo:                   mockWorkflowSvc{},
-		argoCtx:                context.Background(),
-		config:                 config,
-		gitClient:              newMockGitClient(),
-		env: env.Vars{
-			AdminSecret: testPassword,
-		},
-		dbClient: newMockDB(),
-	}
-
-	var router = setupRouter(h)
-	req, _ := http.NewRequest(method, url, body)
-
-	req.Header.Add("Authorization", authHeader)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	return w.Result()
-}
-
 func executeRequestWithHandler(h handler, method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
 	var router = setupRouter(h)
-	req, _ := http.NewRequest(method, url, serialize(body))
+	req, _ := http.NewRequest(method, url, body)
 
 	req.Header.Add("Authorization", authHeader)
 	w := httptest.NewRecorder()
