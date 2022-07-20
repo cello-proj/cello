@@ -304,8 +304,8 @@ func TestCreateProject(t *testing.T) {
 				},
 				CreateProjectFunc: func(s string) (types.Token, error) {
 					return types.Token{
-						CreatedAt: "TODO",
-						ExpiresAt: "TODO",
+						CreatedAt: "createdAt",
+						ExpiresAt: "expiresAt",
 						ProjectID: "project1",
 						ProjectToken: types.ProjectToken{
 							ID: "secret-id-accessor",
@@ -417,6 +417,42 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets/tokens",
 			method:     "POST",
+			dbMock: &th.DBClientMock{
+				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error {
+					return nil
+				},
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{{
+						CreatedAt: "createdAt",
+						ExpiresAt: "expiresAt",
+						ProjectID: "project1",
+						TokenID:   "token",
+					}}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
+			cpMock: &th.CredsProviderMock{
+				CreateTokenFunc: func(s string) (types.Token, error) {
+					return types.Token{
+						CreatedAt: "createdAt",
+						ExpiresAt: "expiresAt",
+						ProjectID: "project1",
+						ProjectToken: types.ProjectToken{
+							ID: "token",
+						},
+						RoleID: "role-id",
+						Secret: "secret",
+					}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) {
+					return true, nil
+				},
+			},
 		},
 		{
 			name:       "project does not exist",
