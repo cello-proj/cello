@@ -299,9 +299,7 @@ func TestCreateProject(t *testing.T) {
 			url:        "/projects",
 			method:     "POST",
 			cpMock: &th.CredsProviderMock{
-				ProjectExistsFunc: func(s string) (bool, error) {
-					return false, nil
-				},
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
 				CreateProjectFunc: func(s string) (types.Token, error) {
 					return types.Token{
 						CreatedAt: "createdAt",
@@ -316,12 +314,8 @@ func TestCreateProject(t *testing.T) {
 				},
 			},
 			dbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
-					return nil
-				},
-				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
-					return nil
-				},
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
+				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
 			},
 		},
 		{
@@ -340,12 +334,8 @@ func TestCreateProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects",
 			method:     "POST",
-			// TODO: maybe set a projectExists and have runTests set the mocks appropriately,
-			// not sure what this would look like in runTests
 			cpMock: &th.CredsProviderMock{
-				ProjectExistsFunc: func(s string) (bool, error) {
-					return true, nil
-				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
 		},
 		{
@@ -355,17 +345,11 @@ func TestCreateProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects",
 			method:     "POST",
-			// TODO: ditto to above
 			cpMock: &th.CredsProviderMock{
-				ProjectExistsFunc: func(s string) (bool, error) {
-					return false, nil
-				},
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
 			},
-			// TODO: maybe set a createProjectEntryFuncErr and have runTests set this appropriately?
 			dbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
-					return errors.New("db error")
-				},
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return errors.New("db error") },
 			},
 		},
 		{
@@ -388,18 +372,11 @@ func TestCreateProject(t *testing.T) {
 						Secret: "secret",
 					}, nil
 				},
-				ProjectExistsFunc: func(s string) (bool, error) {
-					return false, nil
-				},
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
 			},
-			// TODO: maybe set a createProjectEntryFuncErr and have runTests set this appropriately?
 			dbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
-					return nil
-				},
-				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
-					return errors.New("db error")
-				},
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
+				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return errors.New("db error") },
 			},
 		},
 	}
@@ -417,16 +394,29 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets/tokens",
 			method:     "POST",
-			dbMock: &th.DBClientMock{
-				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error {
-					return nil
+			cpMock: &th.CredsProviderMock{
+				CreateTokenFunc: func(s string) (types.Token, error) {
+					return types.Token{
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+						ProjectID: "project1",
+						ProjectToken: types.ProjectToken{
+							ID: "secret-id-accessor",
+						},
+						RoleID: "role-id",
+						Secret: "secret",
+					}, nil
 				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{{
-						CreatedAt: "createdAt",
-						ExpiresAt: "expiresAt",
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
 						ProjectID: "project1",
-						TokenID:   "token",
+						TokenID:   "secret-id-accessor",
 					}}, nil
 				},
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
@@ -434,23 +424,6 @@ func TestCreateToken(t *testing.T) {
 						ProjectID:  "project1",
 						Repository: "repo",
 					}, nil
-				},
-			},
-			cpMock: &th.CredsProviderMock{
-				CreateTokenFunc: func(s string) (types.Token, error) {
-					return types.Token{
-						CreatedAt: "createdAt",
-						ExpiresAt: "expiresAt",
-						ProjectID: "project1",
-						ProjectToken: types.ProjectToken{
-							ID: "token",
-						},
-						RoleID: "role-id",
-						Secret: "secret",
-					}, nil
-				},
-				ProjectExistsFunc: func(s string) (bool, error) {
-					return true, nil
 				},
 			},
 		},
@@ -462,6 +435,9 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/project1234/tokens",
 			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
+			},
 		},
 		{
 			name:       "fails to create token when not admin",
@@ -479,6 +455,26 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/tokendberror/tokens",
 			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				CreateTokenFunc:   func(s string) (types.Token, error) { return types.Token{}, errors.New("error") },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{{
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+						ProjectID: "project1",
+						TokenID:   "secret-id-accessor",
+					}}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
 		},
 		{
 			name:       "allowed tokens limit reached",
@@ -488,6 +484,27 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenslimit/tokens",
 			method:     "POST",
+			dbMock: &th.DBClientMock{
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{{
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+						ProjectID: "project1",
+						TokenID:   "secret-id-accessor",
+					}, {
+						CreatedAt: "2022-07-21T14:00:00.000000-07:00",
+						ExpiresAt: "2023-07-21T14:00:00.000000-07:00",
+						ProjectID: "project1",
+						TokenID:   "secret-id-accessor",
+					}}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
 		},
 		{
 			name:       "error listing tokens",
@@ -497,6 +514,17 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenserror/tokens",
 			method:     "POST",
+			dbMock: &th.DBClientMock{
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{}, errors.New("error")
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
 		},
 	}
 	runTests(t, tests)
@@ -519,6 +547,21 @@ func TestGetTarget(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets/targets/TARGET_EXISTS",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				GetTargetFunc: func(s1, s2 string) (types.Target, error) {
+					return types.Target{
+						Name: "TARGET",
+						Properties: types.TargetProperties{
+							CredentialType: "assumed_role",
+							PolicyArns:     []string{"arn:aws:iam::012345678901:policy/test-policy"},
+							PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
+							RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+						},
+						Type: "aws_account",
+					}, nil
+				},
+				TargetExistsFunc: func(s1, s2 string) (bool, error) { return true, nil },
+			},
 		},
 		{
 			name:       "target does not exist",
@@ -527,6 +570,9 @@ func TestGetTarget(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets/targets/targetdoesnotexist",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				TargetExistsFunc: func(s1, s2 string) (bool, error) { return false, nil },
+			},
 		},
 	}
 	runTests(t, tests)
@@ -549,6 +595,12 @@ func TestListTargets(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets/targets",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				ListTargetsFunc: func(s string) ([]string, error) {
+					return []string{"target1", "target2", "undeletabletarget"}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 		},
 		{
 			name:       "project not found",
@@ -557,6 +609,9 @@ func TestListTargets(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/badproject/targets",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
+			},
 		},
 		{
 			name:       "no targets",
@@ -565,6 +620,12 @@ func TestListTargets(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectalreadyexists/targets",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				ListTargetsFunc: func(s string) ([]string, error) {
+					return []string{}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 		},
 	}
 	runTests(t, tests)
@@ -585,6 +646,11 @@ func TestDeleteProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectalreadyexists",
 			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				DeleteProjectFunc: func(s string) error { return nil },
+				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 		},
 		{
 			name:       "fails to delete project if any targets exist",
@@ -592,6 +658,10 @@ func TestDeleteProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets",
 			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				ListTargetsFunc:   func(s string) ([]string, error) { return []string{"target"}, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 		},
 		{
 			name:       "fails to delete project",
@@ -599,6 +669,11 @@ func TestDeleteProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableproject",
 			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				DeleteProjectFunc: func(s string) error { return errors.New("cp error") },
+				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 		},
 		{
 			name:       "fails to delete project db entry",
@@ -606,6 +681,14 @@ func TestDeleteProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/somedeletedberror",
 			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				DeleteProjectFunc: func(s string) error { return nil },
+				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return errors.New("error") },
+			},
 		},
 	}
 	runTests(t, tests)
@@ -626,6 +709,14 @@ func TestGetProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/projects/project1",
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
 		},
 		{
 			name:       "project does not exist",
@@ -633,6 +724,11 @@ func TestGetProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/projects/projectdoesnotexist",
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{}, upper.ErrNoMoreRows
+				},
+			},
 		},
 	}
 	runTests(t, tests)
@@ -648,6 +744,11 @@ func TestCreateTarget(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectalreadyexists/targets",
 			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return false, nil },
+				CreateTargetFunc:  func(s string, target types.Target) error { return nil },
+			},
 		},
 		{
 			name:       "fails to create target when not admin",
