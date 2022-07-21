@@ -1,3 +1,5 @@
+//go:generate moq -out ../../test/testhelpers/gitClientMock.go -pkg testhelpers . Client:GitClientMock
+
 package git
 
 import (

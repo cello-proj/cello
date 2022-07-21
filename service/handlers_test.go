@@ -14,12 +14,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cello-proj/cello/internal/responses"
 	"github.com/cello-proj/cello/internal/types"
 	"github.com/cello-proj/cello/service/internal/credentials"
 	"github.com/cello-proj/cello/service/internal/db"
 	"github.com/cello-proj/cello/service/internal/env"
-	"github.com/cello-proj/cello/service/internal/git"
 	"github.com/cello-proj/cello/service/internal/workflow"
 	th "github.com/cello-proj/cello/service/test/testhelpers"
 
@@ -37,235 +35,6 @@ const (
 	projectDoesNotExist = "projectdoesnotexist"
 )
 
-type mockDB struct{}
-
-func newMockDB() db.Client {
-	return mockDB{}
-}
-
-func (d mockDB) CreateProjectEntry(ctx context.Context, pe db.ProjectEntry) error {
-	if pe.ProjectID == "somedberror" {
-		return fmt.Errorf("some db error")
-	}
-
-	return nil
-}
-
-func (d mockDB) CreateTokenEntry(ctx context.Context, token types.Token) error {
-	if token.ProjectID == "tokendberror" || token.ProjectID == "tokendbentryerror" {
-		return fmt.Errorf("token db error")
-	}
-
-	return nil
-}
-
-func (d mockDB) ListTokenEntries(ctx context.Context, project string) ([]db.TokenEntry, error) {
-	if project == projectDoesNotExist {
-		return []db.TokenEntry{}, upper.ErrNoMoreRows
-	}
-
-	if project == "projectreaderror" {
-		return []db.TokenEntry{}, errors.New("error reading DB")
-	}
-
-	if project == "projectlisttokenserror" {
-		return []db.TokenEntry{}, errors.New("error reading DB")
-	}
-
-	if project == "projectlisttokenslimit" {
-		return []db.TokenEntry{{ProjectID: "project1", TokenID: "1234"}, {ProjectID: "project1", TokenID: "5678"}}, nil
-	}
-
-	return []db.TokenEntry{}, nil
-}
-
-func (d mockDB) ReadProjectEntry(ctx context.Context, project string) (db.ProjectEntry, error) {
-	if project == projectDoesNotExist {
-		return db.ProjectEntry{}, upper.ErrNoMoreRows
-	}
-
-	if project == "projectreaderror" {
-		return db.ProjectEntry{}, errors.New("error reading DB")
-	}
-
-	return db.ProjectEntry{}, nil
-}
-
-func (d mockDB) DeleteProjectEntry(ctx context.Context, project string) error {
-	if project == "somedeletedberror" {
-		return fmt.Errorf("some db error")
-	}
-
-	return nil
-}
-
-func (d mockDB) DeleteTokenEntry(ctx context.Context, token string) error {
-	return nil
-}
-
-func (d mockDB) ReadTokenEntry(ctx context.Context, token string) (db.TokenEntry, error) {
-	return db.TokenEntry{}, nil
-}
-
-type mockGitClient struct{}
-
-func newMockGitClient() git.Client {
-	return mockGitClient{}
-}
-
-func (g mockGitClient) GetManifestFile(repository, commitHash, path string) ([]byte, error) {
-	return loadFileBytes("TestCreateWorkflow/can_create_workflow_request.json")
-}
-
-type mockWorkflowSvc struct{}
-
-func (m mockWorkflowSvc) Status(ctx context.Context, workflowName string) (*workflow.Status, error) {
-	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
-		return &workflow.Status{Status: "success"}, nil
-	}
-	return &workflow.Status{Status: "failed"}, fmt.Errorf("workflow " + workflowName + " does not exist!")
-}
-
-func (m mockWorkflowSvc) Logs(ctx context.Context, workflowName string) (*workflow.Logs, error) {
-	if workflowName == "WORKFLOW_ALREADY_EXISTS" {
-		return nil, nil
-	}
-	return nil, fmt.Errorf("workflow " + workflowName + " does not exist!")
-}
-
-func (m mockWorkflowSvc) LogStream(ctx context.Context, workflowName string, w http.ResponseWriter) error {
-	return nil
-}
-
-func (m mockWorkflowSvc) List(ctx context.Context) ([]string, error) {
-	return []string{"project1-target1-abcde", "project2-target2-12345"}, nil
-}
-
-func (m mockWorkflowSvc) Submit(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
-	return "wf-123456", nil
-}
-
-func newMockProvider(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
-	return &mockCredentialsProvider{}, nil
-}
-
-type mockCredentialsProvider struct{}
-
-func (m mockCredentialsProvider) DeleteProjectToken(projectName, tokenID string) error {
-	return nil
-}
-
-func (m mockCredentialsProvider) GetProjectToken(projectName, tokenID string) (types.ProjectToken, error) {
-	return types.ProjectToken{}, nil
-}
-
-func (m mockCredentialsProvider) GetToken() (string, error) {
-	return testPassword, nil
-}
-
-func (m mockCredentialsProvider) CreateProject(name string) (types.Token, error) {
-	return types.Token{
-		CreatedAt:    "2022-06-22T14:56:10.341066-07:00",
-		ExpiresAt:    "2023-06-22T14:56:10.341066-07:00",
-		ProjectID:    name,
-		ProjectToken: types.ProjectToken{ID: "secret-id-accessor"},
-		RoleID:       "role-id",
-		Secret:       "secret",
-	}, nil
-}
-
-func (m mockCredentialsProvider) CreateToken(name string) (types.Token, error) {
-	return types.Token{
-		CreatedAt:    "2022-06-21T14:56:10.341066-07:00",
-		ExpiresAt:    "2023-06-21T14:56:10.341066-07:00",
-		ProjectID:    name,
-		ProjectToken: types.ProjectToken{ID: "secret-id-accessor"},
-		RoleID:       "role-id",
-		Secret:       "secret",
-	}, nil
-}
-
-func (m mockCredentialsProvider) DeleteProject(name string) error {
-	if name == "undeletableproject" {
-		return fmt.Errorf("Some error occured deleting this project")
-	}
-	return nil
-}
-
-func (m mockCredentialsProvider) GetProject(proj string) (responses.GetProject, error) {
-	if proj == projectDoesNotExist {
-		return responses.GetProject{}, credentials.ErrNotFound
-	}
-	return responses.GetProject{Name: "project1"}, nil
-}
-
-func (m mockCredentialsProvider) CreateTarget(name string, req types.Target) error {
-	return nil
-}
-
-func (m mockCredentialsProvider) GetTarget(project string, target string) (types.Target, error) {
-	if target == "targetdoesnotexist" {
-		return types.Target{}, credentials.ErrNotFound
-	}
-	return types.Target{
-		Name: "TARGET",
-		Type: "aws_account",
-		Properties: types.TargetProperties{
-			CredentialType: "assumed_role",
-			PolicyArns: []string{
-				"arn:aws:iam::012345678901:policy/test-policy",
-			},
-			PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
-			RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-		},
-	}, nil
-}
-
-func (m mockCredentialsProvider) DeleteTarget(string, t string) error {
-	if t == "undeletabletarget" {
-		return fmt.Errorf("Some error occured deleting this target")
-	}
-	return nil
-}
-
-func (m mockCredentialsProvider) ListTargets(name string) ([]string, error) {
-	if name == "undeletableprojecttargets" {
-		return []string{"target1", "target2", "undeletabletarget"}, nil
-	}
-	return []string{}, nil
-}
-
-func (m mockCredentialsProvider) ProjectExists(name string) (bool, error) {
-	existingProjects := []string{
-		"projectalreadyexists",
-		"undeletableprojecttargets",
-		"undeletableproject",
-		"somedeletedberror",
-		"tokendberror",
-		"projectnotokens",
-		"projectreaderror",
-		"projectlisttokenserror",
-		"projectlisttokenslimit",
-	}
-	for _, existingProjects := range existingProjects {
-		if name == existingProjects {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func (m mockCredentialsProvider) TargetExists(projectName, targetName string) (bool, error) {
-	if targetName == "TARGET_EXISTS" {
-		return true, nil
-	}
-	return false, nil
-}
-
-func (m mockCredentialsProvider) UpdateTarget(projectName string, target types.Target) error {
-	return nil
-}
-
 type test struct {
 	name       string
 	req        interface{}
@@ -277,6 +46,7 @@ type test struct {
 	method     string
 	cpMock     *th.CredsProviderMock
 	dbMock     *th.DBClientMock
+	gitMock    *th.GitClientMock
 	wfMock     *th.WorkflowMock
 }
 
@@ -479,6 +249,9 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenslimit/tokens",
 			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 			dbMock: &th.DBClientMock{
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{{
@@ -506,6 +279,9 @@ func TestCreateToken(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenserror/tokens",
 			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 			dbMock: &th.DBClientMock{
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{}, errors.New("error")
@@ -639,6 +415,9 @@ func TestDeleteProject(t *testing.T) {
 				DeleteProjectFunc: func(s string) error { return nil },
 				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return nil },
 			},
 		},
 		{
@@ -1047,6 +826,11 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 			respFile:   "TestCreateWorkflowFromGit/good_response.json",
 			method:     "POST",
 			url:        "/projects/project1/targets/target1/operations",
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			},
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{
@@ -1055,10 +839,10 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 					}, nil
 				},
 			},
-			cpMock: &th.CredsProviderMock{
-				GetTokenFunc:      func() (string, error) { return testPassword, nil },
-				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			gitMock: &th.GitClientMock{
+				GetManifestFileFunc: func(repository, commitHash, path string) ([]byte, error) {
+					return loadFileBytes("TestCreateWorkflow/can_create_workflow_request.json")
+				},
 			},
 			wfMock: &th.WorkflowMock{
 				SubmitFunc: func(ctx context.Context, from string, parameters, labels map[string]string) (string, error) {
@@ -1267,6 +1051,9 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets/tokens",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
@@ -1299,10 +1086,8 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectdoesnotexist/tokens",
 			method:     "GET",
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{}, upper.ErrNoMoreRows
-				},
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
 			},
 		},
 		{
@@ -1312,6 +1097,9 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectnotokens/tokens",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "abc123", Repository: "repo"}, nil
@@ -1339,6 +1127,9 @@ func TestListTokens(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectlisttokenserror/tokens",
 			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
@@ -1465,17 +1256,19 @@ func runTests(t *testing.T, tests []test) {
 				panic(fmt.Sprintf("Unable to load config %s", err))
 			}
 
+			defaultCP := func(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
+				return &th.CredsProviderMock{}, nil
+			}
+
 			h := handler{
 				logger:                 log.NewNopLogger(),
-				newCredentialsProvider: newMockProvider,
-				argo:                   mockWorkflowSvc{},
+				newCredentialsProvider: defaultCP,
 				argoCtx:                context.Background(),
 				config:                 config,
-				gitClient:              newMockGitClient(),
+				gitClient:              &th.GitClientMock{},
 				env: env.Vars{
 					AdminSecret: testPassword,
 				},
-				dbClient: newMockDB(),
 			}
 
 			if tt.dbMock != nil {
@@ -1483,11 +1276,15 @@ func runTests(t *testing.T, tests []test) {
 			}
 
 			if tt.cpMock != nil {
-				defaultCPFunc := func(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
+				mockCP := func(a credentials.Authorization, env env.Vars, h http.Header, f credentials.VaultConfigFn, fn credentials.VaultSvcFn) (credentials.Provider, error) {
 					return tt.cpMock, nil
 				}
 
-				h.newCredentialsProvider = defaultCPFunc
+				h.newCredentialsProvider = mockCP
+			}
+
+			if tt.gitMock != nil {
+				h.gitClient = tt.gitMock
 			}
 
 			if tt.wfMock != nil {
