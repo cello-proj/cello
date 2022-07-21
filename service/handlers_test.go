@@ -28,11 +28,10 @@ import (
 
 const (
 	// #nosec
-	testPassword        = "D34DB33FD34DB33FD34DB33FD34DB33F"
-	userAuthHeader      = "vault:user:" + testPassword
-	invalidAuthHeader   = "bad auth header"
-	adminAuthHeader     = "vault:admin:" + testPassword
-	projectDoesNotExist = "projectdoesnotexist"
+	testPassword      = "D34DB33FD34DB33FD34DB33FD34DB33F"
+	userAuthHeader    = "vault:user:" + testPassword
+	invalidAuthHeader = "bad auth header"
+	adminAuthHeader   = "vault:admin:" + testPassword
 )
 
 type test struct {
@@ -886,7 +885,7 @@ func TestGetWorkflow(t *testing.T) {
 			url:        "/workflows/WORKFLOW_DOES_NOT_EXIST",
 			wfMock: &th.WorkflowMock{
 				StatusFunc: func(ctx context.Context, workflowName string) (*workflow.Status, error) {
-					return &workflow.Status{Status: "failed"}, errors.New("workflow does not exist!")
+					return &workflow.Status{Status: "failed"}, errors.New("workflow does not exist")
 				},
 			},
 		},
@@ -916,7 +915,7 @@ func TestGetWorkflowLogs(t *testing.T) {
 			url:        "/workflows/WORKFLOW_DOES_NOT_EXIST/logs",
 			wfMock: &th.WorkflowMock{
 				LogsFunc: func(ctx context.Context, workflowName string) (*workflow.Logs, error) {
-					return nil, errors.New("workflow does not exist!")
+					return nil, errors.New("workflow does not exist")
 				},
 			},
 		},
