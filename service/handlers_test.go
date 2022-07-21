@@ -420,10 +420,7 @@ func TestCreateToken(t *testing.T) {
 					}}, nil
 				},
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{
-						ProjectID:  "project1",
-						Repository: "repo",
-					}, nil
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
 		},
@@ -469,10 +466,7 @@ func TestCreateToken(t *testing.T) {
 					}}, nil
 				},
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{
-						ProjectID:  "project1",
-						Repository: "repo",
-					}, nil
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
 		},
@@ -499,10 +493,7 @@ func TestCreateToken(t *testing.T) {
 					}}, nil
 				},
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{
-						ProjectID:  "project1",
-						Repository: "repo",
-					}, nil
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
 		},
@@ -519,10 +510,7 @@ func TestCreateToken(t *testing.T) {
 					return []db.TokenEntry{}, errors.New("error")
 				},
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{
-						ProjectID:  "project1",
-						Repository: "repo",
-					}, nil
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
 		},
@@ -711,10 +699,7 @@ func TestGetProject(t *testing.T) {
 			url:        "/projects/project1",
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{
-						ProjectID:  "project1",
-						Repository: "repo",
-					}, nil
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
 		},
@@ -892,7 +877,6 @@ func TestUpdateTarget(t *testing.T) {
 			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
 			method:     "PATCH",
 		},
-		// TODO: revisit
 		{
 			name:       "fails to update target credential_type",
 			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_credential_type_request.json"),
@@ -901,8 +885,23 @@ func TestUpdateTarget(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
 			method:     "PATCH",
+			cpMock: &th.CredsProviderMock{
+				GetTargetFunc: func(s1, s2 string) (types.Target, error) {
+					return types.Target{
+						Name: "TARGET_EXISTS",
+						Properties: types.TargetProperties{
+							CredentialType: "assumed_role",
+							PolicyArns:     []string{"arn:aws:iam::012345678901:policy/test-policy"},
+							PolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:ListBuckets\",\"Resource\":\"*\"}]}",
+							RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+						},
+						Type: "aws_account",
+					}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			},
 		},
-		// TODO: revisit
 		{
 			name:       "does not overwrite target name or type when in request",
 			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_target_name_request.json"),
@@ -911,6 +910,23 @@ func TestUpdateTarget(t *testing.T) {
 			authHeader: adminAuthHeader,
 			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
 			method:     "PATCH",
+			cpMock: &th.CredsProviderMock{
+				GetTargetFunc: func(s1, s2 string) (types.Target, error) {
+					return types.Target{
+						Name: "TARGET_EXISTS",
+						Properties: types.TargetProperties{
+							CredentialType: "assumed_role",
+							PolicyArns:     []string{"arn:aws:iam::012345678901:policy/test-policy"},
+							PolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:ListBuckets\",\"Resource\":\"*\"}]}",
+							RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+						},
+						Type: "aws_account",
+					}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+				UpdateTargetFunc:  func(s string, target types.Target) error { return nil },
+			},
 		},
 		{
 			name:       "target name must exist",
