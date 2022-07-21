@@ -275,8 +275,9 @@ type test struct {
 	authHeader string
 	url        string
 	method     string
-	dbMock     *th.DBClientMock
 	cpMock     *th.CredsProviderMock
+	dbMock     *th.DBClientMock
+	wfMock     *th.WorkflowMock
 }
 
 func TestCreateProject(t *testing.T) {
@@ -967,6 +968,16 @@ func TestCreateWorkflow(t *testing.T) {
 			respFile:   "TestCreateWorkflow/can_create_workflow_response.json",
 			method:     "POST",
 			url:        "/workflows",
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			},
+			wfMock: &th.WorkflowMock{
+				SubmitFunc: func(ctx context.Context, from string, parameters, labels map[string]string) (string, error) {
+					return "wf-123456", nil
+				},
+			},
 		},
 		// We test this specific validation as it's server side only.
 		{
@@ -995,6 +1006,10 @@ func TestCreateWorkflow(t *testing.T) {
 			want:       http.StatusBadRequest,
 			method:     "POST",
 			url:        "/workflows",
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
+			},
 		},
 		{
 			name:       "target must exist",
@@ -1003,6 +1018,11 @@ func TestCreateWorkflow(t *testing.T) {
 			want:       http.StatusBadRequest,
 			method:     "POST",
 			url:        "/workflows",
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return false, nil },
+			},
 		},
 		{
 			name:       "cannot create workflow with bad auth header",
@@ -1027,6 +1047,24 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 			respFile:   "TestCreateWorkflowFromGit/good_response.json",
 			method:     "POST",
 			url:        "/projects/project1/targets/target1/operations",
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			},
+			wfMock: &th.WorkflowMock{
+				SubmitFunc: func(ctx context.Context, from string, parameters, labels map[string]string) (string, error) {
+					return "wf-123456", nil
+				},
+			},
 		},
 		{
 			name:       "bad request",
@@ -1050,6 +1088,11 @@ func TestGetWorkflow(t *testing.T) {
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/workflows/WORKFLOW_ALREADY_EXISTS",
+			wfMock: &th.WorkflowMock{
+				StatusFunc: func(ctx context.Context, workflowName string) (*workflow.Status, error) {
+					return &workflow.Status{Status: "success"}, nil
+				},
+			},
 		},
 		{
 			name:       "workflow does not exist",
@@ -1057,6 +1100,11 @@ func TestGetWorkflow(t *testing.T) {
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/workflows/WORKFLOW_DOES_NOT_EXIST",
+			wfMock: &th.WorkflowMock{
+				StatusFunc: func(ctx context.Context, workflowName string) (*workflow.Status, error) {
+					return &workflow.Status{Status: "failed"}, errors.New("workflow does not exist!")
+				},
+			},
 		},
 	}
 	runTests(t, tests)
@@ -1065,11 +1113,16 @@ func TestGetWorkflow(t *testing.T) {
 func TestGetWorkflowLogs(t *testing.T) {
 	tests := []test{
 		{
+			// TODO: this should be renamed to logs already exists, and a test case created to
+			// test an actual success
 			name:       "successful get workflow logs",
 			want:       http.StatusOK,
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/workflows/WORKFLOW_ALREADY_EXISTS/logs",
+			wfMock: &th.WorkflowMock{
+				LogsFunc: func(ctx context.Context, workflowName string) (*workflow.Logs, error) { return nil, nil },
+			},
 		},
 		{
 			name:       "workflow does not exist",
@@ -1077,6 +1130,11 @@ func TestGetWorkflowLogs(t *testing.T) {
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/workflows/WORKFLOW_DOES_NOT_EXIST/logs",
+			wfMock: &th.WorkflowMock{
+				LogsFunc: func(ctx context.Context, workflowName string) (*workflow.Logs, error) {
+					return nil, errors.New("workflow does not exist!")
+				},
+			},
 		},
 	}
 	runTests(t, tests)
@@ -1090,6 +1148,11 @@ func TestListWorkflows(t *testing.T) {
 			authHeader: userAuthHeader,
 			method:     "GET",
 			url:        "/projects/projects1/targets/target1/workflows",
+			wfMock: &th.WorkflowMock{
+				ListFunc: func(ctx context.Context) ([]string, error) {
+					return []string{"project1-target1-abcde", "project2-target2-12345"}, nil
+				},
+			},
 		},
 	}
 	runTests(t, tests)
@@ -1425,6 +1488,10 @@ func runTests(t *testing.T, tests []test) {
 				}
 
 				h.newCredentialsProvider = defaultCPFunc
+			}
+
+			if tt.wfMock != nil {
+				h.argo = tt.wfMock
 			}
 
 			resp := executeRequestWithHandler(h, tt.method, tt.url, serialize(tt.req), tt.authHeader)

@@ -1,3 +1,5 @@
+//go:generate moq -out ../../test/testhelpers/workflowMock.go -pkg testhelpers . Workflow:WorkflowMock
+
 package workflow
 
 import (
