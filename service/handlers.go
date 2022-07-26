@@ -106,7 +106,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "list-workflows", "project", projectName, "target", targetName)
 
 	level.Debug(l).Log("message", "listing workflows")
-	workflowIDs, err := h.argo.List(h.argoCtx)
+	workflowList, err := h.argo.List(h.argoCtx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
 		h.errorResponse(w, "error listing workflows", http.StatusInternalServerError)
@@ -116,15 +116,9 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	// Only return workflows the target project / target
 	var workflows []workflow.Status
 	prefix := fmt.Sprintf("%s-%s", projectName, targetName)
-	for _, workflowID := range workflowIDs {
-		if strings.HasPrefix(workflowID, prefix) {
-			workflow, err := h.argo.Status(h.argoCtx, workflowID)
-			if err != nil {
-				level.Error(l).Log("message", "error retrieving workflows", "error", err)
-				h.errorResponse(w, "error retrieving workflows", http.StatusInternalServerError)
-				return
-			}
-			workflows = append(workflows, *workflow)
+	for _, wf := range workflowList {
+		if strings.HasPrefix(wf.Name, prefix) {
+			workflows = append(workflows, wf)
 		}
 	}
 
@@ -498,7 +492,6 @@ func newCelloToken(provider string, tok types.Token) *token {
 
 // projectExists checks if a project exists using both the credential provider and database
 func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials.Provider, w http.ResponseWriter, projectName string) (bool, error) {
-
 	// Checking credential provider
 	level.Debug(l).Log("message", "checking if project exists")
 	projectExists, err := cp.ProjectExists(projectName)

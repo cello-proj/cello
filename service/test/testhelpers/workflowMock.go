@@ -20,7 +20,7 @@ var _ workflow.Workflow = &WorkflowMock{}
 //
 // 		// make and configure a mocked workflow.Workflow
 // 		mockedWorkflow := &WorkflowMock{
-// 			ListFunc: func(ctx context.Context) ([]string, error) {
+// 			ListFunc: func(ctx context.Context) ([]workflow.Status, error) {
 // 				panic("mock out the List method")
 // 			},
 // 			LogStreamFunc: func(ctx context.Context, workflowName string, data http.ResponseWriter) error {
@@ -43,7 +43,7 @@ var _ workflow.Workflow = &WorkflowMock{}
 // 	}
 type WorkflowMock struct {
 	// ListFunc mocks the List method.
-	ListFunc func(ctx context.Context) ([]string, error)
+	ListFunc func(ctx context.Context) ([]workflow.Status, error)
 
 	// LogStreamFunc mocks the LogStream method.
 	LogStreamFunc func(ctx context.Context, workflowName string, data http.ResponseWriter) error
@@ -107,7 +107,7 @@ type WorkflowMock struct {
 }
 
 // List calls ListFunc.
-func (mock *WorkflowMock) List(ctx context.Context) ([]string, error) {
+func (mock *WorkflowMock) List(ctx context.Context) ([]workflow.Status, error) {
 	if mock.ListFunc == nil {
 		panic("WorkflowMock.ListFunc: method is nil but Workflow.List was just called")
 	}

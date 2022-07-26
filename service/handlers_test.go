@@ -155,7 +155,6 @@ func TestCreateProject(t *testing.T) {
 
 func TestCreateToken(t *testing.T) {
 	tests := []test{
-
 		{
 			name:       "can create token",
 			req:        loadJSON(t, "TestCreateToken/request.json"),
@@ -932,8 +931,21 @@ func TestListWorkflows(t *testing.T) {
 			method:     "GET",
 			url:        "/projects/projects1/targets/target1/workflows",
 			wfMock: &th.WorkflowMock{
-				ListFunc: func(ctx context.Context) ([]string, error) {
-					return []string{"project1-target1-abcde", "project2-target2-12345"}, nil
+				ListFunc: func(ctx context.Context) ([]workflow.Status, error) {
+					return []workflow.Status{
+						{
+							Name:     "project1-target1-abcde",
+							Status:   "succeeded",
+							Created:  "1658514800",
+							Finished: "1658514856",
+						},
+						{
+							Name:     "project2-target2-12345",
+							Status:   "succeeded",
+							Created:  "1658514764",
+							Finished: "1658514793",
+						},
+					}, nil
 				},
 			},
 		},
@@ -1332,7 +1344,7 @@ func runTests(t *testing.T, tests []test) {
 }
 
 func executeRequestWithHandler(h handler, method string, url string, body *bytes.Buffer, authHeader string) *http.Response {
-	var router = setupRouter(h)
+	router := setupRouter(h)
 	req, _ := http.NewRequest(method, url, body)
 
 	req.Header.Add("Authorization", authHeader)
