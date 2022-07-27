@@ -51,7 +51,7 @@ func TestArgoWorkflowsList(t *testing.T) {
 				"namespace",
 			)
 
-			out, err := argoWf.List(context.Background())
+			out, err := argoWf.ListStatus(context.Background())
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)

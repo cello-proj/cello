@@ -20,7 +20,7 @@ const mainContainer = "main"
 
 // Workflow interface is used for interacting with workflow services.
 type Workflow interface {
-	List(ctx context.Context) ([]Status, error)
+	ListStatus(ctx context.Context) ([]Status, error)
 	Logs(ctx context.Context, workflowName string) (*Logs, error)
 	LogStream(ctx context.Context, workflowName string, data http.ResponseWriter) error
 	Status(ctx context.Context, workflowName string) (*Status, error)
@@ -46,18 +46,18 @@ type Logs struct {
 	Logs []string `json:"logs"`
 }
 
-// List returns a list of workflows.
-func (a ArgoWorkflow) List(ctx context.Context) ([]Status, error) {
-	workflows := []Status{}
-
+// List returns a list of workflow statuses.
+func (a ArgoWorkflow) ListStatus(ctx context.Context) ([]Status, error) {
 	workflowListResult, err := a.svc.ListWorkflows(ctx, &argoWorkflowAPIClient.WorkflowListRequest{
 		Namespace: a.namespace,
 	})
 	if err != nil {
-		return workflows, err
+		return []Status{}, err
 	}
 
-	for _, wf := range workflowListResult.Items {
+	workflows := make([]Status, len(workflowListResult.Items))
+
+	for k, wf := range workflowListResult.Items {
 		wfStatus := Status{
 			Name:    wf.ObjectMeta.Name,
 			Status:  strings.ToLower(string(wf.Status.Phase)),
@@ -68,7 +68,7 @@ func (a ArgoWorkflow) List(ctx context.Context) ([]Status, error) {
 			wfStatus.Finished = fmt.Sprint(wf.Status.FinishedAt.Unix())
 		}
 
-		workflows = append(workflows, wfStatus)
+		workflows[k] = wfStatus
 	}
 
 	return workflows, nil

@@ -931,7 +931,7 @@ func TestListWorkflows(t *testing.T) {
 			method:     "GET",
 			url:        "/projects/projects1/targets/target1/workflows",
 			wfMock: &th.WorkflowMock{
-				ListFunc: func(ctx context.Context) ([]workflow.Status, error) {
+				ListStatusFunc: func(ctx context.Context) ([]workflow.Status, error) {
 					return []workflow.Status{
 						{
 							Name:     "project1-target1-abcde",

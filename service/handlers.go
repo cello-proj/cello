@@ -106,7 +106,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "list-workflows", "project", projectName, "target", targetName)
 
 	level.Debug(l).Log("message", "listing workflows")
-	workflowList, err := h.argo.List(h.argoCtx)
+	workflowList, err := h.argo.ListStatus(h.argoCtx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
 		h.errorResponse(w, "error listing workflows", http.StatusInternalServerError)
