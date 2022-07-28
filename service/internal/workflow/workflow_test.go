@@ -15,18 +15,30 @@ import (
 func TestArgoWorkflowsList(t *testing.T) {
 	tests := []struct {
 		name      string
-		output    []string
+		output    []Status
 		listErr   error
 		errResult error
 	}{
 		{
-			name:      "list workflows success",
-			output:    []string{"testWorkflow1"},
+			name: "list workflows success",
+			output: []Status{
+				{
+					Name:    "testWorkflow1",
+					Status:  "running",
+					Created: "1658514000",
+				},
+				{
+					Name:     "testWorkflow2",
+					Status:   "succeeded",
+					Created:  "1658512485",
+					Finished: "1658512623",
+				},
+			},
 			errResult: nil,
 		},
 		{
 			name:      "list workflows error",
-			output:    []string{},
+			output:    []Status{},
 			listErr:   fmt.Errorf("list error"),
 			errResult: fmt.Errorf("list error"),
 		},
@@ -39,8 +51,7 @@ func TestArgoWorkflowsList(t *testing.T) {
 				"namespace",
 			)
 
-			out, err := argoWf.List(context.Background())
-
+			out, err := argoWf.ListStatus(context.Background())
 			if err != nil {
 				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
 					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
@@ -175,7 +186,28 @@ func (m mockArgoClient) ListWorkflows(ctx context.Context, in *argoWorkflowAPICl
 		return nil, m.err
 	}
 	return &v1alpha1.WorkflowList{Items: []v1alpha1.Workflow{
-		{TypeMeta: v1.TypeMeta{}, ObjectMeta: v1.ObjectMeta{Name: "testWorkflow1"}}}}, nil
+		{
+			TypeMeta: v1.TypeMeta{},
+			ObjectMeta: v1.ObjectMeta{
+				Name:              "testWorkflow1",
+				CreationTimestamp: v1.Unix(1658514000, 0),
+			},
+			Status: v1alpha1.WorkflowStatus{
+				Phase: v1alpha1.WorkflowRunning,
+			},
+		},
+		{
+			TypeMeta: v1.TypeMeta{},
+			ObjectMeta: v1.ObjectMeta{
+				Name:              "testWorkflow2",
+				CreationTimestamp: v1.Unix(1658512485, 0),
+			},
+			Status: v1alpha1.WorkflowStatus{
+				Phase:      v1alpha1.WorkflowSucceeded,
+				FinishedAt: v1.Unix(1658512623, 0),
+			},
+		},
+	}}, nil
 }
 
 func (m mockArgoClient) GetWorkflow(ctx context.Context, in *argoWorkflowAPIClient.WorkflowGetRequest, opts ...grpc.CallOption) (*v1alpha1.Workflow, error) {

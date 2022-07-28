@@ -20,8 +20,8 @@ var _ workflow.Workflow = &WorkflowMock{}
 //
 // 		// make and configure a mocked workflow.Workflow
 // 		mockedWorkflow := &WorkflowMock{
-// 			ListFunc: func(ctx context.Context) ([]string, error) {
-// 				panic("mock out the List method")
+// 			ListStatusFunc: func(ctx context.Context) ([]workflow.Status, error) {
+// 				panic("mock out the ListStatus method")
 // 			},
 // 			LogStreamFunc: func(ctx context.Context, workflowName string, data http.ResponseWriter) error {
 // 				panic("mock out the LogStream method")
@@ -42,8 +42,8 @@ var _ workflow.Workflow = &WorkflowMock{}
 //
 // 	}
 type WorkflowMock struct {
-	// ListFunc mocks the List method.
-	ListFunc func(ctx context.Context) ([]string, error)
+	// ListStatusFunc mocks the ListStatus method.
+	ListStatusFunc func(ctx context.Context) ([]workflow.Status, error)
 
 	// LogStreamFunc mocks the LogStream method.
 	LogStreamFunc func(ctx context.Context, workflowName string, data http.ResponseWriter) error
@@ -59,8 +59,8 @@ type WorkflowMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// List holds details about calls to the List method.
-		List []struct {
+		// ListStatus holds details about calls to the ListStatus method.
+		ListStatus []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
@@ -99,41 +99,41 @@ type WorkflowMock struct {
 			Labels map[string]string
 		}
 	}
-	lockList      sync.RWMutex
-	lockLogStream sync.RWMutex
-	lockLogs      sync.RWMutex
-	lockStatus    sync.RWMutex
-	lockSubmit    sync.RWMutex
+	lockListStatus sync.RWMutex
+	lockLogStream  sync.RWMutex
+	lockLogs       sync.RWMutex
+	lockStatus     sync.RWMutex
+	lockSubmit     sync.RWMutex
 }
 
-// List calls ListFunc.
-func (mock *WorkflowMock) List(ctx context.Context) ([]string, error) {
-	if mock.ListFunc == nil {
-		panic("WorkflowMock.ListFunc: method is nil but Workflow.List was just called")
+// ListStatus calls ListStatusFunc.
+func (mock *WorkflowMock) ListStatus(ctx context.Context) ([]workflow.Status, error) {
+	if mock.ListStatusFunc == nil {
+		panic("WorkflowMock.ListStatusFunc: method is nil but Workflow.ListStatus was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
 	}{
 		Ctx: ctx,
 	}
-	mock.lockList.Lock()
-	mock.calls.List = append(mock.calls.List, callInfo)
-	mock.lockList.Unlock()
-	return mock.ListFunc(ctx)
+	mock.lockListStatus.Lock()
+	mock.calls.ListStatus = append(mock.calls.ListStatus, callInfo)
+	mock.lockListStatus.Unlock()
+	return mock.ListStatusFunc(ctx)
 }
 
-// ListCalls gets all the calls that were made to List.
+// ListStatusCalls gets all the calls that were made to ListStatus.
 // Check the length with:
-//     len(mockedWorkflow.ListCalls())
-func (mock *WorkflowMock) ListCalls() []struct {
+//     len(mockedWorkflow.ListStatusCalls())
+func (mock *WorkflowMock) ListStatusCalls() []struct {
 	Ctx context.Context
 } {
 	var calls []struct {
 		Ctx context.Context
 	}
-	mock.lockList.RLock()
-	calls = mock.calls.List
-	mock.lockList.RUnlock()
+	mock.lockListStatus.RLock()
+	calls = mock.calls.ListStatus
+	mock.lockListStatus.RUnlock()
 	return calls
 }
 
