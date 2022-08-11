@@ -949,6 +949,18 @@ func TestListWorkflows(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:       "no workflows",
+			want:       http.StatusOK,
+			authHeader: userAuthHeader,
+			method:     "GET",
+			url:        "/projects/projects1/targets/target1/workflows",
+			wfMock: &th.WorkflowMock{
+				ListStatusFunc: func(ctx context.Context) ([]workflow.Status, error) {
+					return []workflow.Status{}, nil
+				},
+			},
+		},
 	}
 	runTests(t, tests)
 }

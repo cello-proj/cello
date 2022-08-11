@@ -2,26 +2,54 @@ package workflow
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
 	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
+	mockArgoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow/mocks"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestArgoWorkflowsList(t *testing.T) {
+func TestArgoWorkflowsListStatus(t *testing.T) {
 	tests := []struct {
-		name      string
-		output    []Status
-		listErr   error
-		errResult error
+		name             string
+		workflowList     *v1alpha1.WorkflowList
+		listWorkflowsErr error
+		expectedStatus   []Status
+		errExpected      bool
 	}{
 		{
 			name: "list workflows success",
-			output: []Status{
+			workflowList: &v1alpha1.WorkflowList{
+				Items: []v1alpha1.Workflow{
+					{
+						ObjectMeta: v1.ObjectMeta{
+							Name:              "testWorkflow1",
+							CreationTimestamp: v1.Unix(1658514000, 0),
+						},
+						Status: v1alpha1.WorkflowStatus{
+							Phase: v1alpha1.WorkflowRunning,
+						},
+					},
+					{
+						ObjectMeta: v1.ObjectMeta{
+							Name:              "testWorkflow2",
+							CreationTimestamp: v1.Unix(1658512485, 0),
+						},
+						Status: v1alpha1.WorkflowStatus{
+							Phase:      v1alpha1.WorkflowSucceeded,
+							FinishedAt: v1.Unix(1658512623, 0),
+						},
+					},
+				},
+			},
+			listWorkflowsErr: nil,
+			expectedStatus: []Status{
 				{
 					Name:    "testWorkflow1",
 					Status:  "running",
@@ -34,40 +62,44 @@ func TestArgoWorkflowsList(t *testing.T) {
 					Finished: "1658512623",
 				},
 			},
-			errResult: nil,
+			errExpected: false,
 		},
 		{
-			name:      "list workflows error",
-			output:    []Status{},
-			listErr:   fmt.Errorf("list error"),
-			errResult: fmt.Errorf("list error"),
+			name:             "list status error",
+			workflowList:     nil,
+			listWorkflowsErr: errors.New("list workflows error"),
+			expectedStatus:   []Status{},
+			errExpected:      true,
+		},
+		{
+			name:             "list status empty",
+			workflowList:     new(v1alpha1.WorkflowList),
+			listWorkflowsErr: nil,
+			expectedStatus:   []Status{},
+			errExpected:      false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
+			mockClient.On("ListWorkflows", mock.Anything, &argoWorkflowAPIClient.WorkflowListRequest{Namespace: "namespace"}).
+				Return(tt.workflowList, tt.listWorkflowsErr)
+
 			argoWf := NewArgoWorkflow(
-				mockArgoClient{err: tt.listErr},
+				mockClient,
 				"namespace",
 			)
 
 			out, err := argoWf.ListStatus(context.Background())
 			if err != nil {
-				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
-					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
-				}
-
-				if tt.errResult == nil {
-					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
+				if !tt.errExpected {
+					t.Errorf("\nerror not expected: %v", err)
 				}
 			}
 
-			if err == nil && tt.errResult != nil {
-				t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
-			}
-
-			if !cmp.Equal(out, tt.output) {
-				t.Errorf("\nwant: %v\n got: %v", tt.output, out)
+			if !cmp.Equal(out, tt.expectedStatus) {
+				t.Errorf("\nwant: %v\n got: %v", tt.expectedStatus, out)
 			}
 		})
 	}
@@ -75,59 +107,65 @@ func TestArgoWorkflowsList(t *testing.T) {
 
 func TestArgoStatus(t *testing.T) {
 	tests := []struct {
-		name               string
-		argoWorkflowStatus v1alpha1.WorkflowPhase
-		statusErr          error
-		result             string
-		errResult          error
+		name           string
+		workflowName   string
+		workflow       *v1alpha1.Workflow
+		getWorkflowErr error
+		expectedStatus *Status
+		errExpected    bool
 	}{
 		{
-			name:               "get workflow status pending",
-			argoWorkflowStatus: v1alpha1.WorkflowPending,
-			result:             "pending",
+			name:         "get status",
+			workflowName: "testWorkflow1",
+			workflow: &v1alpha1.Workflow{
+				ObjectMeta: v1.ObjectMeta{
+					Name:              "testWorkflow1",
+					CreationTimestamp: v1.Unix(1658514000, 0),
+				},
+				Status: v1alpha1.WorkflowStatus{
+					Phase:      v1alpha1.WorkflowSucceeded,
+					FinishedAt: v1.Unix(1658512623, 0),
+				},
+			},
+			getWorkflowErr: nil,
+			expectedStatus: &Status{
+				Name:     "testWorkflow1",
+				Status:   "succeeded",
+				Created:  "1658514000",
+				Finished: "1658512623",
+			},
+			errExpected: false,
 		},
 		{
-			name:               "get workflow status running",
-			argoWorkflowStatus: v1alpha1.WorkflowRunning,
-			result:             "running",
-		},
-		{
-			name:               "get workflow status failed",
-			argoWorkflowStatus: v1alpha1.WorkflowFailed,
-			result:             "failed",
-		},
-		{
-			name:               "get workflow status succeeded",
-			argoWorkflowStatus: v1alpha1.WorkflowSucceeded,
-			result:             "succeeded",
-		},
-		{
-			name:      "get workflow status error",
-			statusErr: fmt.Errorf("status error"),
-			errResult: fmt.Errorf("status error"),
+			name:           "get status error",
+			workflowName:   "testWorkflow1",
+			workflow:       new(v1alpha1.Workflow),
+			getWorkflowErr: errors.New("get workflow error"),
+			expectedStatus: nil,
+			errExpected:    true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
+			mockClient.On("GetWorkflow", mock.Anything, &argoWorkflowAPIClient.WorkflowGetRequest{Name: tt.workflowName, Namespace: "namespace"}).
+				Return(tt.workflow, tt.getWorkflowErr)
+
 			argoWf := NewArgoWorkflow(
-				mockArgoClient{status: tt.argoWorkflowStatus, err: tt.statusErr},
+				mockClient,
 				"namespace",
 			)
 
-			status, err := argoWf.Status(context.Background(), "workflow")
+			status, err := argoWf.Status(context.Background(), "testWorkflow1")
 			if err != nil {
-				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
-					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
+				if !tt.errExpected {
+					t.Errorf("\nerror not expected: %v", err)
 				}
+			}
 
-				if tt.errResult == nil {
-					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
-				}
-			} else {
-				if !cmp.Equal(status.Status, tt.result) {
-					t.Errorf("\nwant: %v\n got: %v", tt.result, status.Status)
-				}
+			if !cmp.Equal(status, tt.expectedStatus) {
+				t.Errorf("\nwant: %v\n got: %v", tt.expectedStatus, status)
 			}
 		})
 	}
@@ -179,42 +217,6 @@ type mockArgoClient struct {
 	argoWorkflowAPIClient.WorkflowServiceClient
 	status v1alpha1.WorkflowPhase
 	err    error
-}
-
-func (m mockArgoClient) ListWorkflows(ctx context.Context, in *argoWorkflowAPIClient.WorkflowListRequest, opts ...grpc.CallOption) (*v1alpha1.WorkflowList, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return &v1alpha1.WorkflowList{Items: []v1alpha1.Workflow{
-		{
-			TypeMeta: v1.TypeMeta{},
-			ObjectMeta: v1.ObjectMeta{
-				Name:              "testWorkflow1",
-				CreationTimestamp: v1.Unix(1658514000, 0),
-			},
-			Status: v1alpha1.WorkflowStatus{
-				Phase: v1alpha1.WorkflowRunning,
-			},
-		},
-		{
-			TypeMeta: v1.TypeMeta{},
-			ObjectMeta: v1.ObjectMeta{
-				Name:              "testWorkflow2",
-				CreationTimestamp: v1.Unix(1658512485, 0),
-			},
-			Status: v1alpha1.WorkflowStatus{
-				Phase:      v1alpha1.WorkflowSucceeded,
-				FinishedAt: v1.Unix(1658512623, 0),
-			},
-		},
-	}}, nil
-}
-
-func (m mockArgoClient) GetWorkflow(ctx context.Context, in *argoWorkflowAPIClient.WorkflowGetRequest, opts ...grpc.CallOption) (*v1alpha1.Workflow, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return &v1alpha1.Workflow{TypeMeta: v1.TypeMeta{}, ObjectMeta: v1.ObjectMeta{Name: "testWorkflow1"}, Status: v1alpha1.WorkflowStatus{Phase: m.status}}, nil
 }
 
 func (m mockArgoClient) SubmitWorkflow(ctx context.Context, in *argoWorkflowAPIClient.WorkflowSubmitRequest, opts ...grpc.CallOption) (*v1alpha1.Workflow, error) {

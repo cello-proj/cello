@@ -114,7 +114,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Only return workflows the target project / target
-	var workflows []workflow.Status
+	workflows := make([]workflow.Status, 0)
 	prefix := fmt.Sprintf("%s-%s", projectName, targetName)
 	for _, wf := range workflowList {
 		if strings.HasPrefix(wf.Name, prefix) {
