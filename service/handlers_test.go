@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -1320,7 +1319,7 @@ func runTests(t *testing.T, tests []test) {
 			}
 
 			if tt.body != "" {
-				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				bodyBytes, err := io.ReadAll(resp.Body)
 				defer resp.Body.Close()
 				if err != nil {
 					t.Errorf("Error loading body")

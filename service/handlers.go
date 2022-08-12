@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -79,7 +79,7 @@ func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	// regardless.
 	// https://golang.org/pkg/net/http/#Client.Do
 	defer response.Body.Close()
-	_, err = ioutil.ReadAll(response.Body)
+	_, err = io.ReadAll(response.Body)
 	if err != nil {
 		level.Warn(l).Log("message", "unable to read vault body; continuing", "error", err)
 		// Continue on and handle the actual response code from Vault accordingly.
@@ -164,7 +164,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "reading request body")
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
 		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
@@ -227,7 +227,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "reading request body")
 	var cwr requests.CreateWorkflow
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading workflow request data", "error", err)
 		h.errorResponse(w, "error reading workflow request data", http.StatusInternalServerError)
@@ -541,7 +541,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var capp requests.CreateProject
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request body", "error", err)
 		h.errorResponse(w, "error reading request body", http.StatusInternalServerError)
@@ -759,7 +759,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "reading request body")
 
 	var ctr requests.CreateTarget
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
 		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
@@ -978,7 +978,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	targetType := target.Type
 
 	level.Debug(l).Log("message", "reading request body")
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
 		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
