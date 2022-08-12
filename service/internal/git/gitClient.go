@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,7 +100,7 @@ func newBasicClient(auth transport.AuthMethod, opts ...Option) BasicClient {
 		git:     gitSvcImpl{},
 		fs:      os.DirFS(os.TempDir()),
 		baseDir: os.TempDir(),
-		pw:      ioutil.Discard,
+		pw:      io.Discard,
 	}
 
 	for _, o := range opts {

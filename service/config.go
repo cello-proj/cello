@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -25,7 +25,7 @@ type Config struct {
 }
 
 func loadConfig(configFilePath string) (*Config, error) {
-	f, err := ioutil.ReadFile(configFilePath)
+	f, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,6 @@ func generateExecuteCommand(commandDefinition, environmentVariablesString string
 	t, err := template.New("text").Parse(commandDefinition)
 	if err != nil {
 		return "", err
-
 	}
 	err = t.Execute(&buf, commandVariables)
 	if err != nil {
