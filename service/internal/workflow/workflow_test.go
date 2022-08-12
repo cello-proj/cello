@@ -3,29 +3,26 @@ package workflow
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
-	argoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 	mockArgoWorkflowAPIClient "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow/mocks"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/mock"
-	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestArgoWorkflowsListStatus(t *testing.T) {
 	tests := []struct {
 		name             string
-		workflowList     *v1alpha1.WorkflowList
+		workflowListResp *v1alpha1.WorkflowList
 		listWorkflowsErr error
 		expectedStatus   []Status
 		errExpected      bool
 	}{
 		{
 			name: "list workflows success",
-			workflowList: &v1alpha1.WorkflowList{
+			workflowListResp: &v1alpha1.WorkflowList{
 				Items: []v1alpha1.Workflow{
 					{
 						ObjectMeta: v1.ObjectMeta{
@@ -66,14 +63,14 @@ func TestArgoWorkflowsListStatus(t *testing.T) {
 		},
 		{
 			name:             "list status error",
-			workflowList:     nil,
+			workflowListResp: nil,
 			listWorkflowsErr: errors.New("list workflows error"),
 			expectedStatus:   []Status{},
 			errExpected:      true,
 		},
 		{
 			name:             "list status empty",
-			workflowList:     new(v1alpha1.WorkflowList),
+			workflowListResp: new(v1alpha1.WorkflowList),
 			listWorkflowsErr: nil,
 			expectedStatus:   []Status{},
 			errExpected:      false,
@@ -83,8 +80,8 @@ func TestArgoWorkflowsListStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
-			mockClient.On("ListWorkflows", mock.Anything, &argoWorkflowAPIClient.WorkflowListRequest{Namespace: "namespace"}).
-				Return(tt.workflowList, tt.listWorkflowsErr)
+			mockClient.On("ListWorkflows", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*workflow.WorkflowListRequest")).
+				Return(tt.workflowListResp, tt.listWorkflowsErr)
 
 			argoWf := NewArgoWorkflow(
 				mockClient,
@@ -107,17 +104,17 @@ func TestArgoWorkflowsListStatus(t *testing.T) {
 
 func TestArgoStatus(t *testing.T) {
 	tests := []struct {
-		name           string
-		workflowName   string
-		workflow       *v1alpha1.Workflow
-		getWorkflowErr error
-		expectedStatus *Status
-		errExpected    bool
+		name            string
+		workflowName    string
+		getWorkflowResp *v1alpha1.Workflow
+		getWorkflowErr  error
+		expectedStatus  *Status
+		errExpected     bool
 	}{
 		{
 			name:         "get status",
 			workflowName: "testWorkflow1",
-			workflow: &v1alpha1.Workflow{
+			getWorkflowResp: &v1alpha1.Workflow{
 				ObjectMeta: v1.ObjectMeta{
 					Name:              "testWorkflow1",
 					CreationTimestamp: v1.Unix(1658514000, 0),
@@ -137,20 +134,20 @@ func TestArgoStatus(t *testing.T) {
 			errExpected: false,
 		},
 		{
-			name:           "get status error",
-			workflowName:   "testWorkflow1",
-			workflow:       new(v1alpha1.Workflow),
-			getWorkflowErr: errors.New("get workflow error"),
-			expectedStatus: nil,
-			errExpected:    true,
+			name:            "get status error",
+			workflowName:    "testWorkflow1",
+			getWorkflowResp: new(v1alpha1.Workflow),
+			getWorkflowErr:  errors.New("get workflow error"),
+			expectedStatus:  nil,
+			errExpected:     true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
-			mockClient.On("GetWorkflow", mock.Anything, &argoWorkflowAPIClient.WorkflowGetRequest{Name: tt.workflowName, Namespace: "namespace"}).
-				Return(tt.workflow, tt.getWorkflowErr)
+			mockClient.On("GetWorkflow", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*workflow.WorkflowGetRequest")).
+				Return(tt.getWorkflowResp, tt.getWorkflowErr)
 
 			argoWf := NewArgoWorkflow(
 				mockClient,
@@ -173,55 +170,57 @@ func TestArgoStatus(t *testing.T) {
 
 func TestArgoSubmit(t *testing.T) {
 	tests := []struct {
-		name      string
-		err       error
-		result    string
-		errResult error
+		name               string
+		submitWorkflowResp *v1alpha1.Workflow
+		submitWorkflowErr  error
+		expected           string
+		errExpected        bool
 	}{
 		{
-			name:   "submit workflow",
-			result: "testworkflow1",
+			name: "submit workflow",
+			submitWorkflowResp: &v1alpha1.Workflow{
+				ObjectMeta: v1.ObjectMeta{
+					Name:              "testWorkflow1",
+					CreationTimestamp: v1.Unix(1658514000, 0),
+				},
+				Status: v1alpha1.WorkflowStatus{
+					Phase:      v1alpha1.WorkflowSucceeded,
+					FinishedAt: v1.Unix(1658512623, 0),
+				},
+			},
+			expected:    "testworkflow1",
+			errExpected: false,
 		},
 		{
-			name:      "get workflow logs error",
-			err:       fmt.Errorf("submit error"),
-			errResult: fmt.Errorf("failed to submit workflow: submit error"),
+			name:               "submit workflow error",
+			submitWorkflowResp: new(v1alpha1.Workflow),
+			submitWorkflowErr:  errors.New("submit workflow error"),
+			expected:           "",
+			errExpected:        true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
+			mockClient.On("SubmitWorkflow", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*workflow.WorkflowSubmitRequest")).
+				Return(tt.submitWorkflowResp, tt.submitWorkflowErr)
+
 			argoWf := NewArgoWorkflow(
-				mockArgoClient{err: tt.err},
+				mockClient,
 				"namespace",
 			)
 
-			workflow, err := argoWf.Submit(context.Background(), "test/test", map[string]string{"param": "value"}, map[string]string{"X-B3-TraceId": "test-txid"})
+			workflowName, err := argoWf.Submit(context.Background(), "test/test", map[string]string{"param": "value"}, map[string]string{"X-B3-TraceId": "test-txid"})
 			if err != nil {
-				if tt.errResult != nil && tt.errResult.Error() != err.Error() {
-					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
+				if !tt.errExpected {
+					t.Errorf("\nerror not expected: %v", err)
 				}
-				if tt.errResult == nil {
-					t.Errorf("\nwant: %v\n got: %v", tt.errResult, err)
-				}
-			} else {
-				if !cmp.Equal(workflow, tt.result) {
-					t.Errorf("\nwant: %v\n got: %v", tt.result, workflow)
-				}
+			}
+
+			if !cmp.Equal(workflowName, tt.expected) {
+				t.Errorf("\nwant: %v\n got: %v", tt.expected, workflowName)
 			}
 		})
 	}
-}
-
-type mockArgoClient struct {
-	argoWorkflowAPIClient.WorkflowServiceClient
-	status v1alpha1.WorkflowPhase
-	err    error
-}
-
-func (m mockArgoClient) SubmitWorkflow(ctx context.Context, in *argoWorkflowAPIClient.WorkflowSubmitRequest, opts ...grpc.CallOption) (*v1alpha1.Workflow, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	return &v1alpha1.Workflow{TypeMeta: v1.TypeMeta{}, ObjectMeta: v1.ObjectMeta{Name: "testWorkflow1"}, Status: v1alpha1.WorkflowStatus{Phase: m.status}}, nil
 }
