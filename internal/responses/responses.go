@@ -9,6 +9,7 @@ type CreateProject struct {
 // CreateToken represents the responses for CreateToken.
 type CreateToken struct {
 	CreatedAt string `json:"created_at"`
+	ExpiresAt string `json:"expires_at"`
 	Token     string `json:"token"`
 	TokenID   string `json:"token_id"`
 }
@@ -49,6 +50,7 @@ type GetWorkflowStatus struct {
 // ListTokens represents the responses for ListTokens.
 type ListTokens struct {
 	CreatedAt string `json:"created_at"`
+	ExpiresAt string `json:"expires_at"`
 	ProjectID string `json:"project,omitempty"`
 	TokenID   string `json:"token_id"`
 }

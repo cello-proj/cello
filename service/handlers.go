@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -79,7 +79,7 @@ func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	// regardless.
 	// https://golang.org/pkg/net/http/#Client.Do
 	defer response.Body.Close()
-	_, err = ioutil.ReadAll(response.Body)
+	_, err = io.ReadAll(response.Body)
 	if err != nil {
 		level.Warn(l).Log("message", "unable to read vault body; continuing", "error", err)
 		// Continue on and handle the actual response code from Vault accordingly.
@@ -106,7 +106,7 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	l := h.requestLogger(r, "op", "list-workflows", "project", projectName, "target", targetName)
 
 	level.Debug(l).Log("message", "listing workflows")
-	workflowIDs, err := h.argo.List(h.argoCtx)
+	workflowList, err := h.argo.ListStatus(h.argoCtx)
 	if err != nil {
 		level.Error(l).Log("message", "error listing workflows", "error", err)
 		h.errorResponse(w, "error listing workflows", http.StatusInternalServerError)
@@ -114,17 +114,11 @@ func (h handler) listWorkflows(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Only return workflows the target project / target
-	var workflows []workflow.Status
+	workflows := make([]workflow.Status, 0)
 	prefix := fmt.Sprintf("%s-%s", projectName, targetName)
-	for _, workflowID := range workflowIDs {
-		if strings.HasPrefix(workflowID, prefix) {
-			workflow, err := h.argo.Status(h.argoCtx, workflowID)
-			if err != nil {
-				level.Error(l).Log("message", "error retrieving workflows", "error", err)
-				h.errorResponse(w, "error retrieving workflows", http.StatusInternalServerError)
-				return
-			}
-			workflows = append(workflows, *workflow)
+	for _, wf := range workflowList {
+		if strings.HasPrefix(wf.Name, prefix) {
+			workflows = append(workflows, wf)
 		}
 	}
 
@@ -170,7 +164,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "reading request body")
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
 		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
@@ -233,7 +227,7 @@ func (h handler) createWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "reading request body")
 	var cwr requests.CreateWorkflow
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading workflow request data", "error", err)
 		h.errorResponse(w, "error reading workflow request data", http.StatusInternalServerError)
@@ -489,16 +483,15 @@ func (h handler) getWorkflowLogStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns a new token
-func newCelloToken(provider, key, secret string) *token {
+// Returns a new Cello token
+func newCelloToken(provider string, tok types.Token) *token {
 	return &token{
-		Token: fmt.Sprintf("%s:%s:%s", provider, key, secret),
+		Token: fmt.Sprintf("%s:%s:%s", provider, tok.RoleID, tok.Secret),
 	}
 }
 
 // projectExists checks if a project exists using both the credential provider and database
 func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials.Provider, w http.ResponseWriter, projectName string) (bool, error) {
-
 	// Checking credential provider
 	level.Debug(l).Log("message", "checking if project exists")
 	projectExists, err := cp.ProjectExists(projectName)
@@ -548,7 +541,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var capp requests.CreateProject
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request body", "error", err)
 		h.errorResponse(w, "error reading request body", http.StatusInternalServerError)
@@ -599,7 +592,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	level.Debug(l).Log("message", "creating project")
-	role, secret, secretAccessor, err := cp.CreateProject(capp.Name)
+	token, err := cp.CreateProject(capp.Name)
 	if err != nil {
 		level.Error(l).Log("message", "error creating project", "error", err)
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
@@ -607,7 +600,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "inserting token into DB")
-	_, err = h.dbClient.CreateTokenEntry(ctx, capp.Name, secretAccessor)
+	err = h.dbClient.CreateTokenEntry(ctx, token)
 	if err != nil {
 		level.Error(l).Log("message", "error inserting token into DB", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
@@ -615,11 +608,11 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "retrieving Cello token")
-	token := newCelloToken("vault", role, secret)
+	celloToken := newCelloToken("vault", token)
 
 	resp := responses.CreateProject{
-		Token:   token.Token,
-		TokenID: secretAccessor,
+		Token:   celloToken.Token,
+		TokenID: token.ProjectToken.ID,
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -766,7 +759,7 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "reading request body")
 
 	var ctr requests.CreateTarget
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
 		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
@@ -985,7 +978,7 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 	targetType := target.Type
 
 	level.Debug(l).Log("message", "reading request body")
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		level.Error(l).Log("message", "error reading request data", "error", err)
 		h.errorResponse(w, "error reading request data", http.StatusInternalServerError)
@@ -1151,7 +1144,7 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "creating token")
-	role, secret, secretAccessor, err := cp.CreateToken(projectName)
+	token, err := cp.CreateToken(projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error creating token with credentials provider", "error", err)
 		h.errorResponse(w, "error creating token with credentials provider", http.StatusInternalServerError)
@@ -1159,19 +1152,20 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	level.Debug(l).Log("message", "inserting into db")
-	te, err := h.dbClient.CreateTokenEntry(ctx, projectName, secretAccessor)
+	err = h.dbClient.CreateTokenEntry(ctx, token)
 	if err != nil {
 		level.Error(l).Log("message", "error inserting token to db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
 	}
 
-	token := newCelloToken("vault", role, secret)
+	celloToken := newCelloToken("vault", token)
 
 	resp := responses.CreateToken{
-		CreatedAt: te.CreatedAt,
-		Token:     token.Token,
-		TokenID:   te.TokenID,
+		CreatedAt: token.CreatedAt,
+		ExpiresAt: token.ExpiresAt,
+		Token:     celloToken.Token,
+		TokenID:   token.ProjectToken.ID,
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -1227,6 +1221,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	for _, tokenEntry := range tokens {
 		resp = append(resp, responses.ListTokens{
 			CreatedAt: tokenEntry.CreatedAt,
+			ExpiresAt: tokenEntry.ExpiresAt,
 			TokenID:   tokenEntry.TokenID,
 		})
 	}

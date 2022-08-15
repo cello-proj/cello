@@ -5,6 +5,7 @@ package testhelpers
 
 import (
 	"context"
+	"github.com/cello-proj/cello/internal/types"
 	"github.com/cello-proj/cello/service/internal/db"
 	"sync"
 )
@@ -22,7 +23,7 @@ var _ db.Client = &DBClientMock{}
 // 			CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
 // 				panic("mock out the CreateProjectEntry method")
 // 			},
-// 			CreateTokenEntryFunc: func(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error) {
+// 			CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
 // 				panic("mock out the CreateTokenEntry method")
 // 			},
 // 			DeleteProjectEntryFunc: func(ctx context.Context, project string) error {
@@ -51,7 +52,7 @@ type DBClientMock struct {
 	CreateProjectEntryFunc func(ctx context.Context, pe db.ProjectEntry) error
 
 	// CreateTokenEntryFunc mocks the CreateTokenEntry method.
-	CreateTokenEntryFunc func(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error)
+	CreateTokenEntryFunc func(ctx context.Context, token types.Token) error
 
 	// DeleteProjectEntryFunc mocks the DeleteProjectEntry method.
 	DeleteProjectEntryFunc func(ctx context.Context, project string) error
@@ -81,10 +82,8 @@ type DBClientMock struct {
 		CreateTokenEntry []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Project is the project argument value.
-			Project string
-			// SecretAccessor is the secretAccessor argument value.
-			SecretAccessor string
+			// Token is the token argument value.
+			Token types.Token
 		}
 		// DeleteProjectEntry holds details about calls to the DeleteProjectEntry method.
 		DeleteProjectEntry []struct {
@@ -167,37 +166,33 @@ func (mock *DBClientMock) CreateProjectEntryCalls() []struct {
 }
 
 // CreateTokenEntry calls CreateTokenEntryFunc.
-func (mock *DBClientMock) CreateTokenEntry(ctx context.Context, project string, secretAccessor string) (db.TokenEntry, error) {
+func (mock *DBClientMock) CreateTokenEntry(ctx context.Context, token types.Token) error {
 	if mock.CreateTokenEntryFunc == nil {
 		panic("DBClientMock.CreateTokenEntryFunc: method is nil but Client.CreateTokenEntry was just called")
 	}
 	callInfo := struct {
-		Ctx            context.Context
-		Project        string
-		SecretAccessor string
+		Ctx   context.Context
+		Token types.Token
 	}{
-		Ctx:            ctx,
-		Project:        project,
-		SecretAccessor: secretAccessor,
+		Ctx:   ctx,
+		Token: token,
 	}
 	mock.lockCreateTokenEntry.Lock()
 	mock.calls.CreateTokenEntry = append(mock.calls.CreateTokenEntry, callInfo)
 	mock.lockCreateTokenEntry.Unlock()
-	return mock.CreateTokenEntryFunc(ctx, project, secretAccessor)
+	return mock.CreateTokenEntryFunc(ctx, token)
 }
 
 // CreateTokenEntryCalls gets all the calls that were made to CreateTokenEntry.
 // Check the length with:
 //     len(mockedClient.CreateTokenEntryCalls())
 func (mock *DBClientMock) CreateTokenEntryCalls() []struct {
-	Ctx            context.Context
-	Project        string
-	SecretAccessor string
+	Ctx   context.Context
+	Token types.Token
 } {
 	var calls []struct {
-		Ctx            context.Context
-		Project        string
-		SecretAccessor string
+		Ctx   context.Context
+		Token types.Token
 	}
 	mock.lockCreateTokenEntry.RLock()
 	calls = mock.calls.CreateTokenEntry

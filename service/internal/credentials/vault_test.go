@@ -55,11 +55,13 @@ func TestVaultCreateProject(t *testing.T) {
 					"secret_id":          tt.expectedSecret,
 					"secret_id_accessor": tt.expectedSecretAccessor,
 					"role_id":            tt.expectedRole,
+					"creation_time":      "2022-07-01T14:56:10.341066-07:00",
+					"expiration_time":    "2023-07-01T14:56:10.341066-07:00",
 				}},
 				vaultSysSvc: &mockVaultSys{},
 			}
 
-			roleID, secretID, _, err := v.CreateProject("testProject")
+			token, err := v.CreateProject("testProject")
 			if err != nil {
 				if !tt.errResult {
 					t.Errorf("\ndid not expect error, got: %v", err)
@@ -68,11 +70,11 @@ func TestVaultCreateProject(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error")
 				}
-				if !cmp.Equal(roleID, tt.expectedRole) {
-					t.Errorf("\nwant: %v\n got: %v", tt.expectedRole, roleID)
+				if !cmp.Equal(token.RoleID, tt.expectedRole) {
+					t.Errorf("\nwant: %v\n got: %v", tt.expectedRole, token.RoleID)
 				}
-				if !cmp.Equal(secretID, tt.expectedSecret) {
-					t.Errorf("\nwant: %v\n got: %v", tt.expectedSecret, secretID)
+				if !cmp.Equal(token.Secret, tt.expectedSecret) {
+					t.Errorf("\nwant: %v\n got: %v", tt.expectedSecret, token.Secret)
 				}
 			}
 
