@@ -44,8 +44,7 @@ func TestVaultCreateProject(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -77,7 +76,6 @@ func TestVaultCreateProject(t *testing.T) {
 					t.Errorf("\nwant: %v\n got: %v", tt.expectedSecret, token.Secret)
 				}
 			}
-
 		})
 	}
 }
@@ -108,8 +106,7 @@ func TestVaultCreateTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -158,8 +155,7 @@ func TestVaultUpdateTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -215,8 +211,7 @@ func TestVaultDeleteProject(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -266,8 +261,7 @@ func TestVaultDeleteTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -285,6 +279,69 @@ func TestVaultDeleteTarget(t *testing.T) {
 				if tt.errResult {
 					t.Errorf("\nexpected error")
 				}
+			}
+		})
+	}
+}
+
+func TestVaultGetProjectToken(t *testing.T) {
+	tests := []struct {
+		name            string
+		admin           bool
+		expectedTokenID string
+		mockVaultData   map[string]interface{}
+		vaultErr        error
+		errResult       bool
+	}{
+		{
+			name:            "get project token success",
+			admin:           true,
+			expectedTokenID: "secret-id-accessor",
+			mockVaultData: map[string]interface{}{
+				"secret_id_accessor": "secret-id-accessor",
+			},
+		},
+		{
+			name:            "get project token error",
+			admin:           false,
+			vaultErr:        errTest,
+			errResult:       true,
+			expectedTokenID: "",
+			mockVaultData:   map[string]interface{}{},
+		},
+		{
+			name:            "project token does not exist",
+			admin:           true,
+			vaultErr:        fmt.Errorf("failed to find accessor entry for secret_id_accessor"),
+			expectedTokenID: "",
+			mockVaultData:   map[string]interface{}{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			role := "testRole"
+			if tt.admin {
+				role = authorizationKeyAdmin
+			}
+			v := VaultProvider{
+				roleID:          role,
+				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr, data: tt.mockVaultData},
+			}
+
+			projectToken, err := v.GetProjectToken("projectName", "tokenID")
+			if err != nil {
+				if !tt.errResult {
+					t.Errorf("\ndid not expect error, got: %v", err)
+				}
+			} else {
+				if tt.errResult {
+					t.Errorf("\nexpected error")
+				}
+			}
+
+			if !cmp.Equal(projectToken.ID, tt.expectedTokenID) {
+				t.Errorf("\nwant: %v\n got: %v", tt.expectedTokenID, projectToken.ID)
 			}
 		})
 	}
@@ -316,8 +373,7 @@ func TestVaultGetTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -371,8 +427,7 @@ func TestVaultGetToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -427,8 +482,7 @@ func TestVaultListTargets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var role = "testRole"
+			role := "testRole"
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -491,7 +545,6 @@ func TestVaultProjectExists(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			v := VaultProvider{
 				vaultLogicalSvc: &mockVaultLogical{err: tt.vaultErr},
 			}
@@ -543,12 +596,11 @@ func TestValidateAuthorizedAdmin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			var key = "test"
+			key := "test"
 			if tt.admin {
 				key = authorizationKeyAdmin
 			}
-			var secret = "invalidSecret"
+			secret := "invalidSecret"
 			if tt.validSecret {
 				secret = "validSecret"
 			}

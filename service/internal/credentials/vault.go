@@ -396,6 +396,10 @@ func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.Proje
 	path := fmt.Sprintf("%s/secret-id-accessor/lookup", genProjectAppRole(projectName))
 	projectToken, err := v.vaultLogicalSvc.Write(path, data)
 	if err != nil {
+		// don't return an error if the secret ID accessor doesn't exist
+		if !isSecretIDAccessorExists(err) {
+			return token, nil
+		}
 		return token, fmt.Errorf("vault get secret ID accessor error: %w", err)
 	}
 
@@ -479,7 +483,6 @@ func (v VaultProvider) readRoleID(appRoleName string) (string, error) {
 }
 
 func (v VaultProvider) readSecretIDAccessor(appRoleName, accessor string) (*vault.Secret, error) {
-
 	options := map[string]interface{}{
 		"secret_id_accessor": accessor,
 	}
@@ -540,4 +543,12 @@ func (v VaultProvider) writeProjectState(name string) error {
 		return err
 	}
 	return nil
+}
+
+func isSecretIDAccessorExists(err error) bool {
+	// Vault does not return a typed error, so unfortunately, the error message must be inspected
+	if strings.Contains(err.Error(), "failed to find accessor entry for secret_id_accessor") {
+		return false
+	}
+	return true
 }
