@@ -1059,40 +1059,54 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	// check if token exists in CP and DB
 	projectToken, err := cp.GetProjectToken(projectName, tokenID)
 	if err != nil {
-		level.Error(l).Log("message", "error retrieving token from credentials provider", "error", err)
-		h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
-		return
+		// do not return an error for a non-existent project token
+		if !errors.Is(err, credentials.ErrProjectTokenNotFound) {
+			level.Error(l).Log("message", "error retrieving token from credentials provider", "error", err)
+			h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if projectToken == (types.ProjectToken{}) {
-		level.Error(l).Log("message", "token does not exist in credential provider", "error", err)
-		h.errorResponse(w, "token does not exist", http.StatusNotFound)
-		return
+		level.Warn(l).Log("message", "token does not exist in credential provider", "error", err)
 	}
 
-	if _, err = h.dbClient.ReadTokenEntry(ctx, tokenID); err != nil {
-		if errors.Is(err, upper.ErrNoMoreRows) {
-			level.Error(l).Log("message", "token does not exist in DB", "error", err)
-			h.errorResponse(w, "token does not exist", http.StatusNotFound)
+	dbProjectToken, err := h.dbClient.ReadTokenEntry(ctx, tokenID)
+	if err != nil {
+		// do not return an error for a non-existent project token
+		if !errors.Is(err, upper.ErrNoMoreRows) {
+			level.Error(l).Log("message", "error retrieving token from DB", "error", err)
+			h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
 			return
 		}
-		level.Error(l).Log("message", "error retrieving token from DB", "error", err)
-		h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
-		return
+	}
+
+	if dbProjectToken == (db.TokenEntry{}) {
+		level.Warn(l).Log("message", "token does not exist in DB", "error", err)
 	}
 
 	// delete token from DB and CP
-	level.Debug(l).Log("message", "deleting token from database")
-	if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
-		level.Error(l).Log("message", "error deleting token from database", "error", err)
-		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
-		return
+	if dbProjectToken != (db.TokenEntry{}) {
+		// only delete token if exists in DB
+		level.Debug(l).Log("message", "deleting token from database")
+		if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
+			level.Error(l).Log("message", "error deleting token from database", "error", err)
+			h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	level.Debug(l).Log("message", "deleting token from credentials provider")
-	if err = cp.DeleteProjectToken(projectName, tokenID); err != nil {
-		level.Error(l).Log("message", "error deleting token from credentials provider", "error", err)
-		h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+	// Deleting from CP last as CP is the source of truth.
+	// Implementations for GetTokens and DeleteToken will handle properly if there is a mismatch
+	// between the CP and DB. GetTokens will return tokens from CP if there is a mismatch.
+	// Only delete token if exists in CP.
+	if projectToken != (types.ProjectToken{}) {
+		level.Debug(l).Log("message", "deleting token from credentials provider")
+		if err = cp.DeleteProjectToken(projectName, tokenID); err != nil {
+			level.Error(l).Log("message", "error deleting token from credentials provider", "error", err)
+			h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

@@ -313,6 +313,7 @@ func TestVaultGetProjectToken(t *testing.T) {
 			name:            "project token does not exist",
 			admin:           true,
 			vaultErr:        fmt.Errorf("failed to find accessor entry for secret_id_accessor"),
+			errResult:       true,
 			expectedTokenID: "",
 			mockVaultData:   map[string]interface{}{},
 		},

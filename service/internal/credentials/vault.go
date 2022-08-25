@@ -61,6 +61,8 @@ var (
 	ErrNotFound = errors.New("item not found")
 	// ErrTargetNotFound conveys that the target was not round.
 	ErrTargetNotFound = errors.New("target not found")
+	// ErrTokeNotFound conveys that the tooken was not found.
+	ErrProjectTokenNotFound = errors.New("project token not found")
 )
 
 type VaultProvider struct {
@@ -396,9 +398,8 @@ func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.Proje
 	path := fmt.Sprintf("%s/secret-id-accessor/lookup", genProjectAppRole(projectName))
 	projectToken, err := v.vaultLogicalSvc.Write(path, data)
 	if err != nil {
-		// don't return an error if the secret ID accessor doesn't exist
 		if !isSecretIDAccessorExists(err) {
-			return token, nil
+			return token, ErrProjectTokenNotFound
 		}
 		return token, fmt.Errorf("vault get secret ID accessor error: %w", err)
 	}
