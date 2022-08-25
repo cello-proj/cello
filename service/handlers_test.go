@@ -1070,13 +1070,18 @@ func TestListTokens(t *testing.T) {
 			method:     "GET",
 		},
 		{
-			name:       "can list tokens",
+			name:       "can list tokens - DB and CP entries match",
 			want:       http.StatusOK,
 			respFile:   "TestListTokens/can_list_tokens_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/undeletableprojecttargets/tokens",
 			method:     "GET",
 			cpMock: &th.CredsProviderMock{
+				ListProjectTokensFunc: func(s string) ([]types.ProjectToken, error) {
+					return []types.ProjectToken{
+						{ID: "ghi789"}, {ID: "def456"}, {ID: "abc123"},
+					}, nil
+				},
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
 			dbMock: &th.DBClientMock{
@@ -1105,6 +1110,114 @@ func TestListTokens(t *testing.T) {
 			},
 		},
 		{
+			name:       "can list tokens - DB and CP token lengths not matching",
+			want:       http.StatusOK,
+			respFile:   "TestListTokens/can_list_tokens_mismatch_token_lengths_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project1/tokens",
+			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				GetProjectTokenFunc: func(s1, s2 string) (types.ProjectToken, error) {
+					if s2 == "abc123" {
+						return types.ProjectToken{
+							ProjectID: "project1",
+							CreatedAt: "2022-06-21T14:42:50.182037-07:00",
+							ExpiresAt: "2023-06-21T14:42:50.182037-07:00",
+							ID:        "abc123",
+						}, nil
+					}
+					return types.ProjectToken{
+						ProjectID: "project1",
+						CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+						ExpiresAt: "2023-06-21T14:43:16.172896-07:00",
+						ID:        "def456",
+					}, nil
+				},
+				ListProjectTokensFunc: func(s string) ([]types.ProjectToken, error) {
+					return []types.ProjectToken{
+						{ID: "def456"}, {ID: "abc123"},
+					}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{
+						{
+							CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+							ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+							TokenID:   "ghi789",
+						},
+						{
+							CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+							ExpiresAt: "2023-06-21T14:43:16.172896-07:00",
+							TokenID:   "def456",
+						},
+						{
+							CreatedAt: "2022-06-21T14:42:50.182037-07:00",
+							ExpiresAt: "2023-06-21T14:42:50.182037-07:00",
+							TokenID:   "abc123",
+						},
+					}, nil
+				},
+			},
+		},
+		{
+			name:       "can list tokens - DB and CP tokens elements do not match",
+			want:       http.StatusOK,
+			respFile:   "TestListTokens/can_list_tokens_mismatch_elements_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project1/tokens",
+			method:     "GET",
+			cpMock: &th.CredsProviderMock{
+				GetProjectTokenFunc: func(s1, s2 string) (types.ProjectToken, error) {
+					if s2 == "ghi789" {
+						return types.ProjectToken{
+							ProjectID: "project1",
+							CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+							ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+							ID:        "ghi789",
+						}, nil
+					}
+					return types.ProjectToken{
+						ProjectID: "project1",
+						CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+						ExpiresAt: "2023-06-21T14:43:16.172896-07:00",
+						ID:        "def456",
+					}, nil
+				},
+				ListProjectTokensFunc: func(s string) ([]types.ProjectToken, error) {
+					return []types.ProjectToken{
+						{ID: "ghi789"}, {ID: "def456"},
+					}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{
+						{
+							CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+							ExpiresAt: "2023-06-21T14:43:16.172896-07:00",
+							TokenID:   "def456",
+						},
+						{
+							CreatedAt: "2022-06-21T14:42:50.182037-07:00",
+							ExpiresAt: "2023-06-21T14:42:50.182037-07:00",
+							TokenID:   "abc123",
+						},
+					}, nil
+				},
+			},
+		},
+		// TODO: test mismatch token expire time
+		{
 			name:       "project not found",
 			want:       http.StatusNotFound,
 			respFile:   "TestListTokens/project_not_found_response.json",
@@ -1123,6 +1236,9 @@ func TestListTokens(t *testing.T) {
 			url:        "/projects/projectnotokens/tokens",
 			method:     "GET",
 			cpMock: &th.CredsProviderMock{
+				ListProjectTokensFunc: func(s string) ([]types.ProjectToken, error) {
+					return []types.ProjectToken{}, nil
+				},
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
 			dbMock: &th.DBClientMock{

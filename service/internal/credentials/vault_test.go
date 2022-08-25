@@ -286,8 +286,9 @@ func TestVaultDeleteTarget(t *testing.T) {
 
 func TestVaultGetProjectToken(t *testing.T) {
 	tests := []struct {
-		name            string
-		admin           bool
+		name  string
+		admin bool
+		// TODO: use type instead?
 		expectedTokenID string
 		mockVaultData   map[string]interface{}
 		vaultErr        error
@@ -298,6 +299,8 @@ func TestVaultGetProjectToken(t *testing.T) {
 			admin:           true,
 			expectedTokenID: "secret-id-accessor",
 			mockVaultData: map[string]interface{}{
+				"creation_time":      "2022-06-21T14:43:16.172896-07:00",
+				"expiration_time":    "2023-06-21T14:43:16.172896-07:00",
 				"secret_id_accessor": "secret-id-accessor",
 			},
 		},

@@ -410,7 +410,10 @@ func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.Proje
 	}
 
 	return types.ProjectToken{
-		ID: projectToken.Data["secret_id_accessor"].(string),
+		ID:        projectToken.Data["secret_id_accessor"].(string),
+		CreatedAt: projectToken.Data["creation_time"].(string),
+		ExpiresAt: projectToken.Data["expiration_time"].(string),
+		ProjectID: projectName,
 	}, nil
 }
 
