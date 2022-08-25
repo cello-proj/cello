@@ -1059,34 +1059,28 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	// check if token exists in CP and DB
 	projectToken, err := cp.GetProjectToken(projectName, tokenID)
 	if err != nil {
-		// do not return an error for a non-existent project token
+		// do not return an error if project token is not found
 		if !errors.Is(err, credentials.ErrProjectTokenNotFound) {
 			level.Error(l).Log("message", "error retrieving token from credentials provider", "error", err)
 			h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
 			return
 		}
-	}
-
-	if projectToken == (types.ProjectToken{}) {
 		level.Warn(l).Log("message", "token does not exist in credential provider", "error", err)
 	}
 
 	dbProjectToken, err := h.dbClient.ReadTokenEntry(ctx, tokenID)
 	if err != nil {
-		// do not return an error for a non-existent project token
+		// do not return an error if project token is not found
 		if !errors.Is(err, upper.ErrNoMoreRows) {
 			level.Error(l).Log("message", "error retrieving token from DB", "error", err)
 			h.errorResponse(w, "error retrieving token", http.StatusInternalServerError)
 			return
 		}
-	}
-
-	if dbProjectToken == (db.TokenEntry{}) {
 		level.Warn(l).Log("message", "token does not exist in DB", "error", err)
 	}
 
 	// delete token from DB and CP
-	if dbProjectToken != (db.TokenEntry{}) {
+	if !dbProjectToken.IsEmpty() {
 		// only delete token if exists in DB
 		level.Debug(l).Log("message", "deleting token from database")
 		if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
@@ -1096,11 +1090,12 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// If the token was deleted from the DB, but receives an error while deleting from CP,
+	// leaving the CP token intact, this is fine as the CP is the source of truth.
+	// Related token methods like listTokens also sees the CP as the source of truth.
+	//
 	// Deleting from CP last as CP is the source of truth.
-	// Implementations for ListTokens and DeleteToken will handle properly if there is a mismatch
-	// between the CP and DB. ListTokens will return tokens from CP if there is a mismatch.
-	// Only delete token if exists in CP.
-	if projectToken != (types.ProjectToken{}) {
+	if !projectToken.IsEmpty() {
 		level.Debug(l).Log("message", "deleting token from credentials provider")
 		if err = cp.DeleteProjectToken(projectName, tokenID); err != nil {
 			level.Error(l).Log("message", "error deleting token from credentials provider", "error", err)
@@ -1241,9 +1236,13 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	resp := []responses.ListTokens{}
 
 	// Check if the two project tokens list are equal. If not equal, return CP tokens as the CP
-	// is the source of truth. Else, return the DB tokens as they already contain the expire time.
-	// This is assuming that the DB token expire time is correct since the ID exists in the CP,
-	// an CP tokens will need an extra call to the CP to get the expire time.
+	// is the source of truth.
+	// Else, return the DB tokens as they already contain the expire time.
+	//
+	// This is assuming that the expire time for the DB token is correct since the token exists in the CP.
+	//
+	// Vault automatically deletes secrets when they expire, so there is a chance that the tokens DB and Vault
+	// are not in sync.
 	if isProjectTokensListsEqual(cpTokens, dbTokens) {
 		for _, tokenEntry := range dbTokens {
 			resp = append(resp, responses.ListTokens{
@@ -1254,6 +1253,8 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		for _, projectToken := range cpTokens {
+			// cp.ListProjectTokens only returns the token ID. Call GetProjectToken
+			// to populate the missing fields.
 			getProjectTkn, err := cp.GetProjectToken(projectName, projectToken.ID)
 			if err != nil {
 				level.Error(l).Log("message", "error listing project tokens", "error", err)

@@ -73,6 +73,14 @@ type ProjectToken struct {
 	ProjectID string `db:"project"`
 }
 
+// IsEmpty returns whether a struct is empty.
+func (p ProjectToken) IsEmpty() bool {
+	if p == (ProjectToken{}) {
+		return true
+	}
+	return false
+}
+
 // Token represents a secrets object/type for a project.
 type Token struct {
 	CreatedAt    string       `json:"created_at"`
