@@ -1011,7 +1011,7 @@ func TestDeleteToken(t *testing.T) {
 		},
 		{
 			name:       "token does not exist",
-			want:       http.StatusNotFound,
+			want:       http.StatusOK,
 			respFile:   "TestDeleteToken/token_does_not_exist_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/tokendoesnotexist",
@@ -1025,6 +1025,9 @@ func TestDeleteToken(t *testing.T) {
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{}, nil
 				},
 			},
 		},
