@@ -1097,8 +1097,8 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Deleting from CP last as CP is the source of truth.
-	// Implementations for GetTokens and DeleteToken will handle properly if there is a mismatch
-	// between the CP and DB. GetTokens will return tokens from CP if there is a mismatch.
+	// Implementations for ListTokens and DeleteToken will handle properly if there is a mismatch
+	// between the CP and DB. ListTokens will return tokens from CP if there is a mismatch.
 	// Only delete token if exists in CP.
 	if projectToken != (types.ProjectToken{}) {
 		level.Debug(l).Log("message", "deleting token from credentials provider")
@@ -1230,6 +1230,10 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
 	}
+
+	// TODO: call CP for tokens
+
+	// TODO: if mismatch, return CP tokens
 
 	resp := []responses.ListTokens{}
 	for _, tokenEntry := range tokens {

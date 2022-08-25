@@ -33,6 +33,7 @@ type Provider interface {
 	GetToken() (string, error)
 	DeleteProjectToken(string, string) error
 	GetProjectToken(string, string) (types.ProjectToken, error)
+	ListProjectTokens(string) ([]types.ProjectToken, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
 	TargetExists(string, string) (bool, error)
@@ -435,6 +436,33 @@ func (v VaultProvider) GetToken() (string, error) {
 // TODO See if this can be removed when refactoring auth.
 func (v VaultProvider) isAdmin() bool {
 	return v.roleID == authorizationKeyAdmin
+}
+
+func (v VaultProvider) ListProjectTokens(projectName string) ([]types.ProjectToken, error) {
+	projectTokens := make([]types.ProjectToken, 0)
+	if !v.isAdmin() {
+		return nil, errors.New("admin credentials must be used to list project tokens")
+	}
+
+	path := fmt.Sprintf("%s/secret-id", genProjectAppRole(projectName))
+	tokens, err := v.vaultLogicalSvc.List(path)
+	if err != nil {
+		return nil, fmt.Errorf("vault list error: %w", err)
+	}
+
+	if _, ok := tokens.Data["keys"]; !ok {
+		return projectTokens, nil
+	}
+
+	for _, key := range tokens.Data["keys"].([]interface{}) {
+		tok := types.ProjectToken{
+			ID: key.(string),
+		}
+
+		projectTokens = append(projectTokens, tok)
+	}
+
+	return projectTokens, nil
 }
 
 func (v VaultProvider) ListTargets(project string) ([]string, error) {

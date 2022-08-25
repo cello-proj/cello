@@ -50,6 +50,9 @@ var _ credentials.Provider = &CredsProviderMock{}
 // 			GetTokenFunc: func() (string, error) {
 // 				panic("mock out the GetToken method")
 // 			},
+// 			ListProjectTokensFunc: func(s string) ([]types.ProjectToken, error) {
+// 				panic("mock out the ListProjectTokens method")
+// 			},
 // 			ListTargetsFunc: func(s string) ([]string, error) {
 // 				panic("mock out the ListTargets method")
 // 			},
@@ -98,6 +101,9 @@ type CredsProviderMock struct {
 
 	// GetTokenFunc mocks the GetToken method.
 	GetTokenFunc func() (string, error)
+
+	// ListProjectTokensFunc mocks the ListProjectTokens method.
+	ListProjectTokensFunc func(s string) ([]types.ProjectToken, error)
 
 	// ListTargetsFunc mocks the ListTargets method.
 	ListTargetsFunc func(s string) ([]string, error)
@@ -171,6 +177,11 @@ type CredsProviderMock struct {
 		// GetToken holds details about calls to the GetToken method.
 		GetToken []struct {
 		}
+		// ListProjectTokens holds details about calls to the ListProjectTokens method.
+		ListProjectTokens []struct {
+			// S is the s argument value.
+			S string
+		}
 		// ListTargets holds details about calls to the ListTargets method.
 		ListTargets []struct {
 			// S is the s argument value.
@@ -206,6 +217,7 @@ type CredsProviderMock struct {
 	lockGetProjectToken    sync.RWMutex
 	lockGetTarget          sync.RWMutex
 	lockGetToken           sync.RWMutex
+	lockListProjectTokens  sync.RWMutex
 	lockListTargets        sync.RWMutex
 	lockProjectExists      sync.RWMutex
 	lockTargetExists       sync.RWMutex
@@ -534,6 +546,37 @@ func (mock *CredsProviderMock) GetTokenCalls() []struct {
 	mock.lockGetToken.RLock()
 	calls = mock.calls.GetToken
 	mock.lockGetToken.RUnlock()
+	return calls
+}
+
+// ListProjectTokens calls ListProjectTokensFunc.
+func (mock *CredsProviderMock) ListProjectTokens(s string) ([]types.ProjectToken, error) {
+	if mock.ListProjectTokensFunc == nil {
+		panic("CredsProviderMock.ListProjectTokensFunc: method is nil but Provider.ListProjectTokens was just called")
+	}
+	callInfo := struct {
+		S string
+	}{
+		S: s,
+	}
+	mock.lockListProjectTokens.Lock()
+	mock.calls.ListProjectTokens = append(mock.calls.ListProjectTokens, callInfo)
+	mock.lockListProjectTokens.Unlock()
+	return mock.ListProjectTokensFunc(s)
+}
+
+// ListProjectTokensCalls gets all the calls that were made to ListProjectTokens.
+// Check the length with:
+//     len(mockedProvider.ListProjectTokensCalls())
+func (mock *CredsProviderMock) ListProjectTokensCalls() []struct {
+	S string
+} {
+	var calls []struct {
+		S string
+	}
+	mock.lockListProjectTokens.RLock()
+	calls = mock.calls.ListProjectTokens
+	mock.lockListProjectTokens.RUnlock()
 	return calls
 }
 
