@@ -1235,14 +1235,14 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	resp := []responses.ListTokens{}
 
+	// Vault automatically deletes secrets when they expire, so there is a chance that the tokens DB and Vault
+	// are not in sync.
+	//
 	// Check if the two project tokens list are equal. If not equal, return CP tokens as the CP
 	// is the source of truth.
 	// Else, return the DB tokens as they already contain the expire time.
 	//
 	// This is assuming that the expire time for the DB token is correct since the token exists in the CP.
-	//
-	// Vault automatically deletes secrets when they expire, so there is a chance that the tokens DB and Vault
-	// are not in sync.
 	if isProjectTokensListsEqual(cpTokens, dbTokens) {
 		for _, tokenEntry := range dbTokens {
 			resp = append(resp, responses.ListTokens{
@@ -1254,7 +1254,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	} else {
 		for _, projectToken := range cpTokens {
 			// cp.ListProjectTokens only returns the token ID. Call GetProjectToken
-			// to populate the missing fields.
+			// to populate the necessary fields.
 			getProjectTkn, err := cp.GetProjectToken(projectName, projectToken.ID)
 			if err != nil {
 				level.Error(l).Log("message", "error listing project tokens", "error", err)
