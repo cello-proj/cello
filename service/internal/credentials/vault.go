@@ -578,7 +578,17 @@ func (v VaultProvider) writeProjectState(name string) error {
 }
 
 func isSecretIDAccessorExists(err error) bool {
-	// Vault does not return a typed error, so unfortunately, the error message must be inspected
+	// Vault does not return a typed error, so unfortunately, the error message must be inspected.
+	// More info on this below.
+	// https://github.com/hashicorp/vault/issues/2140
+	// https://github.com/hashicorp/vault/issues/6868
+	// https://github.com/hashicorp/vault/issues/6779
+	// https://github.com/hashicorp/vault/pull/6879
+
+	// One other note that could be helpful when typed errors are supported.
+	// For versions < 1.9.0, Vault returns a 500 when a secret id accessor cannot be found.
+	// In version 1.9.0, a proper status code 404 is being returned.
+	// https://github.com/hashicorp/vault/pull/12788
 	if strings.Contains(err.Error(), "failed to find accessor entry for secret_id_accessor") {
 		return false
 	}
