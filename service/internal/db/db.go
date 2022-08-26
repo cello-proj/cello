@@ -25,10 +25,7 @@ type TokenEntry struct {
 
 // IsEmpty returns whether a struct is empty.
 func (t TokenEntry) IsEmpty() bool {
-	if t == (TokenEntry{}) {
-		return true
-	}
-	return false
+	return t == (TokenEntry{})
 }
 
 // Client allows for db crud operations

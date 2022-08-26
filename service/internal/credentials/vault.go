@@ -590,8 +590,5 @@ func isSecretIDAccessorExists(err error) bool {
 	// In version 1.9.0, a proper status code 404 is being returned.
 	// https://github.com/hashicorp/vault/pull/12788
 	// https://github.com/hashicorp/vault/releases/tag/v1.9.0
-	if strings.Contains(err.Error(), "failed to find accessor entry for secret_id_accessor") {
-		return false
-	}
-	return true
+	return !strings.Contains(err.Error(), "failed to find accessor entry for secret_id_accessor")
 }

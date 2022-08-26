@@ -10,6 +10,8 @@ import (
 	vault "github.com/hashicorp/vault/api"
 )
 
+const TestRole = "testRole"
+
 var errTest = fmt.Errorf("error")
 
 func TestVaultCreateProject(t *testing.T) {
@@ -44,7 +46,7 @@ func TestVaultCreateProject(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -106,7 +108,7 @@ func TestVaultCreateTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -155,7 +157,7 @@ func TestVaultUpdateTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -211,7 +213,7 @@ func TestVaultDeleteProject(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -261,7 +263,7 @@ func TestVaultDeleteTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -329,7 +331,7 @@ func TestVaultGetProjectToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -382,7 +384,7 @@ func TestVaultGetTarget(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -436,7 +438,7 @@ func TestVaultGetToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -509,7 +511,7 @@ func TestVaultListProjectTokens(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
@@ -568,7 +570,7 @@ func TestVaultListTargets(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			role := "testRole"
+			role := TestRole
 			if tt.admin {
 				role = authorizationKeyAdmin
 			}
