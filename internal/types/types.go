@@ -67,10 +67,7 @@ func (properties TargetProperties) Validate() error {
 
 // ProjectToken represents a project token.
 type ProjectToken struct {
-	CreatedAt string `db:"created_at"`
-	ExpiresAt string `db:"expires_at"`
-	ID        string `json:"token_id"`
-	ProjectID string `db:"project"`
+	ID string `json:"token_id"`
 }
 
 // IsEmpty returns whether a struct is empty.

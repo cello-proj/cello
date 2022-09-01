@@ -61,7 +61,7 @@ var (
 	ErrNotFound = errors.New("item not found")
 	// ErrTargetNotFound conveys that the target was not round.
 	ErrTargetNotFound = errors.New("target not found")
-	// ErrTokeNotFound conveys that the tooken was not found.
+	// ErrTokeNotFound conveys that the token was not found.
 	ErrProjectTokenNotFound = errors.New("project token not found")
 )
 
@@ -409,10 +409,7 @@ func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.Proje
 	}
 
 	return types.ProjectToken{
-		ID:        projectToken.Data["secret_id_accessor"].(string),
-		CreatedAt: projectToken.Data["creation_time"].(string),
-		ExpiresAt: projectToken.Data["expiration_time"].(string),
-		ProjectID: projectName,
+		ID: projectToken.Data["secret_id_accessor"].(string),
 	}, nil
 }
 

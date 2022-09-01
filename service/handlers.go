@@ -1223,7 +1223,6 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := []responses.ListTokens{}
-
 	for _, tokenEntry := range tokens {
 		resp = append(resp, responses.ListTokens{
 			CreatedAt: tokenEntry.CreatedAt,
