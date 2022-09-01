@@ -1219,14 +1219,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbTokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
-	if err != nil {
-		level.Error(l).Log("message", "error listing project tokens", "error", err)
-		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
-		return
-	}
-
-	cpTokens, err := cp.ListProjectTokens(projectName)
+	tokens, err := h.dbClient.ListTokenEntries(ctx, projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error listing project tokens", "error", err)
 		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
@@ -1235,39 +1228,12 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	resp := []responses.ListTokens{}
 
-	// Vault automatically deletes secrets when they expire, so there is a chance that the tokens DB and Vault
-	// are not in sync.
-	//
-	// Check if the two project tokens list are equal. If not equal, return CP tokens as the CP
-	// is the source of truth.
-	// Else, return the DB tokens as they already contain the expire time.
-	//
-	// This is assuming that the expire time for the DB token is correct since the token exists in the CP.
-	if isProjectTokensListsEqual(cpTokens, dbTokens) {
-		for _, tokenEntry := range dbTokens {
-			resp = append(resp, responses.ListTokens{
-				CreatedAt: tokenEntry.CreatedAt,
-				ExpiresAt: tokenEntry.ExpiresAt,
-				TokenID:   tokenEntry.TokenID,
-			})
-		}
-	} else {
-		for _, projectToken := range cpTokens {
-			// cp.ListProjectTokens only returns the token ID. Call GetProjectToken
-			// to populate the necessary fields.
-			getProjectTkn, err := cp.GetProjectToken(projectName, projectToken.ID)
-			if err != nil {
-				level.Error(l).Log("message", "error listing project tokens", "error", err)
-				h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
-				return
-			}
-
-			resp = append(resp, responses.ListTokens{
-				CreatedAt: getProjectTkn.CreatedAt,
-				ExpiresAt: getProjectTkn.ExpiresAt,
-				TokenID:   getProjectTkn.ID,
-			})
-		}
+	for _, tokenEntry := range tokens {
+		resp = append(resp, responses.ListTokens{
+			CreatedAt: tokenEntry.CreatedAt,
+			ExpiresAt: tokenEntry.ExpiresAt,
+			TokenID:   tokenEntry.TokenID,
+		})
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -1295,36 +1261,6 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 		r = tmp
 	}
 	return r
-}
-
-func isProjectTokensListsEqual(cpTokens []types.ProjectToken, dbTokens []db.TokenEntry) bool {
-	cpTokensLen := len(cpTokens)
-	dbTokensLen := len(dbTokens)
-
-	if cpTokensLen != dbTokensLen {
-		return false
-	}
-
-	// if both lists are empty, no need to iterate
-	if cpTokensLen == 0 && dbTokensLen == 0 {
-		return true
-	}
-
-	// save CP tokens into a map with the ID as the key
-	exists := make(map[string]string)
-	for _, cpToken := range cpTokens {
-		exists[cpToken.ID] = cpToken.ExpiresAt
-	}
-
-	// iterate the DB tokens
-	for _, dbToken := range dbTokens {
-		// and check if token exists in CP
-		if _, ok := exists[dbToken.TokenID]; !ok {
-			return false
-		}
-	}
-
-	return true
 }
 
 func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logger {
