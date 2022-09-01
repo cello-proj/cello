@@ -556,7 +556,7 @@ func isSecretIDAccessorExists(err error) bool {
 
 	// One other note that could be helpful when typed errors are supported.
 	// For versions < 1.9.0, Vault returns a 500 when a secret id accessor cannot be found.
-	// In version 1.9.0, a proper status code 404 is being returned.
+	// In versions >= 1.9.0, a proper status code 404 is being returned.
 	// https://github.com/hashicorp/vault/pull/12788
 	// https://github.com/hashicorp/vault/releases/tag/v1.9.0
 	return !strings.Contains(err.Error(), "failed to find accessor entry for secret_id_accessor")
