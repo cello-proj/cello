@@ -61,7 +61,7 @@ var (
 	ErrNotFound = errors.New("item not found")
 	// ErrTargetNotFound conveys that the target was not round.
 	ErrTargetNotFound = errors.New("target not found")
-	// ErrTokeNotFound conveys that the token was not found.
+	// ErrProjectTokenNotFound conveys that the token was not found.
 	ErrProjectTokenNotFound = errors.New("project token not found")
 )
 
