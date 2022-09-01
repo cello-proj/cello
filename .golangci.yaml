@@ -18,6 +18,10 @@ linters-settings:
   goimports:
     local-prefixes: github.com/cello-proj/cello
 
+  gosec:
+    excludes:
+      - G104
+
   errcheck:
     exclude: .errcheck_excludes.txt
   revive:
