@@ -20,7 +20,7 @@ linters-settings:
 
   gosec:
     excludes:
-      - G104
+      - G114
 
   errcheck:
     exclude: .errcheck_excludes.txt
