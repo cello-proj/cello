@@ -1080,8 +1080,8 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// delete token from DB and CP
+	// only delete token if exists in DB
 	if !dbProjectToken.IsEmpty() {
-		// only delete token if exists in DB
 		level.Debug(l).Log("message", "deleting token from database")
 		if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
 			level.Error(l).Log("message", "error deleting token from database", "error", err)
@@ -1090,11 +1090,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// If the token was deleted from the DB, but receives an error while deleting from CP,
-	// leaving the CP token intact, this is fine as the CP is the source of truth.
-	// Related token methods like listTokens also sees the CP as the source of truth.
-	//
-	// Deleting from CP last as CP is the source of truth.
+	// only delete token if exists in CP
 	if !projectToken.IsEmpty() {
 		level.Debug(l).Log("message", "deleting token from credentials provider")
 		if err = cp.DeleteProjectToken(projectName, tokenID); err != nil {
