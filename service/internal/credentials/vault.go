@@ -61,6 +61,8 @@ var (
 	ErrNotFound = errors.New("item not found")
 	// ErrTargetNotFound conveys that the target was not round.
 	ErrTargetNotFound = errors.New("target not found")
+	// ErrProjectTokenNotFound conveys that the token was not found.
+	ErrProjectTokenNotFound = errors.New("project token not found")
 )
 
 type VaultProvider struct {
@@ -396,6 +398,9 @@ func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.Proje
 	path := fmt.Sprintf("%s/secret-id-accessor/lookup", genProjectAppRole(projectName))
 	projectToken, err := v.vaultLogicalSvc.Write(path, data)
 	if err != nil {
+		if !isSecretIDAccessorExists(err) {
+			return token, ErrProjectTokenNotFound
+		}
 		return token, fmt.Errorf("vault get secret ID accessor error: %w", err)
 	}
 
@@ -479,7 +484,6 @@ func (v VaultProvider) readRoleID(appRoleName string) (string, error) {
 }
 
 func (v VaultProvider) readSecretIDAccessor(appRoleName, accessor string) (*vault.Secret, error) {
-
 	options := map[string]interface{}{
 		"secret_id_accessor": accessor,
 	}
@@ -540,4 +544,20 @@ func (v VaultProvider) writeProjectState(name string) error {
 		return err
 	}
 	return nil
+}
+
+func isSecretIDAccessorExists(err error) bool {
+	// Vault does not return a typed error, so unfortunately, the error message must be inspected.
+	// More info on this below.
+	// https://github.com/hashicorp/vault/issues/2140
+	// https://github.com/hashicorp/vault/issues/6868
+	// https://github.com/hashicorp/vault/issues/6779
+	// https://github.com/hashicorp/vault/pull/6879
+
+	// One other note that could be helpful when typed errors are supported.
+	// For versions < 1.9.0, Vault returns a 500 when a secret id accessor cannot be found.
+	// In versions >= 1.9.0, a proper status code 404 is being returned.
+	// https://github.com/hashicorp/vault/pull/12788
+	// https://github.com/hashicorp/vault/releases/tag/v1.9.0
+	return !strings.Contains(err.Error(), "failed to find accessor entry for secret_id_accessor")
 }
