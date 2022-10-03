@@ -213,7 +213,7 @@ trap kill_jobs SIGINT
 echo "Exposing Argo UI & API on http://localhost:2746/"
 argo server --secure=false --auth-mode=server >/dev/null 2>&1 &
 
-echo "Cello started, forwarding to port 8443"
-export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep cello)"
-kubectl port-forward $CELLO_POD 8443:8443 &
+CELLO_LOCAL_PORT=8443
+echo "Cello started, forwarding to port $CELLO_LOCAL_PORT"
+kubectl port-forward service/cello $CELLO_LOCAL_PORT:8443 &
 wait

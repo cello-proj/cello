@@ -667,7 +667,20 @@ spec:
    app: postgres
 
 # CELLO
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cello
+  labels:
+    app: cello
+spec:
+  type: NodePort
+  ports:
+    - port: 8443
+      targetPort: 8443
+  selector:
+   app: cello
 ---
 apiVersion: apps/v1
 kind: Deployment
