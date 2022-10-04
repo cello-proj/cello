@@ -215,5 +215,5 @@ argo server --secure=false --auth-mode=server >/dev/null 2>&1 &
 
 CELLO_LOCAL_PORT=8443
 echo "Cello started, forwarding to port $CELLO_LOCAL_PORT"
-kubectl port-forward service/cello $CELLO_LOCAL_PORT:8443 &
+kubectl port-forward service/cello-service $CELLO_LOCAL_PORT:8443 &
 wait

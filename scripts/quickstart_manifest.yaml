@@ -671,7 +671,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: cello
+  name: cello-service
   labels:
     app: cello
 spec:
@@ -748,8 +748,6 @@ spec:
             value: cello
           - name: CELLO_DB_PASSWORD
             value: "1234"
-          - name: CELLO_PORT
-            value: 8443
           - name: CELLO_GIT_AUTH_METHOD
             value: https
           - name: VAULT_ADDR
