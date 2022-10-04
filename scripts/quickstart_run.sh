@@ -95,10 +95,6 @@ fi
 echo "Applying manifest"
 kubectl apply -f ./scripts/quickstart_manifest.yaml
 # Sleeping after applying manifest so pods have time to start
-while [ "$(kubectl get pods -l=app='cello' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
-   sleep 5
-   echo "Waiting for Cello to be ready."
-done
 while [ "$(kubectl get pods -l=app.kubernetes.io/name='vault' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
    sleep 5
    echo "Waiting for Vault to be ready."
@@ -146,6 +142,11 @@ while : ; do
     echo "ERROR: migration job failed. Please check pod logs and ."
     exit 1
   fi
+done
+
+while [ "$(kubectl get pods -l=app='cello' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+   sleep 5
+   echo "Waiting for Cello to be ready."
 done
 
 # setup workflow if it doesn't exist
