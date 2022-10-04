@@ -703,9 +703,9 @@ spec:
           persistentVolumeClaim:
             claimName: 'vault-pv-claim'
       containers:
-      - image: cello:latest
+      - image: docker.intuit.com/personal/sfruhwald/cello:latest
         name: cello
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         command:
         - "/bin/sh"
         - "-ec"
@@ -748,6 +748,8 @@ spec:
             value: cello
           - name: CELLO_DB_PASSWORD
             value: "1234"
+          - name: CELLO_PORT
+            value: 8443
           - name: CELLO_GIT_AUTH_METHOD
             value: https
           - name: VAULT_ADDR
