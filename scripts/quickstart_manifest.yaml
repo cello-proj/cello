@@ -758,6 +758,18 @@ spec:
             value: DEBUG
           - name: CELLO_LOG_LEVEL
             value: DEBUG
+          - name: GitAuthMethod
+            value: https
+          - name: GitHTTPSUser
+            valueFrom:
+            secretKeyRef:
+              name: github-token
+              key: username
+          - name: GitHTTPSPass
+            valueFrom:
+            secretKeyRef:
+              name: github-token
+              key: token
         volumeMounts:
           - name: vault-home
             mountPath: /home/vault
