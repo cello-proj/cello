@@ -157,6 +157,7 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 		}
 
 		fmt.Fprintf(w, "%s: %s\n", event.PodName, event.Content)
+		w.(http.Flusher).Flush()
 	}
 }
 
