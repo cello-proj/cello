@@ -147,30 +147,16 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 	}
 
 	for {
-		select {
-		case <-ctx.Done():
+		event, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
 			return nil
-		default:
-			event, err := stream.Recv()
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintf(w, "%s: %s\n", event.GetPodName(), event.GetContent())
-			w.(http.Flusher).Flush()
-			status, err := a.Status(ctx, workflowName)
-			if err != nil {
-				return err
-			}
-
-			if event == nil && status.Status != "running" && status.Status != "pending" {
-				return nil
-			}
 		}
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(w, "%s: %s\n", event.PodName, event.Content)
 	}
 }
 
