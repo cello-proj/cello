@@ -92,6 +92,7 @@ func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintln(w, "Health check succeeded")
 }
 
