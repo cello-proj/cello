@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.2] - 2022-10-12
+### Changed
+* Flush Argo Workflow log stream
+
+## [0.15.1] - 2022-10-11
+### Changed
+* Remove Argo Workflow status call from log streaming
+
+## [0.15.0] - 2022-09-06
+### Changed
+* Delete tokens idempotent
+
 ## [0.14.3] - 2022-08-15
 ### Changed
 * List workflows returns an empty array instead of null for targets with no workflows

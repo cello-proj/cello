@@ -23,6 +23,11 @@ type TokenEntry struct {
 	TokenID   string `db:"token_id"`
 }
 
+// IsEmpty returns whether a struct is empty.
+func (t TokenEntry) IsEmpty() bool {
+	return t == (TokenEntry{})
+}
+
 // Client allows for db crud operations
 type Client interface {
 	CreateProjectEntry(ctx context.Context, pe ProjectEntry) error
@@ -42,8 +47,10 @@ type SQLClient struct {
 	password string
 }
 
-const ProjectEntryDB = "projects"
-const TokenEntryDB = "tokens"
+const (
+	ProjectEntryDB = "projects"
+	TokenEntryDB   = "tokens"
+)
 
 func NewSQLClient(host, database, user, password string) (SQLClient, error) {
 	return SQLClient{
@@ -151,7 +158,6 @@ func (d SQLClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry
 
 	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).One(&res)
 	return res, err
-
 }
 
 func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {

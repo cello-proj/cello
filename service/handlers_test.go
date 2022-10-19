@@ -1010,9 +1010,9 @@ func TestDeleteToken(t *testing.T) {
 			},
 		},
 		{
-			name:       "token does not exist",
-			want:       http.StatusNotFound,
-			respFile:   "TestDeleteToken/token_does_not_exist_response.json",
+			name:       "token does not exist in DB or CP",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects/project/tokens/tokendoesnotexist",
 			method:     "DELETE",
@@ -1025,6 +1025,55 @@ func TestDeleteToken(t *testing.T) {
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{}, nil
+				},
+			},
+		},
+		{
+			name:       "token exists in CP but not in DB",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project/tokens/tokenonlyincp",
+			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				DeleteProjectTokenFunc: func(s1, s2 string) error { return nil },
+				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+					return types.ProjectToken{ID: "tokenonlyincp"}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{}, nil
+				},
+			},
+		},
+		{
+			name:       "token exists in DB but not in CP",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project/tokens/tokenonlyindb",
+			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+					return types.ProjectToken{}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{TokenID: "tokenonlyindb"}, nil
 				},
 			},
 		},

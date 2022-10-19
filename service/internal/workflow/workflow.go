@@ -133,8 +133,8 @@ func (a ArgoWorkflow) Logs(ctx context.Context, workflowName string) (*Logs, err
 }
 
 // LogStream returns a log stream for a workflow.
-func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http.ResponseWriter) error {
-	stream, err := a.svc.WorkflowLogs(ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
+func (a ArgoWorkflow) LogStream(argoCtx context.Context, workflowName string, w http.ResponseWriter) error {
+	stream, err := a.svc.WorkflowLogs(argoCtx, &argoWorkflowAPIClient.WorkflowLogRequest{
 		Name:      workflowName,
 		Namespace: a.namespace,
 		LogOptions: &v1.PodLogOptions{
@@ -147,30 +147,17 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 	}
 
 	for {
-		select {
-		case <-ctx.Done():
+		event, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
 			return nil
-		default:
-			event, err := stream.Recv()
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintf(w, "%s: %s\n", event.GetPodName(), event.GetContent())
-			w.(http.Flusher).Flush()
-			status, err := a.Status(ctx, workflowName)
-			if err != nil {
-				return err
-			}
-
-			if event == nil && status.Status != "running" && status.Status != "pending" {
-				return nil
-			}
 		}
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(w, "%s: %s\n", event.PodName, event.Content)
+		w.(http.Flusher).Flush()
 	}
 }
 
