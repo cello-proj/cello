@@ -1245,18 +1245,21 @@ func TestHealthCheck(t *testing.T) {
 		writeBadContentLength bool // Used to create response body error.
 		wantResponseBody      string
 		wantStatusCode        int
+		wantResponseHeader    string
 	}{
 		{
-			name:             "good_vault_200",
-			vaultStatusCode:  http.StatusOK,
-			wantResponseBody: "Health check succeeded\n",
-			wantStatusCode:   http.StatusOK,
+			name:               "good_vault_200",
+			vaultStatusCode:    http.StatusOK,
+			wantResponseBody:   "Health check succeeded\n",
+			wantStatusCode:     http.StatusOK,
+			wantResponseHeader: "text/plain",
 		},
 		{
-			name:             "good_vault_429",
-			vaultStatusCode:  http.StatusTooManyRequests,
-			wantResponseBody: "Health check succeeded\n",
-			wantStatusCode:   http.StatusOK,
+			name:               "good_vault_429",
+			vaultStatusCode:    http.StatusTooManyRequests,
+			wantResponseBody:   "Health check succeeded\n",
+			wantStatusCode:     http.StatusOK,
+			wantResponseHeader: "text/plain",
 		},
 		{
 			// We want successful health check in this vault error scenario.
@@ -1265,6 +1268,7 @@ func TestHealthCheck(t *testing.T) {
 			writeBadContentLength: true,
 			wantResponseBody:      "Health check succeeded\n",
 			wantStatusCode:        http.StatusOK,
+			wantResponseHeader:    "text/plain",
 		},
 		{
 			name:             "error_vault_connection",
@@ -1332,6 +1336,7 @@ func TestHealthCheck(t *testing.T) {
 
 			assert.Equal(t, tt.wantStatusCode, respResult.StatusCode)
 			assert.Equal(t, tt.wantResponseBody, string(body))
+			assert.Equal(t, tt.wantResponseHeader, respResult.Header.Get("Content-Type"))
 		})
 	}
 }
