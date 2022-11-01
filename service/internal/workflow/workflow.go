@@ -1,3 +1,5 @@
+//go:generate moq -out ../../test/testhelpers/workflowMock.go -pkg testhelpers . Workflow:WorkflowMock
+
 package workflow
 
 import (
@@ -18,7 +20,7 @@ const mainContainer = "main"
 
 // Workflow interface is used for interacting with workflow services.
 type Workflow interface {
-	List(ctx context.Context) ([]string, error)
+	ListStatus(ctx context.Context) ([]Status, error)
 	Logs(ctx context.Context, workflowName string) (*Logs, error)
 	LogStream(ctx context.Context, workflowName string, data http.ResponseWriter) error
 	Status(ctx context.Context, workflowName string) (*Status, error)
@@ -44,23 +46,32 @@ type Logs struct {
 	Logs []string `json:"logs"`
 }
 
-// List returns a list of workflows.
-func (a ArgoWorkflow) List(ctx context.Context) ([]string, error) {
-	workflowIDs := []string{}
-
+// List returns a list of workflow statuses.
+func (a ArgoWorkflow) ListStatus(ctx context.Context) ([]Status, error) {
 	workflowListResult, err := a.svc.ListWorkflows(ctx, &argoWorkflowAPIClient.WorkflowListRequest{
 		Namespace: a.namespace,
 	})
-
 	if err != nil {
-		return workflowIDs, err
+		return []Status{}, err
 	}
 
-	for _, item := range workflowListResult.Items {
-		workflowIDs = append(workflowIDs, item.ObjectMeta.Name)
+	workflows := make([]Status, len(workflowListResult.Items))
+
+	for k, wf := range workflowListResult.Items {
+		wfStatus := Status{
+			Name:    wf.ObjectMeta.Name,
+			Status:  strings.ToLower(string(wf.Status.Phase)),
+			Created: fmt.Sprint(wf.ObjectMeta.CreationTimestamp.Unix()),
+		}
+
+		if wf.Status.Phase != argoWorkflowAPISpec.WorkflowRunning {
+			wfStatus.Finished = fmt.Sprint(wf.Status.FinishedAt.Unix())
+		}
+
+		workflows[k] = wfStatus
 	}
 
-	return workflowIDs, nil
+	return workflows, nil
 }
 
 // Status represents a workflow status.
@@ -68,7 +79,7 @@ type Status struct {
 	Name     string `json:"name"`
 	Status   string `json:"status"`
 	Created  string `json:"created"`
-	Finished string `json:"finished"`
+	Finished string `json:"finished,omitempty"`
 }
 
 // Status returns a workflow status.
@@ -77,7 +88,6 @@ func (a ArgoWorkflow) Status(ctx context.Context, workflowName string) (*Status,
 		Name:      workflowName,
 		Namespace: a.namespace,
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +111,6 @@ func (a ArgoWorkflow) Logs(ctx context.Context, workflowName string) (*Logs, err
 			Container: mainContainer,
 		},
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +133,8 @@ func (a ArgoWorkflow) Logs(ctx context.Context, workflowName string) (*Logs, err
 }
 
 // LogStream returns a log stream for a workflow.
-func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http.ResponseWriter) error {
-	stream, err := a.svc.WorkflowLogs(ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
+func (a ArgoWorkflow) LogStream(argoCtx context.Context, workflowName string, w http.ResponseWriter) error {
+	stream, err := a.svc.WorkflowLogs(argoCtx, &argoWorkflowAPIClient.WorkflowLogRequest{
 		Name:      workflowName,
 		Namespace: a.namespace,
 		LogOptions: &v1.PodLogOptions{
@@ -133,36 +142,22 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 			Follow:    true,
 		},
 	})
-
 	if err != nil {
 		return err
 	}
 
 	for {
-		select {
-		case <-ctx.Done():
+		event, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
 			return nil
-		default:
-			event, err := stream.Recv()
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintf(w, "%s: %s\n", event.GetPodName(), event.GetContent())
-			w.(http.Flusher).Flush()
-			status, err := a.Status(ctx, workflowName)
-			if err != nil {
-				return err
-			}
-
-			if event == nil && status.Status != "running" && status.Status != "pending" {
-				return nil
-			}
 		}
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(w, "%s: %s\n", event.PodName, event.Content)
+		w.(http.Flusher).Flush()
 	}
 }
 
@@ -195,7 +190,6 @@ func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[st
 			Labels:       labels.FormatLabels(workflowLabels),
 		},
 	})
-
 	if err != nil {
 		return "", fmt.Errorf("failed to submit workflow: %w", err)
 	}

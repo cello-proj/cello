@@ -9,7 +9,7 @@ build_service: clean_service
 	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) -o build/service ./service/
 
 build_cli: clean_cli
-	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) -o build/argo-cloudops ./cli/
+	CGO_ENABLED=0 GOARCH=amd64 go build -trimpath $(GO_LDFLAGS) -o build/cello ./cli/
 
 lint:
 	@#Install the linter from here:
@@ -31,7 +31,7 @@ clean_service:
 	@rm -f ./build/service
 
 clean_cli:
-	@rm -f ./build/argo-cloudops
+	@rm -f ./build/cello
 
 up: ## Starts a local vault and api locally
 	bash scripts/start_local.sh dev

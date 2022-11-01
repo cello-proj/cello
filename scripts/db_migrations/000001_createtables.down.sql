@@ -1,0 +1,3 @@
+DROP OWNED BY cello;
+DROP ROLE IF EXISTS cello;
+DROP TABLE IF EXISTS projects;

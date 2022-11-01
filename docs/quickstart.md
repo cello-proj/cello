@@ -27,10 +27,10 @@ You will need two windows
 
 - In window **#1**, ensure you have [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html) for the target account configured and access to your kubernetes cluster. For the AWS credentials, export the AWS_PROFILE that is to be used.
 
-- Set **ARGO_CLOUDOPS_ADMIN_SECRET** env var to `abcd1234abcd1234`.
+- Set **CELLO_ADMIN_SECRET** env var to `abcd1234abcd1234`.
 
   ```sh
-  export ARGO_CLOUDOPS_ADMIN_SECRET=abcd1234abcd1234
+  export CELLO_ADMIN_SECRET=abcd1234abcd1234
   ```
 
 - Start the Cello Service (includes workflows, vault, and postgres).
@@ -42,15 +42,15 @@ You will need two windows
 
 ### Create Cello Project And Target (One Time Setup)
 
-- In window **#2**, ensure you have the **ARGO_CLOUDOPS_ADMIN_SECRET**
+- In window **#2**, ensure you have the **CELLO_ADMIN_SECRET**
   env var set to `abcd1234abcd1234`.
 
       ```sh
-      export ARGO_CLOUDOPS_ADMIN_SECRET=abcd1234abcd1234
+      export CELLO_ADMIN_SECRET=abcd1234abcd1234
       ```
 
 - Ensure your AWS credentials are set for the **target account** and create
-  your first project and target. The output contains an export command for the **ARGO_CLOUDOPS_USER_TOKEN**
+  your first project and target. The output contains an export command for the **CELLO_USER_TOKEN**
   for the new project.
 
   ```sh
@@ -59,7 +59,7 @@ You will need two windows
 
 ### Run Workflow
 
-- In window **#2**, ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is
+- In window **#2**, ensure the **CELLO_USER_TOKEN** for the project is
   specified (the output of `create_project.sh` should have output a bash
   command to export it).
 
@@ -67,20 +67,20 @@ You will need two windows
 
   ```sh
   # CDK Example
-  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc`
+  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_cdk_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547`
 
   # Get the status/follow the logs
-  ./quickstart/argo-cloudops get $CDK_WORKFLOW_NAME
-  ./quickstart/argo-cloudops logs -f $CDK_WORKFLOW_NAME
+  ./quickstart/cello get $CDK_WORKFLOW_NAME
+  ./quickstart/cello logs -f $CDK_WORKFLOW_NAME
   ```
 
 - TERRAFORM Example
 
   ```sh
   # Terraform Example
-  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml 5b40793bded1030d8a17d6ddd050ee1ef060f8cc`
+  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/kube_terraform_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547`
 
   # Get the status/follow the logs
-  ./quickstart/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
-  ./quickstart/argo-cloudops logs -f $TERRAFORM_WORKFLOW_NAME
+  ./quickstart/cello get $TERRAFORM_WORKFLOW_NAME
+  ./quickstart/cello logs -f $TERRAFORM_WORKFLOW_NAME
   ```

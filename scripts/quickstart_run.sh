@@ -33,8 +33,8 @@ if [ $? != 0 ]; then
 fi
 set -e
 
-if [ -z $ARGO_CLOUDOPS_ADMIN_SECRET ]; then
-  echo "ARGO_CLOUDOPS_ADMIN_SECRET environment variable must be set"
+if [ -z $CELLO_ADMIN_SECRET ]; then
+  echo "CELLO_ADMIN_SECRET environment variable must be set"
   exit 1
 fi
 
@@ -45,7 +45,7 @@ fi
 
 # create iam role if it doesn't already exist
 set +e
-aws cloudformation describe-stacks --stack-name ArgoCloudOpsSampleRole --region us-west-2 &> /dev/null
+aws cloudformation describe-stacks --stack-name CelloSampleRole --region us-west-2 &> /dev/null
 if [ $? != 0 ]; then
   echo "creating iam role"
   bash scripts/create_iam_role.sh
@@ -61,7 +61,7 @@ latest_release=$(curl --silent "https://api.github.com/repos/cello-proj/cello/re
 latest_release="${latest_release//v}"
 
 # download Cello CLI if it doesn't exist
-if [ ! -f quickstart/argo-cloudops ]; then
+if [ ! -f quickstart/cello ]; then
     curl -L https://github.com/cello-proj/cello/releases/download/v${latest_release}/cello_cli_${latest_release}_darwin_x86_64.tar.gz -o quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
       tar -xzf quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz -C quickstart/ #&> /dev/null
         rm quickstart/cello_cli_${latest_release}_darwin_x86_64.tar.gz &> /dev/null
@@ -76,11 +76,21 @@ fi
 
 set +e
 echo "Building docker image"
-docker build --pull --rm -f "Dockerfile" --build-arg BINARY=quickstart/service -t argocloudops:latest "."
+docker build --pull --rm -f "Dockerfile" --build-arg BINARY=quickstart/service -t cello:latest "."
+docker build --pull --rm -f "Dockerfile.db_migration" -t cello-db-migration:latest "."
+echo "Checking for Argo Workflows"
+kubectl get ns | grep argo
+if [ $? != 0 ]; then
+  echo "Applying Argo Workflows manifest"
+  kubectl create ns argo
+  kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/quick-start-minimal.yaml
+else 
+  echo "Argo Workflows found"
+fi
 echo "Applying manifest"
 kubectl apply -f ./scripts/quickstart_manifest.yaml
 # Sleeping after applying manifest so pods have time to start
-while [ "$(kubectl get pods -l=app='argocloudops' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
+while [ "$(kubectl get pods -l=app='cello' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
    sleep 5
    echo "Waiting for Cello to be ready."
 done
@@ -96,22 +106,40 @@ echo "Pods ready. Initializing environment"
 set -e
 
 # setup postgres db
-# dont fail if alredy exists
+# don't fail if already exists
 set +e
 export POSTGRES_POD="$(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep postgres)"
-kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep argocloudops
+kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep cello
 if [ $? != 0 ]; then
-  kubectl cp ./scripts/createdbtables.sql $POSTGRES_POD:./createdbtables.sql
-  kubectl exec $POSTGRES_POD -- createdb argocloudops -U postgres
-  kubectl exec $POSTGRES_POD -- psql -U postgres -d argocloudops -f ./createdbtables.sql
+  kubectl exec $POSTGRES_POD -- createdb cello -U postgres
 fi
 set -e
 
+# run DB migration job after Postgres DB is fully stood up
+echo "Applying DB migration manifest"
+kubectl apply -f ./scripts/quickstart_db_migration_manifest.yaml
+
+while : ; do
+  echo "Waiting for DB migration job to complete"
+  status=$(kubectl get job migrate-db -o jsonpath='{.status.conditions[].type}')
+  if [ -z $status ]; then
+    sleep 5
+    continue
+  fi
+  if [ $status == 'Complete' ]; then
+    break
+  fi
+  if [ $status == 'Failed' ]; then
+    echo "ERROR: migration job failed. Please check pod logs and ."
+    exit 1
+  fi
+done
+
 # setup workflow if it doesn't exist
 set +e
-argo template get -n argo argo-cloudops-single-step-vault-aws &> /dev/null
+argo template get -n argo cello-single-step-vault-aws &> /dev/null
 if [ $? != 0 ]; then
-  argo template create -n argo workflows/argo-cloudops-single-step-vault-aws.yaml
+  argo template create -n argo workflows/cello-single-step-vault-aws.yaml
 fi
 
 # setup aws credentials in vault
@@ -166,7 +194,5 @@ kubectl exec vault-0 -- mkdir -p /home/vault/.aws
 kubectl cp /tmp/awsConfig vault-0:/home/vault/.aws/credentials
 
 echo "Cello started, forwarding to port 8443"
-export ACO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep argocloudops)"
-kubectl port-forward $ACO_POD 8443:8443
-
-
+export CELLO_POD="$(kubectl get pods --field-selector status.phase=Running --no-headers -o custom-columns=":metadata.name" | grep cello)"
+kubectl port-forward $CELLO_POD 8443:8443

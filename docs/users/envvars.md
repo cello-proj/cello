@@ -4,21 +4,21 @@ Cello uses a number of environment variables for configuration. In addition to t
 
 | Name                                       | Description                                                                                                                         |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| ARGO_CLOUDOPS_ADMIN_SECRET                 | Secret for the Cello API                                                                                                    |
+| CELLO_ADMIN_SECRET                 | Secret for the Cello API                                                                                                    |
 | VAULT_ROLE                                 | Role for accessing Vault API                                                                                                        |
 | VAULT_SECRET                               | Secret for access Vault instance                                                                                                    |
 | VAULT_ADDR                                 | Endpoint for the Vault instance                                                                                                     |
 | ARGO_ADDR                                  | Argo Endpoint                                                                                                                       |
-| ARGO_CLOUDOPS_WORKFLOW_EXECUTION_NAMESPACE | Namespace to use to execute the deployments in Argo Workflows (Default: argo)                                                       |
-| ARGO_CLOUDOPS_CONFIG                       | File that contains argo cloudops command configuration. [Example](https://github.com/cello-proj/cello/blob/main/argo-cloudops.yaml) |
+| CELLO_WORKFLOW_EXECUTION_NAMESPACE | Namespace to use to execute the deployments in Argo Workflows (Default: argo)                                                       |
+| CELLO_CONFIG                       | File that contains cello command configuration. [Example](https://github.com/cello-proj/cello/blob/main/cello.yaml)
 | SSH_PEM_FILE                               | PEM file to use for GITHUB access authentication                                                                                    |
-| ARGO_CLOUDOPS_GIT_AUTH_METHOD              | A value of SSH or HTTPS depending on which authentication method prefered.                                                          |
-| ARGO_CLOUDOPS_GIT_HTTPS_USER               | User name for GITHUB access authentication via HTTPS.                                                                               |
-| ARGO_CLOUDOPS_GIT_HTTPS_PASS               | Password for GITHUB access authentication via HTTPS.                                                                                |
-| ARGO_CLOUDOPS_DB_HOST                      | Database Host                                                                                                                       |
-| ARGO_CLOUDOPS_DB_USER                      | Database User                                                                                                                       |
-| ARGO_CLOUDOPS_DB_PASSWORD                  | Database Password                                                                                                                   |
-| ARGO_CLOUDOPS_DB_NAME                      | Database name                                                                                                                       |
-| ARGO_CLOUDOPS_LOG_LEVEL                    | The configured log level for Cello service (Default: Info)                                                                  |
-| ARGO_CLOUDOPS_PORT                         | Port which the Cello service listens (Default: 8443)                                                                        |
-| ARGO_CLOUDOPS_IMAGE_URIS                   | List of approved image URI patterns. See IsApprovedImageURI validation doc for examples                                             |
+| CELLO_GIT_AUTH_METHOD              | A value of SSH or HTTPS depending on which authentication method prefered.                                                          |
+| CELLO_GIT_HTTPS_USER               | User name for GITHUB access authentication via HTTPS.                                                                               |
+| CELLO_GIT_HTTPS_PASS               | Password for GITHUB access authentication via HTTPS.                                                                                |
+| CELLO_DB_HOST                      | Database Host                                                                                                                       |
+| CELLO_DB_USER                      | Database User                                                                                                                       |
+| CELLO_DB_PASSWORD                  | Database Password                                                                                                                   |
+| CELLO_DB_NAME                      | Database name                                                                                                                       |
+| CELLO_LOG_LEVEL                    | The configured log level for Cello service (Default: Info)                                                                  |
+| CELLO_PORT                         | Port which the Cello service listens (Default: 8443)                                                                        |
+| CELLO_IMAGE_URIS                   | List of approved image URI patterns. See IsApprovedImageURI validation doc for examples                                             |

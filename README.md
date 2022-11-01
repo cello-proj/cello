@@ -5,7 +5,7 @@
 # What Is Cello?
 
 Cello is a service for running infrastructure as code software tools
-including CDK, Terraform and Cloud Formation via GitOps.
+including CDK, Terraform and CloudFormation via GitOps.
 
 - Separate build and deployment
 - Isolate cloud credentials

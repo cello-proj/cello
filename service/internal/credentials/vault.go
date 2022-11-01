@@ -1,3 +1,5 @@
+//go:generate moq -out ../../test/testhelpers/credsProviderMock.go -pkg testhelpers . Provider:CredsProviderMock
+
 package credentials
 
 import (
@@ -20,14 +22,17 @@ const (
 
 // Provider defines the interface required by providers.
 type Provider interface {
-	CreateProject(string) (string, string, error)
+	CreateProject(string) (types.Token, error)
 	CreateTarget(string, types.Target) error
+	CreateToken(string) (types.Token, error)
 	UpdateTarget(string, types.Target) error
 	DeleteProject(string) error
 	DeleteTarget(string, string) error
 	GetProject(string) (responses.GetProject, error)
 	GetTarget(string, string) (types.Target, error)
 	GetToken() (string, error)
+	DeleteProjectToken(string, string) error
+	GetProjectToken(string, string) (types.ProjectToken, error)
 	ListTargets(string) ([]string, error)
 	ProjectExists(string) (bool, error)
 	TargetExists(string, string) (bool, error)
@@ -56,6 +61,8 @@ var (
 	ErrNotFound = errors.New("item not found")
 	// ErrTargetNotFound conveys that the target was not round.
 	ErrTargetNotFound = errors.New("target not found")
+	// ErrProjectTokenNotFound conveys that the token was not found.
+	ErrProjectTokenNotFound = errors.New("project token not found")
 )
 
 type VaultProvider struct {
@@ -186,32 +193,55 @@ func genProjectAppRole(name string) string {
 	return fmt.Sprintf("%s/%s-%s", vaultAppRolePrefix, vaultProjectPrefix, name)
 }
 
-func (v VaultProvider) CreateProject(name string) (string, string, error) {
+func (v VaultProvider) CreateToken(name string) (types.Token, error) {
+	token := types.Token{}
+
 	if !v.isAdmin() {
-		return "", "", errors.New("admin credentials must be used to create project")
+		return token, errors.New("admin credentials must be used to create token")
+	}
+
+	secret, err := v.generateSecrets(name)
+	if err != nil {
+		return token, err
+	}
+
+	roleID, err := v.readRoleID(name)
+	if err != nil {
+		return token, err
+	}
+
+	accessor, err := v.readSecretIDAccessor(name, secret.Data["secret_id_accessor"].(string))
+	if err != nil {
+		return token, err
+	}
+
+	token.ProjectID = name
+	token.Secret = secret.Data["secret_id"].(string)
+	token.ProjectToken.ID = secret.Data["secret_id_accessor"].(string)
+	token.RoleID = roleID
+	token.CreatedAt = accessor.Data["creation_time"].(string)
+	token.ExpiresAt = accessor.Data["expiration_time"].(string)
+
+	return token, nil
+}
+
+func (v VaultProvider) CreateProject(name string) (types.Token, error) {
+	token := types.Token{}
+	if !v.isAdmin() {
+		return token, errors.New("admin credentials must be used to create project")
 	}
 
 	policy := defaultVaultReadonlyPolicyAWS(name)
 	err := v.createPolicyState(name, policy)
 	if err != nil {
-		return "", "", err
+		return token, err
 	}
 
 	if err := v.writeProjectState(name); err != nil {
-		return "", "", err
+		return token, err
 	}
 
-	secretID, err := v.readSecretID(name)
-	if err != nil {
-		return "", "", err
-	}
-
-	roleID, err := v.readRoleID(name)
-	if err != nil {
-		return "", "", err
-	}
-
-	return roleID, secretID, nil
+	return v.CreateToken(name)
 }
 
 // CreateTarget creates a target for the project.
@@ -336,6 +366,53 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, 
 	}, nil
 }
 
+func (v VaultProvider) DeleteProjectToken(projectName, tokenID string) error {
+	if !v.isAdmin() {
+		return errors.New("admin credentials must be used to delete tokens")
+	}
+
+	data := map[string]interface{}{
+		"secret_id_accessor": tokenID,
+	}
+
+	path := fmt.Sprintf("%s/secret-id-accessor/destroy", genProjectAppRole(projectName))
+	_, err := v.vaultLogicalSvc.Write(path, data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v VaultProvider) GetProjectToken(projectName, tokenID string) (types.ProjectToken, error) {
+	token := types.ProjectToken{}
+
+	if !v.isAdmin() {
+		return token, errors.New("admin credentials must be used to delete tokens")
+	}
+
+	data := map[string]interface{}{
+		"secret_id_accessor": tokenID,
+	}
+
+	path := fmt.Sprintf("%s/secret-id-accessor/lookup", genProjectAppRole(projectName))
+	projectToken, err := v.vaultLogicalSvc.Write(path, data)
+	if err != nil {
+		if !isSecretIDAccessorExists(err) {
+			return token, ErrProjectTokenNotFound
+		}
+		return token, fmt.Errorf("vault get secret ID accessor error: %w", err)
+	}
+
+	if projectToken == nil {
+		return token, nil
+	}
+
+	return types.ProjectToken{
+		ID: projectToken.Data["secret_id_accessor"].(string),
+	}, nil
+}
+
 func (v VaultProvider) GetToken() (string, error) {
 	if v.isAdmin() {
 		return "", errors.New("admin credentials cannot be used to get tokens")
@@ -406,15 +483,28 @@ func (v VaultProvider) readRoleID(appRoleName string) (string, error) {
 	return secret.Data["role_id"].(string), nil
 }
 
-func (v VaultProvider) readSecretID(appRoleName string) (string, error) {
+func (v VaultProvider) readSecretIDAccessor(appRoleName, accessor string) (*vault.Secret, error) {
+	options := map[string]interface{}{
+		"secret_id_accessor": accessor,
+	}
+
+	secret, err := v.vaultLogicalSvc.Write(fmt.Sprintf("%s/secret-id-accessor/lookup", genProjectAppRole(appRoleName)), options)
+	if err != nil {
+		return secret, err
+	}
+	return secret, nil
+}
+
+func (v VaultProvider) generateSecrets(appRoleName string) (*vault.Secret, error) {
 	options := map[string]interface{}{
 		"force": true,
 	}
+
 	secret, err := v.vaultLogicalSvc.Write(fmt.Sprintf("%s/secret-id", genProjectAppRole(appRoleName)), options)
 	if err != nil {
-		return "", err
+		return secret, err
 	}
-	return secret.Data["secret_id"].(string), nil
+	return secret, nil
 }
 
 func (v VaultProvider) TargetExists(projectName, targetName string) (bool, error) {
@@ -454,4 +544,20 @@ func (v VaultProvider) writeProjectState(name string) error {
 		return err
 	}
 	return nil
+}
+
+func isSecretIDAccessorExists(err error) bool {
+	// Vault does not return a typed error, so unfortunately, the error message must be inspected.
+	// More info on this below.
+	// https://github.com/hashicorp/vault/issues/2140
+	// https://github.com/hashicorp/vault/issues/6868
+	// https://github.com/hashicorp/vault/issues/6779
+	// https://github.com/hashicorp/vault/pull/6879
+
+	// One other note that could be helpful when typed errors are supported.
+	// For versions < 1.9.0, Vault returns a 500 when a secret id accessor cannot be found.
+	// In versions >= 1.9.0, a proper status code 404 is being returned.
+	// https://github.com/hashicorp/vault/pull/12788
+	// https://github.com/hashicorp/vault/releases/tag/v1.9.0
+	return !strings.Contains(err.Error(), "failed to find accessor entry for secret_id_accessor")
 }

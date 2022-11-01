@@ -4,8 +4,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.2] - 2022-10-12
+### Changed
+* Flush Argo Workflow log stream
+
+## [0.15.1] - 2022-10-11
+### Changed
+* Remove Argo Workflow status call from log streaming
+
+## [0.15.0] - 2022-09-06
+### Changed
+* Delete tokens idempotent
+
+## [0.14.3] - 2022-08-15
+### Changed
+* List workflows returns an empty array instead of null for targets with no workflows
+
+## [0.14.2] - 2022-07-28
+### Changed
+* Listing workflows no longer calls a status for each workflow
+
+## [0.14.1] - 2022-07-14
+### Added
+* Expiration time for token
+
+## [0.14.0] - 2022-07-08
+### Added
+* Added schema updates to create tokens table
+* Added golang-migrate to manage schema
+* Delete project token
+* List project tokens
+* Create project token
+
+## [0.13.3] - 2022-06-16
+### Changed
+* Added github repository from db to get projects response
+
+## [0.13.2] - 2022-06-09
+### Changed
+* Fixed quickstart issues with standing up database
+* Added log statement to clarify issues with project creation
+
+## [0.13.1] - 2022-05-24
+### Changed
+* The default config file has been renamed to cello.yaml (when the CONFIG env var is NOT specified)
+
+## [0.13.0] - 2022-05-02
+### Changed
+* Default workflow renamed from argo-cloudops-single-step-vault-aws.yaml to cello-single-step-vault-aws.yaml
+* Example manifests now point to cello-single-step-vault-aws workflow
+* Images moved to from argocloudops to celloproj
+* BREAKING cli binary renamed from argo-cloudops to cello
+* Environment variables prefix changed from ARGO_CLOUDOPS to CELLO (backwards compatible)
+
 ## [0.12.1] - 2022-03-14
-## Changed
+### Changed
 * POTENTIALLY BREAKING Release tarballs use cello naming, potentially breaking change for automation scripts
 
 ## [0.12.0] - 2022-03-10
@@ -23,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Validate project exists when listing targets
 
 ## [0.10.0] - 2022-01-26
-* Add `exec` type/command 
+* Add `exec` type/command
 
 ## [0.9.0] - 2021-12-14
 ### Added

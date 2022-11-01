@@ -1,0 +1,16 @@
+{
+  "arguments": {
+    "execute": ["foobar"]
+  },
+  "environment_variables": {
+    "foobar": "barfoo"
+  },
+  "framework": "cdk",
+  "parameters": {
+    "execute_container_image_uri": "celloproj/cello-cdk:1.87.1"
+  },
+  "project_name": "projectalreadyexists",
+  "target_name": "TARGET_EXISTS",
+  "type": "sync",
+  "workflow_template_name": "cello-single-step-vault-aws"
+}

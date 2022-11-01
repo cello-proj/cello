@@ -17,6 +17,8 @@ with Docker Desktop managing resource in AWS (region us-west-2) with credentials
 
 - Install PostgreSQL `brew install postgresql`
 
+- Install [golang-migrate](https://github.com/golang-migrate/migrate)
+
 - Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
 
 - Install [jq](https://stedolan.github.io/jq/) for json parsing.
@@ -59,29 +61,29 @@ You will need two windows
 - Create a new postgres database. This can be done using the command:
 
   ```sh
-  createdb argocloudops
+  createdb cello
   ```
 
-- Use the `createdbtables.sql` script to create the relevant tables and create a new user with read/write permissions. This can be done using the command:
+- Use `golang-migrate` to create the relevant tables and create a new user with read/write permissions. This can be done using the command:
 
   ```sh
-  psql -d argocloudops -f scripts/createdbtables.sql
+  migrate -path scripts/db_migrations -database 'postgres://localhost:5432/cello?sslmode=disable' up
   ```
 
 - Create the default workflow template in Argo.
 
   ```sh
-  argo template create -n argo workflows/argo-cloudops-single-step-vault-aws.yaml
+  argo template create -n argo workflows/cello-single-step-vault-aws.yaml
   ```
 
 ### Start Vault & Cello Service
 
-- In window **#1** first set the **ARGO_CLOUDOPS_ADMIN_SECRET** to a 16
+- In window **#1** first set the **CELLO_ADMIN_SECRET** to a 16
   character string, this will be used to authorize admin commands against
   the Cello service.
 
       ```sh
-      export ARGO_CLOUDOPS_ADMIN_SECRET=abcd1234abcd1234
+      export CELLO_ADMIN_SECRET=abcd1234abcd1234
       ```
 
 - Start the Cello Service (includes vault)
@@ -93,17 +95,17 @@ You will need two windows
 - To run in debug mode set log level DEBUG before running
 
   ```
-  export ARGO_CLOUDOPS_LOG_LEVEL=DEBUG
+  export CELLO_LOG_LEVEL=DEBUG
   make ; make up
   ```
 
 ### Create Cello Project And Target (One Time Setup)
 
-- In window **#2**, ensure you have the **ARGO_CLOUDOPS_ADMIN_SECRET**
+- In window **#2**, ensure you have the **CELLO_ADMIN_SECRET**
   env set to the same value used above.
 
 - Ensure your credentials are set for the **target account** and create your first
-  project and target. This returns the **ARGO_CLOUDOPS_USER_TOKEN** for the new project.
+  project and target. This returns the **CELLO_USER_TOKEN** for the new project.
 
       ```sh
       bash scripts/create_project.sh https://github.com/cello-proj/cello.git
@@ -111,27 +113,27 @@ You will need two windows
 
 ### Run Workflow
 
-- Ensure the **ARGO_CLOUDOPS_USER_TOKEN** for the project is specified
+- Ensure the **CELLO_USER_TOKEN** for the project is specified
 
 - CDK Example
 
   ```sh
   # CDK Example
-  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml 60675a3012c63dd7edc9097654246e48438fa93d dev`
+  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547 dev`
 
   # Get the status / logs
-  ./build/argo-cloudops get $CDK_WORKFLOW_NAME
-  ./build/argo-cloudops logs $CDK_WORKFLOW_NAME
+  ./build/cello get $CDK_WORKFLOW_NAME
+  ./build/cello logs $CDK_WORKFLOW_NAME
   ```
 
 - TERRAFORM Example
 
   ```sh
   # Terraform Example
-  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml 60675a3012c63dd7edc9097654246e48438fa93d dev`
+  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547 dev`
 
   # Get the status / logs
-  ./build/argo-cloudops get $TERRAFORM_WORKFLOW_NAME
-  ./build/argo-cloudops logs $TERRAFORM_WORKFLOW_NAME
+  ./build/cello get $TERRAFORM_WORKFLOW_NAME
+  ./build/cello logs $TERRAFORM_WORKFLOW_NAME
   ```
 

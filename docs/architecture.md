@@ -50,7 +50,7 @@ Operations are converted to the equivalent command in the target framework.
   - **Sync**: deploy
   - **Diff**: diff
 
-Additionally you can define your own frameworks in **argo-cloudops.yaml**.
+Additionally you can define your own frameworks in **cello.yaml**.
 
 ## Workflow
 
@@ -62,5 +62,5 @@ performs one step which executes the image provided with the command, arguments 
 ## Config
 
 The config file contains the commands executed by different frameworks. The example config in
-[argo-cloudops.yaml](https://github.com/cello-proj/cello/blob/main/argo-cloudops.yaml) contains the default commands to
+[cello.yaml](https://github.com/cello-proj/cello/blob/main/cello.yaml) contains the default commands to
 run **cdk** and **terraform**.

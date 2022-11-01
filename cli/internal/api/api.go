@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -116,7 +115,7 @@ func (c *Client) streamLogsToWriterAtCursor(ctx context.Context, w io.Writer, wo
 	}
 
 	// discard reader bytes till cursor byte number
-	if _, err := io.CopyN(ioutil.Discard, resp.Body, *loggingCursorByte); err != nil {
+	if _, err := io.CopyN(io.Discard, resp.Body, *loggingCursorByte); err != nil {
 		return err
 	}
 	writtenBytes, err := io.Copy(w, resp.Body)

@@ -16,7 +16,11 @@ linters:
     - wastedassign
 linters-settings:
   goimports:
-    local-prefixes: github.com/argoproj-labs/argo-cloudops
+    local-prefixes: github.com/cello-proj/cello
+
+  gosec:
+    excludes:
+      - G114
 
   errcheck:
     exclude: .errcheck_excludes.txt

@@ -7,8 +7,8 @@ environment_variables:
   VAULT_ADDR: http://docker.for.mac.localhost:8200
 framework: cdk
 parameters:
-  execute_container_image_uri: argocloudops/argo-cloudops-cdk:1.99.0
+  execute_container_image_uri: celloproj/cello-cdk:1.99.0
 project_name: project1
 target_name: target1
 type: diff
-workflow_template_name: argo-cloudops-single-step-vault-aws
+workflow_template_name: cello-single-step-vault-aws
