@@ -133,8 +133,8 @@ func (a ArgoWorkflow) Logs(ctx context.Context, workflowName string) (*Logs, err
 }
 
 // LogStream returns a log stream for a workflow.
-func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http.ResponseWriter) error {
-	stream, err := a.svc.WorkflowLogs(ctx, &argoWorkflowAPIClient.WorkflowLogRequest{
+func (a ArgoWorkflow) LogStream(argoCtx context.Context, workflowName string, w http.ResponseWriter) error {
+	stream, err := a.svc.WorkflowLogs(argoCtx, &argoWorkflowAPIClient.WorkflowLogRequest{
 		Name:      workflowName,
 		Namespace: a.namespace,
 		LogOptions: &v1.PodLogOptions{
@@ -157,6 +157,7 @@ func (a ArgoWorkflow) LogStream(ctx context.Context, workflowName string, w http
 		}
 
 		fmt.Fprintf(w, "%s: %s\n", event.PodName, event.Content)
+		w.(http.Flusher).Flush()
 	}
 }
 
