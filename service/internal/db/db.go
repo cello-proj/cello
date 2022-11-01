@@ -37,6 +37,7 @@ type Client interface {
 	DeleteTokenEntry(ctx context.Context, token string) error
 	ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error)
 	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
+	Health(ctx context.Context) error
 }
 
 // SQLClient allows for db crud operations using postgres db
@@ -70,6 +71,16 @@ func (d SQLClient) createSession() (db.Session, error) {
 	}
 
 	return postgresql.Open(settings)
+}
+
+func (d SQLClient) Health(ctx context.Context) error {
+	sess, err := d.createSession()
+	if err != nil {
+		return err
+	}
+	defer sess.Close()
+
+	return sess.WithContext(ctx).Ping()
 }
 
 func (d SQLClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) error {
