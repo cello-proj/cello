@@ -1246,6 +1246,7 @@ func TestHealthCheck(t *testing.T) {
 		wantResponseBody      string
 		wantStatusCode        int
 		wantResponseHeader    string
+		dbMock                *th.DBClientMock
 	}{
 		{
 			name:               "good_vault_200",
@@ -1253,6 +1254,11 @@ func TestHealthCheck(t *testing.T) {
 			wantResponseBody:   "Health check succeeded\n",
 			wantStatusCode:     http.StatusOK,
 			wantResponseHeader: "text/plain",
+			dbMock: &th.DBClientMock{
+				HealthFunc: func(ctx context.Context) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:               "good_vault_429",
@@ -1260,6 +1266,11 @@ func TestHealthCheck(t *testing.T) {
 			wantResponseBody:   "Health check succeeded\n",
 			wantStatusCode:     http.StatusOK,
 			wantResponseHeader: "text/plain",
+			dbMock: &th.DBClientMock{
+				HealthFunc: func(ctx context.Context) error {
+					return nil
+				},
+			},
 		},
 		{
 			// We want successful health check in this vault error scenario.
@@ -1269,6 +1280,11 @@ func TestHealthCheck(t *testing.T) {
 			wantResponseBody:      "Health check succeeded\n",
 			wantStatusCode:        http.StatusOK,
 			wantResponseHeader:    "text/plain",
+			dbMock: &th.DBClientMock{
+				HealthFunc: func(ctx context.Context) error {
+					return nil
+				},
+			},
 		},
 		{
 			name:             "error_vault_connection",
@@ -1281,6 +1297,17 @@ func TestHealthCheck(t *testing.T) {
 			vaultStatusCode:  http.StatusInternalServerError,
 			wantResponseBody: "Health check failed\n",
 			wantStatusCode:   http.StatusServiceUnavailable,
+		},
+		{
+			name:             "bad_db",
+			vaultStatusCode:  http.StatusOK,
+			wantResponseBody: "Health check failed\n",
+			wantStatusCode:   http.StatusServiceUnavailable,
+			dbMock: &th.DBClientMock{
+				HealthFunc: func(ctx context.Context) error {
+					return errors.New("too many connections")
+				},
+			},
 		},
 	}
 
@@ -1316,6 +1343,7 @@ func TestHealthCheck(t *testing.T) {
 				env: env.Vars{
 					VaultAddress: vaultEndpoint,
 				},
+				dbClient: tt.dbMock,
 			}
 
 			// Dummy request.

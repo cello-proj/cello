@@ -92,6 +92,13 @@ func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err = h.dbClient.Health(r.Context()); err != nil {
+		level.Error(l).Log("message", fmt.Sprintf("received code error %s when connecting to database", err.Error()))
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(w, "Health check failed")
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintln(w, "Health check succeeded")
 }
