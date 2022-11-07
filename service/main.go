@@ -30,7 +30,8 @@ var (
 
 func main() {
 	var (
-		logger = log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
+		logger    = log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)), "ts", log.DefaultTimestampUTC)
+		errLogger = log.With(log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr)), "ts", log.DefaultTimestampUTC)
 	)
 
 	env, err := env.GetEnv()
@@ -55,8 +56,8 @@ func main() {
 
 	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword)
 	if err != nil {
-		level.Error(logger).Log("message", "error creating db client", "error", err)
-		panic("error creating db client")
+		level.Error(errLogger).Log("message", "error creating db client", "error", err)
+		os.Exit(1)
 	}
 
 	// Any Argo Workflow client method calls need the context returned from NewAPIClient, otherwise
@@ -68,15 +69,15 @@ func main() {
 		argo:                   workflow.NewArgoWorkflow(argoClient.NewWorkflowServiceClient(), env.ArgoNamespace),
 		argoCtx:                argoCtx,
 		config:                 config,
-		gitClient:              gitClient(env, logger),
+		gitClient:              gitClient(env, errLogger),
 		env:                    env,
 		dbClient:               dbClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)
 	if err := http.ListenAndServeTLS(fmt.Sprintf(":%d", env.Port), "ssl/certificate.crt", "ssl/certificate.key", setupRouter(h)); err != nil {
-		level.Error(logger).Log("message", "error starting service", "error", err)
-		panic("error starting service")
+		level.Error(errLogger).Log("message", "error starting service", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -89,7 +90,7 @@ func setLogLevel(logger *log.Logger, logLevel string) {
 	}
 }
 
-func gitClient(env env.Vars, logger log.Logger) git.BasicClient {
+func gitClient(env env.Vars, errLogger log.Logger) git.BasicClient {
 	var cl git.BasicClient
 	var err error
 
@@ -107,8 +108,8 @@ func gitClient(env env.Vars, logger log.Logger) git.BasicClient {
 	}
 
 	if err != nil {
-		level.Error(logger).Log("message", "error creating git client", "error", err)
-		panic("error creating git client")
+		level.Error(errLogger).Log("message", "error creating git client", "error", err)
+		os.Exit(1)
 	}
 
 	return cl

@@ -16,37 +16,40 @@ var _ db.Client = &DBClientMock{}
 
 // DBClientMock is a mock implementation of db.Client.
 //
-// 	func TestSomethingThatUsesClient(t *testing.T) {
+//	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked db.Client
-// 		mockedClient := &DBClientMock{
-// 			CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
-// 				panic("mock out the CreateProjectEntry method")
-// 			},
-// 			CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
-// 				panic("mock out the CreateTokenEntry method")
-// 			},
-// 			DeleteProjectEntryFunc: func(ctx context.Context, project string) error {
-// 				panic("mock out the DeleteProjectEntry method")
-// 			},
-// 			DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
-// 				panic("mock out the DeleteTokenEntry method")
-// 			},
-// 			ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
-// 				panic("mock out the ListTokenEntries method")
-// 			},
-// 			ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-// 				panic("mock out the ReadProjectEntry method")
-// 			},
-// 			ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-// 				panic("mock out the ReadTokenEntry method")
-// 			},
-// 		}
+//		// make and configure a mocked db.Client
+//		mockedClient := &DBClientMock{
+//			CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
+//				panic("mock out the CreateProjectEntry method")
+//			},
+//			CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
+//				panic("mock out the CreateTokenEntry method")
+//			},
+//			DeleteProjectEntryFunc: func(ctx context.Context, project string) error {
+//				panic("mock out the DeleteProjectEntry method")
+//			},
+//			DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
+//				panic("mock out the DeleteTokenEntry method")
+//			},
+//			HealthFunc: func(ctx context.Context) error {
+//				panic("mock out the Health method")
+//			},
+//			ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
+//				panic("mock out the ListTokenEntries method")
+//			},
+//			ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+//				panic("mock out the ReadProjectEntry method")
+//			},
+//			ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+//				panic("mock out the ReadTokenEntry method")
+//			},
+//		}
 //
-// 		// use mockedClient in code that requires db.Client
-// 		// and then make assertions.
+//		// use mockedClient in code that requires db.Client
+//		// and then make assertions.
 //
-// 	}
+//	}
 type DBClientMock struct {
 	// CreateProjectEntryFunc mocks the CreateProjectEntry method.
 	CreateProjectEntryFunc func(ctx context.Context, pe db.ProjectEntry) error
@@ -59,6 +62,9 @@ type DBClientMock struct {
 
 	// DeleteTokenEntryFunc mocks the DeleteTokenEntry method.
 	DeleteTokenEntryFunc func(ctx context.Context, token string) error
+
+	// HealthFunc mocks the Health method.
+	HealthFunc func(ctx context.Context) error
 
 	// ListTokenEntriesFunc mocks the ListTokenEntries method.
 	ListTokenEntriesFunc func(ctx context.Context, project string) ([]db.TokenEntry, error)
@@ -99,6 +105,11 @@ type DBClientMock struct {
 			// Token is the token argument value.
 			Token string
 		}
+		// Health holds details about calls to the Health method.
+		Health []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 		// ListTokenEntries holds details about calls to the ListTokenEntries method.
 		ListTokenEntries []struct {
 			// Ctx is the ctx argument value.
@@ -125,6 +136,7 @@ type DBClientMock struct {
 	lockCreateTokenEntry   sync.RWMutex
 	lockDeleteProjectEntry sync.RWMutex
 	lockDeleteTokenEntry   sync.RWMutex
+	lockHealth             sync.RWMutex
 	lockListTokenEntries   sync.RWMutex
 	lockReadProjectEntry   sync.RWMutex
 	lockReadTokenEntry     sync.RWMutex
@@ -150,7 +162,8 @@ func (mock *DBClientMock) CreateProjectEntry(ctx context.Context, pe db.ProjectE
 
 // CreateProjectEntryCalls gets all the calls that were made to CreateProjectEntry.
 // Check the length with:
-//     len(mockedClient.CreateProjectEntryCalls())
+//
+//	len(mockedClient.CreateProjectEntryCalls())
 func (mock *DBClientMock) CreateProjectEntryCalls() []struct {
 	Ctx context.Context
 	Pe  db.ProjectEntry
@@ -185,7 +198,8 @@ func (mock *DBClientMock) CreateTokenEntry(ctx context.Context, token types.Toke
 
 // CreateTokenEntryCalls gets all the calls that were made to CreateTokenEntry.
 // Check the length with:
-//     len(mockedClient.CreateTokenEntryCalls())
+//
+//	len(mockedClient.CreateTokenEntryCalls())
 func (mock *DBClientMock) CreateTokenEntryCalls() []struct {
 	Ctx   context.Context
 	Token types.Token
@@ -220,7 +234,8 @@ func (mock *DBClientMock) DeleteProjectEntry(ctx context.Context, project string
 
 // DeleteProjectEntryCalls gets all the calls that were made to DeleteProjectEntry.
 // Check the length with:
-//     len(mockedClient.DeleteProjectEntryCalls())
+//
+//	len(mockedClient.DeleteProjectEntryCalls())
 func (mock *DBClientMock) DeleteProjectEntryCalls() []struct {
 	Ctx     context.Context
 	Project string
@@ -255,7 +270,8 @@ func (mock *DBClientMock) DeleteTokenEntry(ctx context.Context, token string) er
 
 // DeleteTokenEntryCalls gets all the calls that were made to DeleteTokenEntry.
 // Check the length with:
-//     len(mockedClient.DeleteTokenEntryCalls())
+//
+//	len(mockedClient.DeleteTokenEntryCalls())
 func (mock *DBClientMock) DeleteTokenEntryCalls() []struct {
 	Ctx   context.Context
 	Token string
@@ -267,6 +283,38 @@ func (mock *DBClientMock) DeleteTokenEntryCalls() []struct {
 	mock.lockDeleteTokenEntry.RLock()
 	calls = mock.calls.DeleteTokenEntry
 	mock.lockDeleteTokenEntry.RUnlock()
+	return calls
+}
+
+// Health calls HealthFunc.
+func (mock *DBClientMock) Health(ctx context.Context) error {
+	if mock.HealthFunc == nil {
+		panic("DBClientMock.HealthFunc: method is nil but Client.Health was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockHealth.Lock()
+	mock.calls.Health = append(mock.calls.Health, callInfo)
+	mock.lockHealth.Unlock()
+	return mock.HealthFunc(ctx)
+}
+
+// HealthCalls gets all the calls that were made to Health.
+// Check the length with:
+//
+//	len(mockedClient.HealthCalls())
+func (mock *DBClientMock) HealthCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockHealth.RLock()
+	calls = mock.calls.Health
+	mock.lockHealth.RUnlock()
 	return calls
 }
 
@@ -290,7 +338,8 @@ func (mock *DBClientMock) ListTokenEntries(ctx context.Context, project string) 
 
 // ListTokenEntriesCalls gets all the calls that were made to ListTokenEntries.
 // Check the length with:
-//     len(mockedClient.ListTokenEntriesCalls())
+//
+//	len(mockedClient.ListTokenEntriesCalls())
 func (mock *DBClientMock) ListTokenEntriesCalls() []struct {
 	Ctx     context.Context
 	Project string
@@ -325,7 +374,8 @@ func (mock *DBClientMock) ReadProjectEntry(ctx context.Context, project string) 
 
 // ReadProjectEntryCalls gets all the calls that were made to ReadProjectEntry.
 // Check the length with:
-//     len(mockedClient.ReadProjectEntryCalls())
+//
+//	len(mockedClient.ReadProjectEntryCalls())
 func (mock *DBClientMock) ReadProjectEntryCalls() []struct {
 	Ctx     context.Context
 	Project string
@@ -360,7 +410,8 @@ func (mock *DBClientMock) ReadTokenEntry(ctx context.Context, token string) (db.
 
 // ReadTokenEntryCalls gets all the calls that were made to ReadTokenEntry.
 // Check the length with:
-//     len(mockedClient.ReadTokenEntryCalls())
+//
+//	len(mockedClient.ReadTokenEntryCalls())
 func (mock *DBClientMock) ReadTokenEntryCalls() []struct {
 	Ctx   context.Context
 	Token string
