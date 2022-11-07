@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.114
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/distribution/distribution v2.7.1+incompatible
+	github.com/distribution/distribution v2.8.1+incompatible
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-kit/log v0.2.0
