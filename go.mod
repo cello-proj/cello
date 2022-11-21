@@ -11,7 +11,7 @@ require (
 	github.com/distribution/distribution v2.8.1+incompatible
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/go-kit/log v0.2.0
+	github.com/go-kit/log v0.2.1
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
