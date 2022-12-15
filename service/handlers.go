@@ -373,9 +373,16 @@ func (h handler) getWorkflow(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "getting workflow status")
 	status, err := h.argo.Status(h.argoCtx, workflowName)
+
 	if err != nil {
-		level.Error(l).Log("message", "error getting workflow", "error", err)
-		h.errorResponse(w, "error getting workflow", http.StatusInternalServerError)
+		if strings.Contains(err.Error(), "code = NotFound") {
+			level.Error(l).Log("message", "error getting workflow", "error", err)
+			h.errorResponse(w, "workflow not found", http.StatusNotFound)
+		} else {
+			level.Error(l).Log("message", "error getting workflow", "error", err)
+			h.errorResponse(w, "error getting workflow", http.StatusInternalServerError)
+		}
+
 		return
 	}
 
