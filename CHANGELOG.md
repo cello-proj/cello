@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Added DB healthcheck
 ### Changed
-* Non-existant workflows return 404 on GET workflow calls
+* Non-existent workflows return 404 on GET workflow calls
 * Fixed return type for health check
 * Panics changed to clean exits in main.go
 
