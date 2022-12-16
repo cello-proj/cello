@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## UNRELEASED
+### Added
+* Added DB healthcheck
+### Changed
+* Non-existent workflows return 404 on GET workflow calls
+* Fixed return type for health check
+* Panics changed to clean exits in main.go
+
 ## [0.15.2] - 2022-10-12
 ### Changed
 * Flush Argo Workflow log stream

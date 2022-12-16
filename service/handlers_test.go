@@ -877,13 +877,25 @@ func TestGetWorkflow(t *testing.T) {
 		},
 		{
 			name:       "workflow does not exist",
-			want:       http.StatusInternalServerError,
+			want:       http.StatusNotFound,
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/workflows/WORKFLOW_DOES_NOT_EXIST",
 			wfMock: &th.WorkflowMock{
 				StatusFunc: func(ctx context.Context, workflowName string) (*workflow.Status, error) {
-					return &workflow.Status{Status: "failed"}, errors.New("workflow does not exist")
+					return &workflow.Status{Status: "failed"}, errors.New("rpc error: code = NotFound desc = workflows.argoproj.io \"WORKFLOW_DOES_NOT_EXIST\" not found")
+				},
+			},
+		},
+		{
+			name:       "workflow internal error",
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/workflows/WORKFLOW_ERROR",
+			wfMock: &th.WorkflowMock{
+				StatusFunc: func(ctx context.Context, workflowName string) (*workflow.Status, error) {
+					return &workflow.Status{Status: "failed"}, errors.New("rpc error: code = workflow error desc = unknown")
 				},
 			},
 		},
