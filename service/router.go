@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	txIDHeader = "X-B3-TraceId"
+	txIDHeader = "X-Trace-Id"
 )
 
 func setupRouter(h handler) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
-	r.Use(txIDMiddleware)
+	r.Use(traceIDsMiddleware(h.env.TraceIDHeaders))
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
 	r.HandleFunc("/workflows/{workflowName}", h.getWorkflow).Methods(http.MethodGet)
@@ -44,11 +44,25 @@ func commonMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func txIDMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(txIDHeader) == "" {
-			r.Header.Set(txIDHeader, uuid.NewString())
-		}
-		next.ServeHTTP(w, r)
-	})
+// traceIDsMiddleware returns a middleware which allows to append trace ID headers to the request. By default, it will
+// add a txIDHeader header to the request if it is not already set. It will also add any trace IDs specified in the
+// environment variables
+func traceIDsMiddleware(traceIDHeaders []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get(txIDHeader) == "" {
+				r.Header.Set(txIDHeader, uuid.NewString())
+			}
+
+			for _, header := range traceIDHeaders {
+				if r.Header.Get(header) == "" {
+					// Now we just simply use a random UUID for the trace ID. We may adopt a more sophisticated approach
+					// later with respect to known trace IDs following the W3 trace context Http Headers format
+					// https://www.w3.org/TR/trace-context/#trace-context-http-headers-format
+					r.Header.Set(header, uuid.NewString())
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

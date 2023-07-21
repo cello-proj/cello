@@ -24,6 +24,7 @@ var prefixedEnvVars = map[string]string{
 	"_DB_NAME":                      "argocloudops",
 	"_DB_USER":                      "argoco",
 	"_DB_PASSWORD":                  "1234",
+	"_TRACE_ID_HEADERS":             "X-B3-TraceId,traceparent",
 }
 
 var nonPrefixedEnvVars = map[string]string{
@@ -79,6 +80,7 @@ func TestGetEnv(t *testing.T) {
 	assert.Equal(t, "argocloudops", vars.DBName)
 	assert.Equal(t, "argoco", vars.DBUser)
 	assert.Equal(t, "1234", vars.DBPassword)
+	assert.Equal(t, []string{"X-B3-TraceId", "traceparent"}, vars.TraceIDHeaders)
 }
 
 func TestDefaults(t *testing.T) {
@@ -90,6 +92,7 @@ func TestDefaults(t *testing.T) {
 	os.Setenv("VAULT_ADDR", "1.2.3.4")
 	os.Setenv("ARGO_ADDR", "2.3.4.5")
 	os.Setenv(appPrefix+"_GIT_AUTH_METHOD", "https")
+	os.Setenv(appPrefix+"_TRACE_ID_HEADERS", "")
 
 	// When
 	vars, _ := GetEnv()
@@ -98,6 +101,7 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, "argo", vars.ArgoNamespace)
 	assert.Equal(t, "cello.yaml", vars.ConfigFilePath)
 	assert.Equal(t, 8443, vars.Port)
+	assert.Equal(t, []string([]string(nil)), vars.TraceIDHeaders)
 }
 
 func TestValidations(t *testing.T) {
