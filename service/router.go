@@ -1,20 +1,21 @@
 package main
 
 import (
+	"github.com/google/uuid"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 const (
-	txIDHeader = "X-Trace-Id"
+	txIDHeader      = "X-Trace-Id"
+	b3TraceIDHeader = "X-B3-TraceId"
 )
 
 func setupRouter(h handler) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
-	r.Use(traceIDsMiddleware(h.env.TraceIDHeaders))
+	r.Use(traceIDsMiddleware(getTraceIDHeaders(h.env.TraceIDHeaders)))
 
 	r.HandleFunc("/workflows", h.createWorkflow).Methods(http.MethodPost)
 	r.HandleFunc("/workflows/{workflowName}", h.getWorkflow).Methods(http.MethodGet)
@@ -50,19 +51,48 @@ func commonMiddleware(next http.Handler) http.Handler {
 func traceIDsMiddleware(traceIDHeaders []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get(txIDHeader) == "" {
-				r.Header.Set(txIDHeader, uuid.NewString())
+
+			// If the request already has a trace ID header, we just reuse it for the following requests.
+			// Now we only search for the first trace ID header found in the request headers.
+			// We can specify the priority of the trace ID by the order of the trace ID headers in the environment variables
+			traceId := findExistingTraceId(r, traceIDHeaders)
+			if traceId == "" {
+				// Now we just simply use a random UUID for the trace ID. We may adopt a more sophisticated approach
+				// later with respect to known trace IDs following the W3 trace context Http Headers format
+				// https://www.w3.org/TR/trace-context/#trace-context-http-headers-format
+				traceId = uuid.NewString()
 			}
 
 			for _, header := range traceIDHeaders {
 				if r.Header.Get(header) == "" {
-					// Now we just simply use a random UUID for the trace ID. We may adopt a more sophisticated approach
-					// later with respect to known trace IDs following the W3 trace context Http Headers format
-					// https://www.w3.org/TR/trace-context/#trace-context-http-headers-format
-					r.Header.Set(header, uuid.NewString())
+					r.Header.Set(header, traceId)
 				}
 			}
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func getTraceIDHeaders(customTraceIDHeaders []string) []string {
+	var traceHeaders []string
+	traceHeaders = append(traceHeaders, customTraceIDHeaders...)
+
+	// for backward compatibility, we also add the b3TraceIDHeader
+	traceHeaders = append(traceHeaders, []string{b3TraceIDHeader, txIDHeader}...)
+
+	return traceHeaders
+}
+
+// findExistingTraceId returns the first trace ID found in the request headers
+func findExistingTraceId(r *http.Request, traceIDHeaders []string) string {
+	traceId := ""
+
+	for _, header := range traceIDHeaders {
+		if r.Header.Get(header) != "" {
+			traceId = r.Header.Get(header)
+			break
+		}
+	}
+
+	return traceId
 }
