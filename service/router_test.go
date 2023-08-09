@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
 func dummyHandler(w http.ResponseWriter, r *http.Request) {}
@@ -80,7 +81,7 @@ func TestFindExistingTraceId(t *testing.T) {
 			req.Header.Set(header, traceIDs[header])
 		}
 
-		traceID := findExistingTraceId(req, tc.input)
+		traceID := findExistingTraceID(req, tc.input)
 
 		// Then
 		assert.Equal(t, tc.want[0], traceID)
