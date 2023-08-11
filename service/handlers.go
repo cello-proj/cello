@@ -337,7 +337,7 @@ func (h handler) createWorkflowFromRequest(_ context.Context, w http.ResponseWri
 	}
 
 	level.Debug(l).Log("message", "creating workflow parameters")
-	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken)
+	parameters := workflow.NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, cwr.TargetName, cwr.ProjectName, cwr.Parameters, credentialsToken, cwr.Type)
 
 	workflowLabels := map[string]string{txIDHeader: r.Header.Get(txIDHeader)}
 

@@ -224,3 +224,68 @@ func TestArgoSubmit(t *testing.T) {
 		})
 	}
 }
+
+func TestNewParameters(t *testing.T) {
+	environmentVariablesString := "ENVIRONMENT: prd"
+	executeCommand := "fake_execution_command"
+	executeContainerImageURI := "fake_execute_container_image_url"
+	targetName := "fake_target_name"
+	projectName := "fake_project_name"
+	preContainerImageURI := "fake_pre_container_image_uri"
+	credentialsToken := "fake_token"
+	flowType := "sync"
+
+	tests := []struct {
+		name                       string
+		environmentVariablesString string
+		executeCommand             string
+		executeContainerImageURI   string
+		targetName                 string
+		projectName                string
+		cliParameters              map[string]string
+		credentialsToken           string
+		flowType                   string
+		expected                   map[string]string
+	}{
+		{
+			name:                       "new parameter",
+			environmentVariablesString: environmentVariablesString,
+			executeCommand:             executeCommand,
+			executeContainerImageURI:   executeContainerImageURI,
+			targetName:                 targetName,
+			projectName:                projectName,
+			cliParameters:              map[string]string{"pre_container_image_uri": preContainerImageURI},
+			credentialsToken:           credentialsToken,
+			flowType:                   flowType,
+			expected: map[string]string{
+				"environment_variables_string": environmentVariablesString,
+				"execute_command":              executeCommand,
+				"execute_container_image_uri":  executeContainerImageURI,
+				"project_name":                 projectName,
+				"target_name":                  targetName,
+				"credentials_token":            credentialsToken,
+				"type":                         flowType,
+				"pre_container_image_uri":      preContainerImageURI,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parameters := NewParameters(
+				tt.environmentVariablesString,
+				tt.executeCommand,
+				tt.executeContainerImageURI,
+				tt.targetName,
+				tt.projectName,
+				tt.cliParameters,
+				tt.credentialsToken,
+				tt.flowType,
+			)
+
+			if !cmp.Equal(parameters, tt.expected) {
+				t.Errorf("\nwant: %v\n got: %v", tt.expected, parameters)
+			}
+		})
+	}
+}
