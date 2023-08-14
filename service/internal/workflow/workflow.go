@@ -198,7 +198,7 @@ func (a ArgoWorkflow) Submit(ctx context.Context, from string, parameters map[st
 }
 
 // NewParameters creates workflow parameters.
-func NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, targetName, projectName string, cliParameters map[string]string, credentialsToken string) map[string]string {
+func NewParameters(environmentVariablesString, executeCommand, executeContainerImageURI, targetName, projectName string, cliParameters map[string]string, credentialsToken string, flowType string) map[string]string {
 	parameters := map[string]string{
 		"environment_variables_string": environmentVariablesString,
 		"execute_command":              executeCommand,
@@ -206,6 +206,7 @@ func NewParameters(environmentVariablesString, executeCommand, executeContainerI
 		"project_name":                 projectName,
 		"target_name":                  targetName,
 		"credentials_token":            credentialsToken,
+		"type":                         flowType,
 	}
 
 	// this include override parameters
