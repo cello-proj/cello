@@ -58,10 +58,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v4.1.0
         with:
           distribution: goreleaser
-          version: v4.1.0
+          version: latest
           args: release --debug --rm-dist --release-notes ./tmp/release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
