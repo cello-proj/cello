@@ -35,6 +35,7 @@ type Vars struct {
 	DBPassword     string   `split_words:"true" required:"true"`
 	DBName         string   `split_words:"true" required:"true"`
 	ImageURIs      []string `envconfig:"IMAGE_URIS"`
+	TraceIDHeaders []string `envconfig:"TRACE_ID_HEADERS" default:""`
 }
 
 var (
