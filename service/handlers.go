@@ -1267,7 +1267,7 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 
 	r := "env"
 	for k, v := range environmentVariables {
-		tmp := r + fmt.Sprintf(" %s=%s", k, v)
+		tmp := r + fmt.Sprintf(" %s=\"%s\"", k, v)
 		r = tmp
 	}
 	return r
