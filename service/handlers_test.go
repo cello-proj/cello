@@ -842,7 +842,11 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 				},
 			},
 			wfMock: &th.WorkflowMock{
-				SubmitFunc: func(ctx context.Context, from string, parameters, labels map[string]string) (string, error) {
+				SubmitFunc: func(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
+					if parameters["environment_variables_string"] != "env foobar='barfoo'" {
+						return "", errors.New("environment variables are not quoted")
+					}
+
 					return "wf-123456", nil
 				},
 			},
