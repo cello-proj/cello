@@ -1,0 +1,21 @@
+{
+  "arguments": {
+    "execute": ["foobar"]
+  },
+  "environment_variables": {
+    "foobar": "barfoo",
+    "user": "first_name last_name",
+    "single_quoted_variable": "'single_quoted_variable'",
+    "double_quoted_variable": "\"double_quoted_variable\"",
+    "variable_with_single_quote": "someone's value",
+    "variable_with_double_quote": "I love book \"Harry Potter\""
+  },
+  "framework": "cdk",
+  "parameters": {
+    "execute_container_image_uri": "celloproj/cello-cdk:1.87.1"
+  },
+  "project_name": "projectalreadyexists",
+  "target_name": "TARGET_EXISTS",
+  "type": "sync",
+  "workflow_template_name": "cello-single-step-vault-aws"
+}
