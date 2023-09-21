@@ -57,7 +57,7 @@ func argoCloudOpsServiceAddr() string {
 
 // TODO refactor
 func argoCloudOpsUserToken() (string, error) {
-	legacyKey := "ARGO_CLOUDOPS_USER_TOKEN"
+	legacyKey := "ARGO_CLOUDOPS_USER_TOKEN" // #nosec G101
 	key := "CELLO_USER_TOKEN"
 	result := envOrLegacy(key, legacyKey)
 	if len(result) == 0 {
