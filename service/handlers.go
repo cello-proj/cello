@@ -1267,8 +1267,9 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 
 	r := "env"
 	for k, v := range environmentVariables {
-		tmp := r + fmt.Sprintf(" %s=%s", k, v)
-		r = tmp
+		// strip all single and double quotes in environment variables
+		value := strings.ReplaceAll(strings.ReplaceAll(v, "\"", ""), "'", "")
+		r = r + fmt.Sprintf(" %s='%s'", k, value)
 	}
 	return r
 }

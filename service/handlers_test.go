@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/cello-proj/cello/internal/types"
@@ -31,6 +32,8 @@ const (
 	userAuthHeader    = "vault:user:" + testPassword
 	invalidAuthHeader = "bad auth header"
 	adminAuthHeader   = "vault:admin:" + testPassword
+
+	workflowResponse = "wf-123456"
 )
 
 type test struct {
@@ -751,7 +754,7 @@ func TestCreateWorkflow(t *testing.T) {
 			},
 			wfMock: &th.WorkflowMock{
 				SubmitFunc: func(ctx context.Context, from string, parameters, labels map[string]string) (string, error) {
-					return "wf-123456", nil
+					return workflowResponse, nil
 				},
 			},
 		},
@@ -842,8 +845,58 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 				},
 			},
 			wfMock: &th.WorkflowMock{
-				SubmitFunc: func(ctx context.Context, from string, parameters, labels map[string]string) (string, error) {
-					return "wf-123456", nil
+				SubmitFunc: func(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
+					return workflowResponse, nil
+				},
+			},
+		},
+		{
+			name:       "workflows environment variables",
+			req:        loadJSON(t, "TestCreateWorkflowFromGit/good_request.json"),
+			want:       http.StatusOK,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateWorkflowFromGit/good_response.json",
+			method:     "POST",
+			url:        "/projects/project1/targets/target1/operations",
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
+			gitMock: &th.GitClientMock{
+				GetManifestFileFunc: func(repository, commitHash, path string) ([]byte, error) {
+					return loadFileBytes("TestCreateWorkflow/create_workflow_env_variables.json")
+				},
+			},
+			wfMock: &th.WorkflowMock{
+				SubmitFunc: func(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
+					if !strings.Contains(parameters["environment_variables_string"], "variable_with_single_quote='someones value'") {
+						return "", errors.New("failed to quote string with single quote in it")
+					}
+					if !strings.Contains(parameters["environment_variables_string"], "single_quoted_variable='single_quoted_variable'") {
+						return "", errors.New("failed to quote string with single quotes quited it")
+					}
+					if !strings.Contains(parameters["environment_variables_string"], "double_quoted_variable='double_quoted_variable'") {
+						return "", errors.New("failed to quote string with double quotes quited it")
+					}
+					if !strings.Contains(parameters["environment_variables_string"], "user='first_name last_name'") {
+						return "", errors.New("failed to quote string with empty space it")
+					}
+					if !strings.Contains(parameters["environment_variables_string"], "foobar='barfoo'") {
+						return "", errors.New("failed to quote string")
+					}
+					if !strings.Contains(parameters["environment_variables_string"], "variable_with_double_quote='I love book Harry Potter'") {
+						return "", errors.New("failed to quote string with double quote in it")
+					}
+					return workflowResponse, nil
 				},
 			},
 		},
