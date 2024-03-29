@@ -39,9 +39,8 @@ func NewClient(endpoint, authToken string) Client {
 	// TODO handle this better.
 	tr := &http.Transport{}
 	if endpoint == defaultLocalSecureURI {
-		// #nosec
 		tr.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
+			InsecureSkipVerify: true, // #nosec G402
 		}
 	}
 

@@ -8,7 +8,6 @@ linters:
     - goconst
     - goimports
     - gosec
-    - ifshort
     - nilerr
     - revive
     - stylecheck
@@ -23,7 +22,10 @@ linters-settings:
       - G114
 
   errcheck:
-    exclude: .errcheck_excludes.txt
+    exclude-functions:
+      - (github.com/go-kit/log.Logger).Log
+      - (*github.com/spf13/cobra.Command).MarkFlagRequired
+
   revive:
     ignoreGeneratedHeader: false
     severity: warning
