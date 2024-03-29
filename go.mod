@@ -1,6 +1,6 @@
 module github.com/cello-proj/cello
 
-go 1.17
+go 1.22
 
 require (
 	github.com/argoproj/argo-workflows/v3 v3.1.13
