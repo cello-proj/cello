@@ -80,7 +80,7 @@ func TestArgoWorkflowsListStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
-			mockClient.On("ListWorkflows", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*workflow.WorkflowListRequest")).
+			mockClient.On("ListWorkflows", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.AnythingOfType("*workflow.WorkflowListRequest")).
 				Return(tt.workflowListResp, tt.listWorkflowsErr)
 
 			argoWf := NewArgoWorkflow(
@@ -146,7 +146,7 @@ func TestArgoStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
-			mockClient.On("GetWorkflow", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*workflow.WorkflowGetRequest")).
+			mockClient.On("GetWorkflow", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.AnythingOfType("*workflow.WorkflowGetRequest")).
 				Return(tt.getWorkflowResp, tt.getWorkflowErr)
 
 			argoWf := NewArgoWorkflow(
@@ -203,7 +203,7 @@ func TestArgoSubmit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockArgoWorkflowAPIClient.WorkflowServiceClient{}
-			mockClient.On("SubmitWorkflow", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*workflow.WorkflowSubmitRequest")).
+			mockClient.On("SubmitWorkflow", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.AnythingOfType("*workflow.WorkflowSubmitRequest")).
 				Return(tt.submitWorkflowResp, tt.submitWorkflowErr)
 
 			argoWf := NewArgoWorkflow(
