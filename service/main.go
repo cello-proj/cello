@@ -54,7 +54,7 @@ func main() {
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
 
-	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword)
+	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, env.DBOptions)
 	if err != nil {
 		level.Error(errLogger).Log("message", "error creating db client", "error", err)
 		os.Exit(1)
