@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"testing"
@@ -38,7 +38,7 @@ func TestOptionsToMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := optionsToMap(tt.input)
+			result := OptionsToMap(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

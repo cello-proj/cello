@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/cello-proj/cello/internal/validations"
 	"github.com/cello-proj/cello/service/internal/credentials"
@@ -15,6 +14,7 @@ import (
 	"github.com/cello-proj/cello/service/internal/env"
 	"github.com/cello-proj/cello/service/internal/git"
 	"github.com/cello-proj/cello/service/internal/workflow"
+	"github.com/cello-proj/cello/service/util"
 
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/log"
@@ -55,7 +55,7 @@ func main() {
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
 
-	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, optionsToMap(env.DBOptions))
+	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, util.OptionsToMap(env.DBOptions))
 	if err != nil {
 		level.Error(errLogger).Log("message", "error creating db client", "error", err)
 		os.Exit(1)
@@ -114,19 +114,4 @@ func gitClient(env env.Vars, errLogger log.Logger) git.BasicClient {
 	}
 
 	return cl
-}
-
-func optionsToMap(options string) map[string]string {
-	opts := map[string]string{}
-	options = strings.TrimSpace(options)
-
-	if options != "" {
-		kvPairs := strings.Split(options, " ")
-		for _, entry := range kvPairs {
-			kv := strings.SplitN(entry, "=", 2)
-			opts[kv[0]] = kv[1]
-		}
-	}
-
-	return opts
 }
