@@ -4,6 +4,7 @@ package db
 
 import (
 	"context"
+
 	"github.com/cello-proj/cello/internal/types"
 
 	"github.com/upper/db/v4"
@@ -60,7 +61,6 @@ func NewSQLClient(host, database, user, password string, options map[string]stri
 		user:     user,
 		password: password,
 		options:  options,
-		//options:  optionsToMap(options),
 	}, nil
 }
 
