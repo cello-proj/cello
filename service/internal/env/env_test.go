@@ -24,6 +24,7 @@ var prefixedEnvVars = map[string]string{
 	"_DB_NAME":                      "argocloudops",
 	"_DB_USER":                      "argoco",
 	"_DB_PASSWORD":                  "1234",
+	"_DB_OPTIONS":                   "sslrootcert=rds-ca.pem sslmode=verify-full",
 }
 
 var nonPrefixedEnvVars = map[string]string{
@@ -79,6 +80,7 @@ func TestGetEnv(t *testing.T) {
 	assert.Equal(t, "argocloudops", vars.DBName)
 	assert.Equal(t, "argoco", vars.DBUser)
 	assert.Equal(t, "1234", vars.DBPassword)
+	assert.Equal(t, "sslrootcert=rds-ca.pem sslmode=verify-full", vars.DBOptions)
 }
 
 func TestDefaults(t *testing.T) {

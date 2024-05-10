@@ -34,6 +34,7 @@ type Vars struct {
 	DBUser         string   `split_words:"true" required:"true"`
 	DBPassword     string   `split_words:"true" required:"true"`
 	DBName         string   `split_words:"true" required:"true"`
+	DBOptions      string   `split_words:"true"`
 	ImageURIs      []string `envconfig:"IMAGE_URIS"`
 }
 

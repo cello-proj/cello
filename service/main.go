@@ -14,6 +14,7 @@ import (
 	"github.com/cello-proj/cello/service/internal/env"
 	"github.com/cello-proj/cello/service/internal/git"
 	"github.com/cello-proj/cello/service/internal/workflow"
+	"github.com/cello-proj/cello/service/util"
 
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/log"
@@ -54,7 +55,7 @@ func main() {
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
 	argoCtx, argoClient := client.NewAPIClient()
 
-	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword)
+	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, util.OptionsToMap(env.DBOptions))
 	if err != nil {
 		level.Error(errLogger).Log("message", "error creating db client", "error", err)
 		os.Exit(1)
