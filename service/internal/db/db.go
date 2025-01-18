@@ -46,6 +46,7 @@ type SQLClient struct {
 	database string
 	user     string
 	password string
+	options  map[string]string
 }
 
 const (
@@ -53,12 +54,13 @@ const (
 	TokenEntryDB   = "tokens"
 )
 
-func NewSQLClient(host, database, user, password string) (SQLClient, error) {
+func NewSQLClient(host, database, user, password string, options map[string]string) (SQLClient, error) {
 	return SQLClient{
 		host:     host,
 		database: database,
 		user:     user,
 		password: password,
+		options:  options,
 	}, nil
 }
 
@@ -68,6 +70,7 @@ func (d SQLClient) createSession() (db.Session, error) {
 		Database: d.database,
 		User:     d.user,
 		Password: d.password,
+		Options:  d.options,
 	}
 
 	return postgresql.Open(settings)
