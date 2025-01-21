@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Added ability to flow through additional DB connection options 
 ### Changed
-* Update to go 1.22.1.
+* Update to go 1.23.1.
 
 ## [0.18.0] - 2023-09-25
 ### Changed
