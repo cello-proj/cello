@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Update argo-workflows to v3.6.2
 * Update to go 1.22.1.
 
-
 ## [0.19.0]
 ### Added
 * Added ability to flow through additional DB connection options 
