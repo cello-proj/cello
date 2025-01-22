@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.20.0]
 ### Changed
 * Update argo-workflows to v3.6.2
-* Update to go 1.22.1.
+* Update to go 1.23.1.
 
 ## [0.19.0]
 ### Added
