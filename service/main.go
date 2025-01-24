@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -53,7 +54,11 @@ func main() {
 	validations.SetImageURIs(env.ImageURIs)
 
 	// The Argo context is needed for any Argo client method calls or else, nil errors.
-	argoCtx, argoClient := client.NewAPIClient()
+	argoCtx, argoClient, err := client.NewAPIClient(context.Background())
+	if err != nil {
+		level.Error(errLogger).Log("message", "error creating argo-workflow client", "error", err)
+		os.Exit(1)
+	}
 
 	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, util.OptionsToMap(env.DBOptions))
 	if err != nil {
