@@ -4,7 +4,6 @@ linters:
   enable:
     - bodyclose
     - errorlint
-    - exportloopref
     - goconst
     - goimports
     - gosec

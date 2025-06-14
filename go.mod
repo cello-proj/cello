@@ -7,7 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/argoproj/argo-workflows/v3 v3.6.2
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
-	github.com/aws/aws-sdk-go v1.44.209
+	github.com/aws/aws-sdk-go-v2 v1.36.4
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/distribution/distribution v2.8.1+incompatible
