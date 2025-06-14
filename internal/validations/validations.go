@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/distribution/distribution/reference"
 )
 
