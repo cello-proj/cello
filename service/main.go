@@ -60,9 +60,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	dbClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, util.OptionsToMap(env.DBOptions))
+	sqlClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, util.OptionsToMap(env.DBOptions))
 	if err != nil {
-		level.Error(errLogger).Log("message", "error creating db client", "error", err)
+		level.Error(errLogger).Log("message", "error creating sql db client", "error", err)
+		os.Exit(1)
+	}
+
+	ddbClient, err := db.NewDynamoDBClient(env.DynamoDBTableName, env.DynamoDBEndpoint, sqlClient)
+	if err != nil {
+		level.Error(errLogger).Log("message", "error creating ddb client", "error", err)
 		os.Exit(1)
 	}
 
@@ -77,7 +83,8 @@ func main() {
 		config:                 config,
 		gitClient:              gitClient(env, errLogger),
 		env:                    env,
-		dbClient:               dbClient,
+		dbClient:               sqlClient,
+		ddbClient:              ddbClient,
 	}
 
 	level.Info(logger).Log("message", "starting web service", "vault addr", env.VaultAddress, "argoAddr", env.ArgoAddress)

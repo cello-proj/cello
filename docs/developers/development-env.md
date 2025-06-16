@@ -86,6 +86,15 @@ You will need two windows
       export CELLO_ADMIN_SECRET=abcd1234abcd1234
       ```
 
+- Set DynamoDB environment variables:
+
+  ```sh
+  export CELLO_DYNAMODB_TABLE_NAME=cello
+  export CELLO_DYNAMODB_ENDPOINT=http://localhost:8000
+  ```
+
+- DynamoDB Local will be started automatically when running `make up`
+
 - Start the Cello Service (includes vault)
 
   ```sh
@@ -119,7 +128,7 @@ You will need two windows
 
   ```sh
   # CDK Example
-  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547 dev`
+  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml ffd8c4fd22d1b60f444363a4b9bc12bf88424ebf dev`
 
   # Get the status / logs
   ./build/cello get $CDK_WORKFLOW_NAME
@@ -130,10 +139,28 @@ You will need two windows
 
   ```sh
   # Terraform Example
-  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547 dev`
+  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml ffd8c4fd22d1b60f444363a4b9bc12bf88424ebf dev`
 
   # Get the status / logs
   ./build/cello get $TERRAFORM_WORKFLOW_NAME
   ./build/cello logs $TERRAFORM_WORKFLOW_NAME
   ```
+### Working with DynamoDB Local
 
+As we use DynamoDB Local, you can use the AWS CLI to interact with it. Dynamodb Local maps data using the `AWS_ACCESS_KEY_ID` and region used to start it. Our scripts start DynamoDB Local with both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set to `cello` and the region set to `us-west-2`. Because the data is stored in-memory, the data is not persisted across restarts (including if you re-run `make up`).
+
+If you want to inspect the data, you can use the AWS CLI and point it to the local instance.
+
+To list the tables in DynamoDB Local, you can run the following command:
+
+```sh
+AWS_ACCESS_KEY_ID=cello AWS_SECRET_ACCESS_KEY=cello aws dynamodb list-tables --endpoint-url http://localhost:8000 --region us-west-2
+```
+
+To dump the data in the `cello` table, you can run the following command:
+
+```sh
+AWS_ACCESS_KEY_ID=cello AWS_SECRET_ACCESS_KEY=cello aws dynamodb scan --table-name cello --endpoint-url http://localhost:8000 --region us-west-2
+```
+
+The schema is dynamically pulled from `./scripts/dynamo_table.yaml` and used to create the table in DynamoDB Local. If you want to change the schema, you can modify this file and `make up` will recreate the table with the new schema.

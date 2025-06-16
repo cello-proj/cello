@@ -47,6 +47,7 @@ type test struct {
 	method     string
 	cpMock     *th.CredsProviderMock
 	dbMock     *th.DBClientMock
+	ddbMock    *th.DBClientMock
 	gitMock    *th.GitClientMock
 	wfMock     *th.WorkflowMock
 }
@@ -89,6 +90,10 @@ func TestCreateProject(t *testing.T) {
 				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
 				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
 			},
+			ddbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
+				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
+			},
 		},
 		{
 			name:       "bad request",
@@ -125,13 +130,15 @@ func TestCreateProject(t *testing.T) {
 			},
 		},
 		{
-			name:       "project fails to create token entry",
-			req:        loadJSON(t, "TestCreateProject/project_fails_to_create_token_entry.json"),
-			want:       http.StatusInternalServerError,
+			name:       "project fails to create ddb entry but continues",
+			req:        loadJSON(t, "TestCreateProject/can_create_project_request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestCreateProject/can_create_project_response.json",
 			authHeader: adminAuthHeader,
 			url:        "/projects",
 			method:     "POST",
 			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
 				CreateProjectFunc: func(s string) (types.Token, error) {
 					return types.Token{
 						CreatedAt: "createdAt",
@@ -144,11 +151,81 @@ func TestCreateProject(t *testing.T) {
 						Secret: "secret",
 					}, nil
 				},
-				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
 			},
 			dbMock: &th.DBClientMock{
 				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
-				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return errors.New("db error") },
+				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
+			},
+			ddbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
+					return errors.New("failed to write to DynamoDB")
+				},
+				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error { return nil },
+			},
+		},
+		{
+			name:       "project fails to create db token entry",
+			req:        loadJSON(t, "TestCreateProject/project_fails_to_create_token_entry.json"),
+			want:       http.StatusInternalServerError,
+			authHeader: adminAuthHeader,
+			url:        "/projects",
+			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
+				CreateProjectFunc: func(s string) (types.Token, error) {
+					return types.Token{
+						CreatedAt: "createdAt",
+						ExpiresAt: "expiresAt",
+						ProjectID: "project1",
+						ProjectToken: types.ProjectToken{
+							ID: "secret-id-accessor",
+						},
+						RoleID: "role-id",
+						Secret: "secret",
+					}, nil
+				},
+			},
+			dbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
+				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
+					return errors.New("failed to write token to database")
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
+			},
+		},
+		{
+			name:       "project fails to create ddb token entry but continues",
+			req:        loadJSON(t, "TestCreateProject/project_fails_to_create_token_entry.json"),
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			url:        "/projects",
+			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
+				CreateProjectFunc: func(s string) (types.Token, error) {
+					return types.Token{
+						CreatedAt: "createdAt",
+						ExpiresAt: "expiresAt",
+						ProjectID: "project1",
+						ProjectToken: types.ProjectToken{
+							ID: "secret-id-accessor",
+						},
+						RoleID: "role-id",
+						Secret: "secret",
+					}, nil
+				},
+			},
+			dbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
+				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
+			},
+			ddbMock: &th.DBClientMock{
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
+				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
+					return errors.New("failed to write token to DynamoDB")
+				},
 			},
 		},
 	}
@@ -193,6 +270,9 @@ func TestCreateToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
+			},
+			ddbMock: &th.DBClientMock{
+				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
 			},
 		},
 		{
@@ -239,6 +319,42 @@ func TestCreateToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
+			},
+		},
+		{
+			name:       "token fails to create ddb entry but continues",
+			req:        loadJSON(t, "TestCreateToken/request.json"),
+			want:       http.StatusOK,
+			respFile:   "TestCreateToken/can_create_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectddberror/tokens",
+			method:     "POST",
+			cpMock: &th.CredsProviderMock{
+				CreateTokenFunc: func(s string) (types.Token, error) {
+					return types.Token{
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+						ProjectID: "project1",
+						ProjectToken: types.ProjectToken{
+							ID: "secret-id-accessor",
+						},
+						RoleID: "role-id",
+						Secret: "secret",
+					}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
+			},
+			ddbMock: &th.DBClientMock{
+				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return errors.New("ddb error") },
 			},
 		},
 		{
@@ -1442,6 +1558,10 @@ func runTests(t *testing.T, tests []test) {
 
 			if tt.dbMock != nil {
 				h.dbClient = tt.dbMock
+			}
+
+			if tt.ddbMock != nil {
+				h.ddbClient = tt.ddbMock
 			}
 
 			if tt.cpMock != nil {

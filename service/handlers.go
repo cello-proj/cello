@@ -59,6 +59,7 @@ type handler struct {
 	gitClient              git.Client
 	env                    env.Vars
 	dbClient               db.Client
+	ddbClient              db.Client
 }
 
 // Service HealthCheck
@@ -606,6 +607,17 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
 		return
 	}
+
+	// Create project in ddb and continue execution even if it fails
+	err = h.ddbClient.CreateProjectEntry(ctx, db.ProjectEntry{
+		ProjectID:  capp.Name,
+		Repository: capp.Repository,
+	})
+	if err != nil {
+		level.Error(l).Log("message", "error inserting project to db", "db-type", "dynamo", "error", err)
+		// Continue execution
+	}
+
 	level.Debug(l).Log("message", "creating project")
 	token, err := cp.CreateProject(capp.Name)
 	if err != nil {
@@ -617,9 +629,15 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "inserting token into DB")
 	err = h.dbClient.CreateTokenEntry(ctx, token)
 	if err != nil {
-		level.Error(l).Log("message", "error inserting token into DB", "error", err)
+		level.Error(l).Log("message", "error inserting token into db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
+	}
+
+	// Create token in ddb, continue execution even if it fails
+	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
+		level.Error(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
+		// Continue execution
 	}
 
 	level.Debug(l).Log("message", "retrieving Cello token")
@@ -1177,6 +1195,12 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		level.Error(l).Log("message", "error inserting token to db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
+	}
+
+	// Create token in ddb, continue execution even if it fails
+	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
+		level.Error(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
+		// Continue execution
 	}
 
 	celloToken := newCelloToken("vault", token)

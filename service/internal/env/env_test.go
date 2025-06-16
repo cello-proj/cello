@@ -25,6 +25,7 @@ var prefixedEnvVars = map[string]string{
 	"_DB_USER":                      "argoco",
 	"_DB_PASSWORD":                  "1234",
 	"_DB_OPTIONS":                   "sslrootcert=rds-ca.pem sslmode=verify-full",
+	"_DYNAMODB_TABLE_NAME":          "cello",
 }
 
 var nonPrefixedEnvVars = map[string]string{
