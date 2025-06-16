@@ -241,7 +241,7 @@ Request Body
   "environment_variables": {
     "AWS_REGION": "us-west-2",
     "CODE_URI": "s3://cello-cet-dev/terraform-example.zip",
-    "VAULT_ADDR": "http://docker.for.mac.localhost:8200"
+    "VAULT_ADDR": "http://host.docker.internal:8200"
   },
   "framework": "terraform",
   "parameters": {
