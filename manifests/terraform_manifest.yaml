@@ -6,7 +6,7 @@ arguments:
 environment_variables:
   AWS_REGION: us-west-2
   CODE_URI: https://github.com/cello-proj/cello/releases/download/v0.4.6/terraform-example.tar.gz
-  VAULT_ADDR: http://docker.for.mac.localhost:8200
+  VAULT_ADDR: http://host.docker.internal:8200
 framework: terraform
 parameters:
   execute_container_image_uri: celloproj/cello-terraform:0.15.1
