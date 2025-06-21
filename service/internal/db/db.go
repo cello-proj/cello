@@ -239,7 +239,8 @@ const (
 )
 
 var (
-	ErrTokenNotFound = fmt.Errorf("token not found")
+	ErrProjectNotFound = fmt.Errorf("project not found")
+	ErrTokenNotFound   = fmt.Errorf("token not found")
 )
 
 func NewDynamoDBClient(tableName string, endpointURL string, assumeRoleARN string) (*DynamoDBClient, error) {
@@ -313,7 +314,7 @@ func (d *DynamoDBClient) ReadProjectEntry(ctx context.Context, project string) (
 	}
 
 	if result.Item == nil {
-		return ProjectEntry{}, fmt.Errorf("project not found")
+		return ProjectEntry{}, ErrProjectNotFound
 	}
 
 	repo, ok := result.Item["repository"].(*ddbtypes.AttributeValueMemberS)

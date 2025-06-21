@@ -455,7 +455,7 @@ func TestCreateToken(t *testing.T) {
 				},
 			},
 			ddbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
@@ -1203,7 +1203,7 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{}, fmt.Errorf("project not found")
+					return db.ProjectEntry{}, db.ErrProjectNotFound
 				},
 			},
 			gitMock: &th.GitClientMock{

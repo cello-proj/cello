@@ -206,7 +206,7 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 	// Read from ddb and continue execution even if it fails
 	level.Debug(l).Log("message", "reading project from ddb", "db-type", "dynamo")
 	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
-		if errors.Is(err, fmt.Errorf("project not found")) {
+		if errors.Is(err, db.ErrProjectNotFound) {
 			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
 		} else {
 			level.Warn(l).Log("message", "error reading project from ddb", "db-type", "dynamo", "error", err)
@@ -537,7 +537,7 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 	// Check if project exists in ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "checking if project exists in ddb")
 	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
-		if errors.Is(err, fmt.Errorf("project not found")) {
+		if errors.Is(err, db.ErrProjectNotFound) {
 			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
 		} else {
 			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
@@ -711,7 +711,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "getting project from ddb", "db-type", "dynamo")
 	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
-		if errors.Is(err, fmt.Errorf("project not found")) {
+		if errors.Is(err, db.ErrProjectNotFound) {
 			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
 		} else {
 			level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
