@@ -35,8 +35,9 @@ type Vars struct {
 	DBPassword        string   `split_words:"true" required:"true"`
 	DBName            string   `split_words:"true" required:"true"`
 	DBOptions         string   `split_words:"true"`
-	DynamoDBTableName string   `envconfig:"CELLO_DYNAMODB_TABLE_NAME" required:"true"`
+	AssumeRoleARN     string   `envconfig:"CELLO_ASSUME_ROLE_ARN"`
 	DynamoDBEndpoint  string   `envconfig:"CELLO_DYNAMODB_ENDPOINT"`
+	DynamoDBTableName string   `envconfig:"CELLO_DYNAMODB_TABLE_NAME" required:"true"`
 	ImageURIs         []string `envconfig:"IMAGE_URIS"`
 }
 

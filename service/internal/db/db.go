@@ -13,6 +13,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	ddbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/upper/db/v4"
@@ -241,10 +242,23 @@ var (
 	ErrTokenNotFound = fmt.Errorf("token not found")
 )
 
-func NewDynamoDBClient(tableName string, endpointURL string, sqlClient Client) (*DynamoDBClient, error) {
-	cfg, err := config.LoadDefaultConfig(context.Background())
+func NewDynamoDBClient(tableName string, endpointURL string, assumeRoleARN string) (*DynamoDBClient, error) {
+	var cfg aws.Config
+	var err error
+
+	if assumeRoleARN != "" {
+		cfg, err = config.LoadDefaultConfig(context.Background(),
+			config.WithAssumeRoleCredentialOptions(func(options *stscreds.AssumeRoleOptions) {
+				options.RoleARN = assumeRoleARN
+				options.RoleSessionName = "cello-session"
+			}),
+		)
+	} else {
+		cfg, err = config.LoadDefaultConfig(context.Background())
+	}
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
 	svc := dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
