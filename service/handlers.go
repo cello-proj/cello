@@ -523,6 +523,17 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 		return false, err
 	}
 
+	// Check if project exists in ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "checking if project exists in ddb")
+	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+		if errors.Is(err, fmt.Errorf("project not found")) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
+		}
+		// Continue execution even if DynamoDB fails
+	}
+
 	// Checking database
 	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
@@ -689,7 +700,11 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	level.Debug(l).Log("message", "getting project from ddb", "db-type", "dynamo")
 	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
-		level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
+		if errors.Is(err, fmt.Errorf("project not found")) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
+		}
 		// Continue execution even if DynamoDB fails
 	}
 
@@ -1095,7 +1110,6 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	level.Debug(l).Log("message", "checking if project exists")
-	// TODO do we need to check for ddb?
 	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
 
 	if err != nil || !projectExists {
@@ -1125,9 +1139,19 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		level.Warn(l).Log("message", "token does not exist in DB", "error", err)
 	}
 
-	// TODO do we need to also check for ddb?
+	// Check if token exists in ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "checking if token exists in ddb")
+	ddbProjectToken, err := h.ddbClient.ReadTokenEntry(ctx, tokenID)
+	if err != nil {
+		if errors.Is(err, db.ErrTokenNotFound) {
+			level.Warn(l).Log("message", "token does not exist in ddb", "db-type", "dynamo", "error", err)
+		} else {
+			level.Warn(l).Log("message", "error checking token in ddb", "db-type", "dynamo", "error", err)
+		}
+		// Continue execution even if DynamoDB fails
+	}
 
-	// delete token from DB and CP
+	// delete token from DB, CP, and ddb
 	// only delete token if exists in DB
 	if !dbProjectToken.IsEmpty() {
 		level.Debug(l).Log("message", "deleting token from database")
@@ -1136,16 +1160,14 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 			h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
 			return
 		}
+	}
 
-		// Continue execution even if it fails
-		if err := h.ddbClient.DeleteTokenEntryByProject(ctx, projectName, tokenID); err != nil {
-			// Check if the error is due to token not found
-			if errors.Is(err, db.ErrTokenNotFound) {
-				level.Warn(l).Log("message", "token does not exist in db", "db-type", "dynamo", "error", err)
-			} else {
-				level.Warn(l).Log("message", "error deleting token from ddb", "db-type", "dynamo", "error", err)
-			}
-			// Continue execution regardless
+	// only delete token from ddb if it exists, continue execution even if it fails
+	if !ddbProjectToken.IsEmpty() {
+		level.Debug(l).Log("message", "deleting token from ddb")
+		if err = h.ddbClient.DeleteTokenEntryByProject(ctx, projectName, tokenID); err != nil {
+			level.Warn(l).Log("message", "error deleting token from ddb", "db-type", "dynamo", "error", err)
+			// Continue execution even if DynamoDB fails
 		}
 	}
 
@@ -1201,13 +1223,18 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// List tokens from ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "listing tokens from ddb")
+	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+		level.Warn(l).Log("message", "error listing tokens from ddb", "db-type", "dynamo", "error", err)
+		// Continue execution even if DynamoDB fails
+	}
+
 	if len(tokens) >= numOfTokensLimit {
 		level.Error(l).Log("message", "number of tokens allowed per project has been reached")
 		h.errorResponse(w, "token limit reached", http.StatusInternalServerError)
 		return
 	}
-
-	// TODO add ddb tokens call
 
 	level.Debug(l).Log("message", "creating token")
 	token, err := cp.CreateToken(projectName)

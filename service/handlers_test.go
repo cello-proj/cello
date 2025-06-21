@@ -273,6 +273,17 @@ func TestCreateToken(t *testing.T) {
 			},
 			ddbMock: &th.DBClientMock{
 				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{{
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+						ProjectID: "project1",
+						TokenID:   "secret-id-accessor",
+					}}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
 			},
 		},
 		{
@@ -320,6 +331,19 @@ func TestCreateToken(t *testing.T) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
+			ddbMock: &th.DBClientMock{
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{{
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+						ProjectID: "project1",
+						TokenID:   "secret-id-accessor",
+					}}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+			},
 		},
 		{
 			name:       "token fails to create ddb entry but continues",
@@ -354,6 +378,12 @@ func TestCreateToken(t *testing.T) {
 				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
 			},
 			ddbMock: &th.DBClientMock{
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
 				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return errors.New("ddb error") },
 			},
 		},
@@ -369,6 +399,24 @@ func TestCreateToken(t *testing.T) {
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
 			dbMock: &th.DBClientMock{
+				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{{
+						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+						ProjectID: "project1",
+						TokenID:   "secret-id-accessor",
+					}, {
+						CreatedAt: "2022-07-21T14:00:00.000000-07:00",
+						ExpiresAt: "2023-07-21T14:00:00.000000-07:00",
+						ProjectID: "project1",
+						TokenID:   "secret-id-accessor",
+					}}, nil
+				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{{
 						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
@@ -402,6 +450,11 @@ func TestCreateToken(t *testing.T) {
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{}, errors.New("error")
 				},
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
@@ -1229,6 +1282,12 @@ func TestDeleteToken(t *testing.T) {
 			},
 			ddbMock: &th.DBClientMock{
 				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
+				},
 			},
 		},
 		{
@@ -1243,7 +1302,7 @@ func TestDeleteToken(t *testing.T) {
 			},
 		},
 		{
-			name:       "token does not exist in DB or CP", // TODO do we need to check for ddb?
+			name:       "token does not exist in DB or CP or ddb",
 			want:       http.StatusOK,
 			respFile:   "TestDeleteToken/can_delete_token_response.json",
 			authHeader: adminAuthHeader,
@@ -1264,11 +1323,16 @@ func TestDeleteToken(t *testing.T) {
 				},
 			},
 			ddbMock: &th.DBClientMock{
-				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{}, nil
+				},
 			},
 		},
 		{
-			name:       "token exists in CP but not in DB",
+			name:       "token exists in CP but not in DB or ddb",
 			want:       http.StatusOK,
 			respFile:   "TestDeleteToken/can_delete_token_response.json",
 			authHeader: adminAuthHeader,
@@ -1290,11 +1354,16 @@ func TestDeleteToken(t *testing.T) {
 				},
 			},
 			ddbMock: &th.DBClientMock{
-				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{}, nil
+				},
 			},
 		},
 		{
-			name:       "token exists in DB but not in CP",
+			name:       "token exists in DB but not in CP or ddb",
 			want:       http.StatusOK,
 			respFile:   "TestDeleteToken/can_delete_token_response.json",
 			authHeader: adminAuthHeader,
@@ -1316,7 +1385,12 @@ func TestDeleteToken(t *testing.T) {
 				},
 			},
 			ddbMock: &th.DBClientMock{
-				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{}, nil
+				},
 			},
 		},
 		{
@@ -1343,7 +1417,12 @@ func TestDeleteToken(t *testing.T) {
 				},
 			},
 			ddbMock: &th.DBClientMock{
-				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
+				},
 			},
 		},
 		{
@@ -1371,6 +1450,12 @@ func TestDeleteToken(t *testing.T) {
 			},
 			ddbMock: &th.DBClientMock{
 				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return db.ErrTokenNotFound },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
+				},
 			},
 		},
 		{
@@ -1400,6 +1485,12 @@ func TestDeleteToken(t *testing.T) {
 				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error {
 					return errors.New("error deleting entry from DDB")
 				},
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
+				},
 			},
 		},
 	}
@@ -1427,6 +1518,30 @@ func TestListTokens(t *testing.T) {
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
 			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{
+						{
+							CreatedAt: "2022-06-21T14:56:10.341066-07:00",
+							ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
+							TokenID:   "ghi789",
+						},
+						{
+							CreatedAt: "2022-06-21T14:43:16.172896-07:00",
+							ExpiresAt: "2023-06-21T14:43:16.172896-07:00",
+							TokenID:   "def456",
+						},
+						{
+							CreatedAt: "2022-06-21T14:42:50.182037-07:00",
+							ExpiresAt: "2023-06-21T14:42:50.182037-07:00",
+							TokenID:   "abc123",
+						},
+					}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
@@ -1480,6 +1595,14 @@ func TestListTokens(t *testing.T) {
 					return []db.TokenEntry{}, nil
 				},
 			},
+			ddbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "abc123", Repository: "repo"}, nil
+				},
+				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
+					return []db.TokenEntry{}, nil
+				},
+			},
 		},
 		{
 			name:       "project read error",
@@ -1508,6 +1631,11 @@ func TestListTokens(t *testing.T) {
 				},
 				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{}, errors.New("error from DB")
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
 			},
 		},
