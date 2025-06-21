@@ -520,6 +520,7 @@ func TestDeleteProject(t *testing.T) {
 			authHeader: userAuthHeader,
 			url:        "/projects/projectalreadyexists",
 			method:     "DELETE",
+			ddbMock:    &th.DBClientMock{},
 		},
 		{
 			name:       "can delete project",
@@ -535,6 +536,9 @@ func TestDeleteProject(t *testing.T) {
 			dbMock: &th.DBClientMock{
 				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return nil },
 			},
+			ddbMock: &th.DBClientMock{
+				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return nil },
+			},
 		},
 		{
 			name:       "fails to delete project if any targets exist",
@@ -546,6 +550,7 @@ func TestDeleteProject(t *testing.T) {
 				ListTargetsFunc:   func(s string) ([]string, error) { return []string{"target"}, nil },
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
+			ddbMock: &th.DBClientMock{},
 		},
 		{
 			name:       "fails to delete project",
@@ -558,6 +563,7 @@ func TestDeleteProject(t *testing.T) {
 				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
+			ddbMock: &th.DBClientMock{},
 		},
 		{
 			name:       "fails to delete project db entry",
@@ -572,6 +578,27 @@ func TestDeleteProject(t *testing.T) {
 			},
 			dbMock: &th.DBClientMock{
 				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return errors.New("error") },
+			},
+			ddbMock: &th.DBClientMock{},
+		},
+		{
+			name:       "project fails to delete ddb entry but continues",
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			url:        "/projects/projectddberror",
+			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				DeleteProjectFunc: func(s string) error { return nil },
+				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return nil },
+			},
+			ddbMock: &th.DBClientMock{
+				DeleteProjectEntryFunc: func(ctx context.Context, project string) error {
+					return errors.New("failed to delete from DynamoDB")
+				},
 			},
 		},
 	}

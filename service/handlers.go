@@ -769,6 +769,12 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error deleting project", http.StatusInternalServerError)
 		return
 	}
+
+	// Delete project from ddb, continue execution even if it fails
+	if err := h.ddbClient.DeleteProjectEntry(ctx, projectName); err != nil {
+		level.Error(l).Log("message", "error deleting project in database", "db-type", "dynamo", "error", err)
+		// Continue execution
+	}
 }
 
 // Creates a target

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/cello-proj/cello/internal/types"
 
@@ -201,8 +202,11 @@ func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]Toke
 
 // DynamoDBSvc defines the interface for DynamoDB operations
 type DynamoDBSvc interface {
+	BatchWriteItem(ctx context.Context, params *dynamodb.BatchWriteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.BatchWriteItemOutput, error)
+	DeleteItem(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
 	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
 	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
 }
 
 // DynamoDBClient allows for db crud operations using dynamodb
@@ -293,7 +297,104 @@ func (d *DynamoDBClient) ReadProjectEntry(ctx context.Context, project string) (
 }
 
 func (d *DynamoDBClient) DeleteProjectEntry(ctx context.Context, project string) error {
-	// No-op implementation
+	projectPK := fmt.Sprintf(projectPKFmt, project)
+
+	// First, query all items associated with this project (metadata, tokens, etc.)
+	var allItems []map[string]ddbtypes.AttributeValue
+
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String(d.tableName),
+		KeyConditionExpression: aws.String("pk = :pk"),
+		ExpressionAttributeValues: map[string]ddbtypes.AttributeValue{
+			":pk": &ddbtypes.AttributeValueMemberS{Value: projectPK},
+		},
+	}
+
+	// Handle pagination to get all items
+	for {
+		result, err := d.svc.Query(ctx, queryInput)
+		if err != nil {
+			return fmt.Errorf("failed to query project items: %w", err)
+		}
+
+		allItems = append(allItems, result.Items...)
+
+		// Check if there are more pages
+		if result.LastEvaluatedKey == nil {
+			break
+		}
+
+		// Set the exclusive start key for the next page
+		queryInput.ExclusiveStartKey = result.LastEvaluatedKey
+	}
+
+	if len(allItems) == 0 {
+		// No items to delete, project doesn't exist
+		return nil
+	}
+
+	// Prepare batch delete requests
+	var writeRequests []ddbtypes.WriteRequest
+	for _, item := range allItems {
+		sk, ok := item[sortKey].(*ddbtypes.AttributeValueMemberS)
+		if !ok {
+			continue
+		}
+
+		writeRequests = append(writeRequests, ddbtypes.WriteRequest{
+			DeleteRequest: &ddbtypes.DeleteRequest{
+				Key: map[string]ddbtypes.AttributeValue{
+					primaryKey: &ddbtypes.AttributeValueMemberS{Value: projectPK},
+					sortKey:    &ddbtypes.AttributeValueMemberS{Value: sk.Value},
+				},
+			},
+		})
+	}
+
+	// Delete items in batches of 25 (DynamoDB limit)
+	const batchSize = 25
+	const delay = 100 * time.Millisecond
+	const maxRetries = 5
+
+	for i := 0; i < len(writeRequests); i += batchSize {
+		end := min(i+batchSize, len(writeRequests))
+
+		batch := writeRequests[i:end]
+		batchInput := &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]ddbtypes.WriteRequest{
+				d.tableName: batch,
+			},
+		}
+
+		// Delete this batch of items and retry if there are unprocessed items
+		retryCount := 0
+		for retryCount < maxRetries {
+			result, err := d.svc.BatchWriteItem(ctx, batchInput)
+			if err != nil {
+				return fmt.Errorf("failed to batch delete project items: %w", err)
+			}
+
+			// If there are no unprocessed items, we're done
+			if len(result.UnprocessedItems) == 0 {
+				break
+			}
+
+			retryCount++
+			if retryCount >= maxRetries {
+				return fmt.Errorf("failed to delete all project items after %d retries", maxRetries)
+			}
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(delay):
+				// Continue with retry
+			}
+
+			batchInput.RequestItems = result.UnprocessedItems
+		}
+	}
+
 	return nil
 }
 
