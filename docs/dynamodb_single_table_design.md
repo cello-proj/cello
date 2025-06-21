@@ -21,7 +21,7 @@ Use a single DynamoDB table named `cello`.
 ### 1. Project Items
 
 • **pk**: `"PROJECT#<project_name>"`
-• **sk**: `"META"`
+• **sk**: `"METADATA"`
 • **Additional Attributes**:
 
 - `repository` (string)
@@ -31,7 +31,7 @@ Example:
 ```json
 {
   "pk": "PROJECT#myproj",
-  "sk": "META",
+  "sk": "METADATA",
   "repository": "https://github.com/example/myproj"
 }
 ```
@@ -95,7 +95,7 @@ Storing `properties` as a map (or JSON string) allows for easy extension of `Tar
 
 1. **Get a Single Project**
 
-   - `pk = "PROJECT#<project_name>"`, `sk = "META"`
+   - `pk = "PROJECT#<project_name>"`, `sk = "METADATA"`
 
 2. **List All Tokens for a Project**
 
@@ -179,3 +179,4 @@ If future use cases require different query patterns (e.g., searching by token I
 ## Summary
 The single-table approach handles Projects, Tokens, and Targets with flexible JSON for target properties, no additional indexes needed. This section provides an example CloudFormation template to implement the core table and primary key structure.
 ```
+
