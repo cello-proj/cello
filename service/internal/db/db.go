@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cello-proj/cello/internal/types"
@@ -453,22 +454,7 @@ func (d *DynamoDBClient) ReadTokenEntryByProject(ctx context.Context, project, t
 		return TokenEntry{}, ErrTokenNotFound
 	}
 
-	createdAt, ok := result.Item["created_at"].(*ddbtypes.AttributeValueMemberS)
-	if !ok {
-		return TokenEntry{}, fmt.Errorf("invalid created_at attribute")
-	}
-
-	expiresAt, ok := result.Item["expires_at"].(*ddbtypes.AttributeValueMemberS)
-	if !ok {
-		return TokenEntry{}, fmt.Errorf("invalid expires_at attribute")
-	}
-
-	return TokenEntry{
-		CreatedAt: createdAt.Value,
-		ExpiresAt: expiresAt.Value,
-		ProjectID: project,
-		TokenID:   token,
-	}, nil
+	return d.parseTokenFromItem(result.Item, project)
 }
 
 // ReadTokenEntry should not be used. Use ReadTokenEntryByProject instead.
@@ -497,6 +483,61 @@ func (d *DynamoDBClient) DeleteTokenEntryByProject(ctx context.Context, project,
 }
 
 func (d *DynamoDBClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
-	// No-op implementation
-	return []TokenEntry{}, nil
+	projectPK := fmt.Sprintf(projectPKFmt, project)
+	tokenSKPrefix := fmt.Sprintf(tokenSKFmt, "")
+
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String(d.tableName),
+		KeyConditionExpression: aws.String("pk = :pk AND begins_with(sk, :sk_prefix)"),
+		ExpressionAttributeValues: map[string]ddbtypes.AttributeValue{
+			":pk":        &ddbtypes.AttributeValueMemberS{Value: projectPK},
+			":sk_prefix": &ddbtypes.AttributeValueMemberS{Value: tokenSKPrefix},
+		},
+	}
+
+	result, err := d.svc.Query(ctx, queryInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tokens: %w", err)
+	}
+
+	var tokens []TokenEntry
+	for _, item := range result.Items {
+		token, err := d.parseTokenFromItem(item, project)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse token: %w", err)
+		}
+		tokens = append(tokens, token)
+	}
+
+	return tokens, nil
+}
+
+// parseTokenFromItem converts a DynamoDB item to a TokenEntry
+func (d *DynamoDBClient) parseTokenFromItem(item map[string]ddbtypes.AttributeValue, project string) (TokenEntry, error) {
+	tokenSKPrefix := fmt.Sprintf(tokenSKFmt, "")
+
+	// Extract the actual token ID from the sort key
+	sk, ok := item[sortKey].(*ddbtypes.AttributeValueMemberS)
+	if !ok {
+		return TokenEntry{}, fmt.Errorf("invalid sort key attribute")
+	}
+
+	tokenID := strings.TrimPrefix(sk.Value, tokenSKPrefix)
+
+	createdAt, ok := item["created_at"].(*ddbtypes.AttributeValueMemberS)
+	if !ok {
+		return TokenEntry{}, fmt.Errorf("invalid created_at attribute")
+	}
+
+	expiresAt, ok := item["expires_at"].(*ddbtypes.AttributeValueMemberS)
+	if !ok {
+		return TokenEntry{}, fmt.Errorf("invalid expires_at attribute")
+	}
+
+	return TokenEntry{
+		CreatedAt: createdAt.Value,
+		ExpiresAt: expiresAt.Value,
+		ProjectID: project,
+		TokenID:   tokenID,
+	}, nil
 }

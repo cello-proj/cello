@@ -614,7 +614,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		Repository: capp.Repository,
 	})
 	if err != nil {
-		level.Error(l).Log("message", "error inserting project to db", "db-type", "dynamo", "error", err)
+		level.Warn(l).Log("message", "error inserting project to db", "db-type", "dynamo", "error", err)
 		// Continue execution
 	}
 
@@ -636,7 +636,7 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 
 	// Create token in ddb, continue execution even if it fails
 	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
-		level.Error(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
+		level.Warn(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
 		// Continue execution
 	}
 
@@ -772,7 +772,7 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 
 	// Delete project from ddb, continue execution even if it fails
 	if err := h.ddbClient.DeleteProjectEntry(ctx, projectName); err != nil {
-		level.Error(l).Log("message", "error deleting project in database", "db-type", "dynamo", "error", err)
+		level.Warn(l).Log("message", "error deleting project in database", "db-type", "dynamo", "error", err)
 		// Continue execution
 	}
 }
@@ -1137,7 +1137,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 			if errors.Is(err, db.ErrTokenNotFound) {
 				level.Warn(l).Log("message", "token does not exist in db", "db-type", "dynamo", "error", err)
 			} else {
-				level.Error(l).Log("message", "error deleting token from ddb", "db-type", "dynamo", "error", err)
+				level.Warn(l).Log("message", "error deleting token from ddb", "db-type", "dynamo", "error", err)
 			}
 			// Continue execution regardless
 		}
@@ -1201,6 +1201,8 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO add ddb tokens call
+
 	level.Debug(l).Log("message", "creating token")
 	token, err := cp.CreateToken(projectName)
 	if err != nil {
@@ -1219,7 +1221,7 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 
 	// Create token in ddb, continue execution even if it fails
 	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
-		level.Error(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
+		level.Warn(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
 		// Continue execution
 	}
 
@@ -1279,6 +1281,12 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		level.Error(l).Log("message", "error listing project tokens", "error", err)
 		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
+	}
+
+	level.Debug(l).Log("message", "listing tokens from ddb")
+	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+		level.Warn(l).Log("message", "error listing project tokens from ddb", "db-type", "dynamo", "error", err)
+		// Continue execution even if DynamoDB fails
 	}
 
 	resp := []responses.ListTokens{}
