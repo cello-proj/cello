@@ -1,4 +1,4 @@
-# DynamoDB Single-Table Schema Proposal
+# DynamoDB Single-Table Design
 
 This document describes a single-table DynamoDB design that captures the functionality of the PostgreSQL schema, including:
 
@@ -142,7 +142,13 @@ This approach is efficient and leverages DynamoDB's single-table design where al
 
 DynamoDB does not enforce foreign keys. This single-table design keeps related items (Projects, Tokens, Targets) together in the same partition, but your application is responsible for implementing any referential integrity, such as cleaning up tokens and targets on project deletion.
 
----
+## IAM Role Assumption
+
+The Cello service optionally supports IAM role assumption to access the DynamoDB table to enable different permissions or access the DynamoDB table in a different AWS account.
+
+### Configuration
+
+The service uses the `CELLO_ASSUME_ROLE_ARN` environment variable to specify the IAM role to assume when accessing DynamoDB. If this environment variable is not set, the service will use the default AWS credentials lookup mechanisms.
 
 ## CloudFormation Resource
 
