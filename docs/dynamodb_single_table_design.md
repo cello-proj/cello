@@ -171,12 +171,16 @@ Resources:
           KeyType: HASH
         - AttributeName: sk
           KeyType: RANGE
-      # No additional indexes required for our known access patterns
-      # GlobalSecondaryIndexes: []
-
-If future use cases require different query patterns (e.g., searching by token ID alone), then a new GSI or other approach might become necessary. However, given the patterns described above, this single-table design does not need extra indexes.
-
-## Summary
-The single-table approach handles Projects, Tokens, and Targets with flexible JSON for target properties, no additional indexes needed. This section provides an example CloudFormation template to implement the core table and primary key structure.
 ```
+
+## Migration steps
+
+The migration approach from PostgreSQL to DynamoDB will be:
+
+- Create the DynamoDB infrastructure
+- Add new config to Cello deployment
+- Deploy Cello code which starts writing to ddb in non-error mode (just logging)
+- Once verified as good, then perform batch migration of data from psql to ddb (tooling tbd)
+- Once batch migration is complete, deploy Cello code which performs compares on reads and ensures they match (code tbd)
+- Once both are returning correct data, deploy Cello code which removes comparison code and only writes to ddb (code tbd)
 
