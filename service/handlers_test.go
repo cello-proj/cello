@@ -1205,6 +1205,9 @@ func TestDeleteToken(t *testing.T) {
 					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
 				},
 			},
+			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+			},
 		},
 		{
 			name:       "project does not exist",
@@ -1218,7 +1221,7 @@ func TestDeleteToken(t *testing.T) {
 			},
 		},
 		{
-			name:       "token does not exist in DB or CP",
+			name:       "token does not exist in DB or CP", // TODO do we need to check for ddb?
 			want:       http.StatusOK,
 			respFile:   "TestDeleteToken/can_delete_token_response.json",
 			authHeader: adminAuthHeader,
@@ -1237,6 +1240,9 @@ func TestDeleteToken(t *testing.T) {
 				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{}, nil
 				},
+			},
+			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
 			},
 		},
 		{
@@ -1261,6 +1267,9 @@ func TestDeleteToken(t *testing.T) {
 					return db.TokenEntry{}, nil
 				},
 			},
+			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+			},
 		},
 		{
 			name:       "token exists in DB but not in CP",
@@ -1284,6 +1293,9 @@ func TestDeleteToken(t *testing.T) {
 					return db.TokenEntry{TokenID: "tokenonlyindb"}, nil
 				},
 			},
+			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+			},
 		},
 		{
 			name:       "token delete error",
@@ -1306,6 +1318,65 @@ func TestDeleteToken(t *testing.T) {
 				},
 				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
+			},
+		},
+		{
+			name:       "ddb token does not exist but continues",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project/tokens/ddbtokennotexist",
+			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				DeleteProjectTokenFunc: func(s1, s2 string) error { return nil },
+				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+					return types.ProjectToken{ID: "1234"}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return db.ErrTokenNotFound },
+			},
+		},
+		{
+			name:       "ddb delete error but continues",
+			want:       http.StatusOK,
+			respFile:   "TestDeleteToken/can_delete_token_response.json",
+			authHeader: adminAuthHeader,
+			url:        "/projects/project/tokens/ddbdeleteerror",
+			method:     "DELETE",
+			cpMock: &th.CredsProviderMock{
+				DeleteProjectTokenFunc: func(s1, s2 string) error { return nil },
+				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+					return types.ProjectToken{ID: "1234"}, nil
+				},
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return nil },
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1"}, nil
+				},
+				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error {
+					return errors.New("error deleting entry from DDB")
 				},
 			},
 		},

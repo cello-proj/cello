@@ -42,7 +42,9 @@ type Client interface {
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	CreateTokenEntry(ctx context.Context, token types.Token) error
 	DeleteTokenEntry(ctx context.Context, token string) error
+	DeleteTokenEntryByProject(ctx context.Context, project, token string) error
 	ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error)
+	ReadTokenEntryByProject(ctx context.Context, project, token string) (TokenEntry, error)
 	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 	Health(ctx context.Context) error
 }
@@ -200,6 +202,16 @@ func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]Toke
 	return res, err
 }
 
+func (d SQLClient) DeleteTokenEntryByProject(ctx context.Context, project, token string) error {
+	// For SQL, project is not needed, just delete by token ID
+	return d.DeleteTokenEntry(ctx, token)
+}
+
+func (d SQLClient) ReadTokenEntryByProject(ctx context.Context, project, token string) (TokenEntry, error) {
+	// For SQL, project is not needed, just read by token ID
+	return d.ReadTokenEntry(ctx, token)
+}
+
 // DynamoDBSvc defines the interface for DynamoDB operations
 type DynamoDBSvc interface {
 	BatchWriteItem(ctx context.Context, params *dynamodb.BatchWriteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.BatchWriteItemOutput, error)
@@ -222,6 +234,10 @@ const (
 	projectPKFmt = "PROJECT#%s"
 	metadataSK   = "METADATA"
 	tokenSKFmt   = "TOKEN#%s"
+)
+
+var (
+	ErrTokenNotFound = fmt.Errorf("token not found")
 )
 
 func NewDynamoDBClient(tableName string, endpointURL string, sqlClient Client) (*DynamoDBClient, error) {
@@ -421,13 +437,62 @@ func (d *DynamoDBClient) CreateTokenEntry(ctx context.Context, token types.Token
 	return nil
 }
 
-func (d *DynamoDBClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error) {
-	// No-op implementation
-	return TokenEntry{}, nil
+func (d *DynamoDBClient) ReadTokenEntryByProject(ctx context.Context, project, token string) (TokenEntry, error) {
+	result, err := d.svc.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]ddbtypes.AttributeValue{
+			primaryKey: &ddbtypes.AttributeValueMemberS{Value: fmt.Sprintf(projectPKFmt, project)},
+			sortKey:    &ddbtypes.AttributeValueMemberS{Value: fmt.Sprintf(tokenSKFmt, token)},
+		},
+	})
+	if err != nil {
+		return TokenEntry{}, fmt.Errorf("failed to get token: %w", err)
+	}
+
+	if result.Item == nil {
+		return TokenEntry{}, ErrTokenNotFound
+	}
+
+	createdAt, ok := result.Item["created_at"].(*ddbtypes.AttributeValueMemberS)
+	if !ok {
+		return TokenEntry{}, fmt.Errorf("invalid created_at attribute")
+	}
+
+	expiresAt, ok := result.Item["expires_at"].(*ddbtypes.AttributeValueMemberS)
+	if !ok {
+		return TokenEntry{}, fmt.Errorf("invalid expires_at attribute")
+	}
+
+	return TokenEntry{
+		CreatedAt: createdAt.Value,
+		ExpiresAt: expiresAt.Value,
+		ProjectID: project,
+		TokenID:   token,
+	}, nil
 }
 
+// ReadTokenEntry should not be used. Use ReadTokenEntryByProject instead.
+func (d *DynamoDBClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error) {
+	return TokenEntry{}, fmt.Errorf("ReadTokenEntry should not be used. Use ReadTokenEntryByProject instead")
+}
+
+// DeleteTokenEntry should not be used. Use DeleteTokenEntryByProject instead.
 func (d *DynamoDBClient) DeleteTokenEntry(ctx context.Context, token string) error {
-	// No-op implementation
+	return fmt.Errorf("DeleteTokenEntry should not be used. Use DeleteTokenEntryByProject instead")
+}
+
+func (d *DynamoDBClient) DeleteTokenEntryByProject(ctx context.Context, project, token string) error {
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]ddbtypes.AttributeValue{
+			primaryKey: &ddbtypes.AttributeValueMemberS{Value: fmt.Sprintf(projectPKFmt, project)},
+			sortKey:    &ddbtypes.AttributeValueMemberS{Value: fmt.Sprintf(tokenSKFmt, token)},
+		},
+	}
+
+	if _, err := d.svc.DeleteItem(ctx, input); err != nil {
+		return fmt.Errorf("failed to delete token: %w", err)
+	}
 	return nil
 }
 

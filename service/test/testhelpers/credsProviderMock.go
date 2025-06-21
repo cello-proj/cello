@@ -16,58 +16,58 @@ var _ credentials.Provider = &CredsProviderMock{}
 
 // CredsProviderMock is a mock implementation of credentials.Provider.
 //
-// 	func TestSomethingThatUsesProvider(t *testing.T) {
+//	func TestSomethingThatUsesProvider(t *testing.T) {
 //
-// 		// make and configure a mocked credentials.Provider
-// 		mockedProvider := &CredsProviderMock{
-// 			CreateProjectFunc: func(s string) (types.Token, error) {
-// 				panic("mock out the CreateProject method")
-// 			},
-// 			CreateTargetFunc: func(s string, target types.Target) error {
-// 				panic("mock out the CreateTarget method")
-// 			},
-// 			CreateTokenFunc: func(s string) (types.Token, error) {
-// 				panic("mock out the CreateToken method")
-// 			},
-// 			DeleteProjectFunc: func(s string) error {
-// 				panic("mock out the DeleteProject method")
-// 			},
-// 			DeleteProjectTokenFunc: func(s1 string, s2 string) error {
-// 				panic("mock out the DeleteProjectToken method")
-// 			},
-// 			DeleteTargetFunc: func(s1 string, s2 string) error {
-// 				panic("mock out the DeleteTarget method")
-// 			},
-// 			GetProjectFunc: func(s string) (responses.GetProject, error) {
-// 				panic("mock out the GetProject method")
-// 			},
-// 			GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
-// 				panic("mock out the GetProjectToken method")
-// 			},
-// 			GetTargetFunc: func(s1 string, s2 string) (types.Target, error) {
-// 				panic("mock out the GetTarget method")
-// 			},
-// 			GetTokenFunc: func() (string, error) {
-// 				panic("mock out the GetToken method")
-// 			},
-// 			ListTargetsFunc: func(s string) ([]string, error) {
-// 				panic("mock out the ListTargets method")
-// 			},
-// 			ProjectExistsFunc: func(s string) (bool, error) {
-// 				panic("mock out the ProjectExists method")
-// 			},
-// 			TargetExistsFunc: func(s1 string, s2 string) (bool, error) {
-// 				panic("mock out the TargetExists method")
-// 			},
-// 			UpdateTargetFunc: func(s string, target types.Target) error {
-// 				panic("mock out the UpdateTarget method")
-// 			},
-// 		}
+//		// make and configure a mocked credentials.Provider
+//		mockedProvider := &CredsProviderMock{
+//			CreateProjectFunc: func(s string) (types.Token, error) {
+//				panic("mock out the CreateProject method")
+//			},
+//			CreateTargetFunc: func(s string, target types.Target) error {
+//				panic("mock out the CreateTarget method")
+//			},
+//			CreateTokenFunc: func(s string) (types.Token, error) {
+//				panic("mock out the CreateToken method")
+//			},
+//			DeleteProjectFunc: func(s string) error {
+//				panic("mock out the DeleteProject method")
+//			},
+//			DeleteProjectTokenFunc: func(s1 string, s2 string) error {
+//				panic("mock out the DeleteProjectToken method")
+//			},
+//			DeleteTargetFunc: func(s1 string, s2 string) error {
+//				panic("mock out the DeleteTarget method")
+//			},
+//			GetProjectFunc: func(s string) (responses.GetProject, error) {
+//				panic("mock out the GetProject method")
+//			},
+//			GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
+//				panic("mock out the GetProjectToken method")
+//			},
+//			GetTargetFunc: func(s1 string, s2 string) (types.Target, error) {
+//				panic("mock out the GetTarget method")
+//			},
+//			GetTokenFunc: func() (string, error) {
+//				panic("mock out the GetToken method")
+//			},
+//			ListTargetsFunc: func(s string) ([]string, error) {
+//				panic("mock out the ListTargets method")
+//			},
+//			ProjectExistsFunc: func(s string) (bool, error) {
+//				panic("mock out the ProjectExists method")
+//			},
+//			TargetExistsFunc: func(s1 string, s2 string) (bool, error) {
+//				panic("mock out the TargetExists method")
+//			},
+//			UpdateTargetFunc: func(s string, target types.Target) error {
+//				panic("mock out the UpdateTarget method")
+//			},
+//		}
 //
-// 		// use mockedProvider in code that requires credentials.Provider
-// 		// and then make assertions.
+//		// use mockedProvider in code that requires credentials.Provider
+//		// and then make assertions.
 //
-// 	}
+//	}
 type CredsProviderMock struct {
 	// CreateProjectFunc mocks the CreateProject method.
 	CreateProjectFunc func(s string) (types.Token, error)
@@ -230,7 +230,8 @@ func (mock *CredsProviderMock) CreateProject(s string) (types.Token, error) {
 
 // CreateProjectCalls gets all the calls that were made to CreateProject.
 // Check the length with:
-//     len(mockedProvider.CreateProjectCalls())
+//
+//	len(mockedProvider.CreateProjectCalls())
 func (mock *CredsProviderMock) CreateProjectCalls() []struct {
 	S string
 } {
@@ -263,7 +264,8 @@ func (mock *CredsProviderMock) CreateTarget(s string, target types.Target) error
 
 // CreateTargetCalls gets all the calls that were made to CreateTarget.
 // Check the length with:
-//     len(mockedProvider.CreateTargetCalls())
+//
+//	len(mockedProvider.CreateTargetCalls())
 func (mock *CredsProviderMock) CreateTargetCalls() []struct {
 	S      string
 	Target types.Target
@@ -296,7 +298,8 @@ func (mock *CredsProviderMock) CreateToken(s string) (types.Token, error) {
 
 // CreateTokenCalls gets all the calls that were made to CreateToken.
 // Check the length with:
-//     len(mockedProvider.CreateTokenCalls())
+//
+//	len(mockedProvider.CreateTokenCalls())
 func (mock *CredsProviderMock) CreateTokenCalls() []struct {
 	S string
 } {
@@ -327,7 +330,8 @@ func (mock *CredsProviderMock) DeleteProject(s string) error {
 
 // DeleteProjectCalls gets all the calls that were made to DeleteProject.
 // Check the length with:
-//     len(mockedProvider.DeleteProjectCalls())
+//
+//	len(mockedProvider.DeleteProjectCalls())
 func (mock *CredsProviderMock) DeleteProjectCalls() []struct {
 	S string
 } {
@@ -360,7 +364,8 @@ func (mock *CredsProviderMock) DeleteProjectToken(s1 string, s2 string) error {
 
 // DeleteProjectTokenCalls gets all the calls that were made to DeleteProjectToken.
 // Check the length with:
-//     len(mockedProvider.DeleteProjectTokenCalls())
+//
+//	len(mockedProvider.DeleteProjectTokenCalls())
 func (mock *CredsProviderMock) DeleteProjectTokenCalls() []struct {
 	S1 string
 	S2 string
@@ -395,7 +400,8 @@ func (mock *CredsProviderMock) DeleteTarget(s1 string, s2 string) error {
 
 // DeleteTargetCalls gets all the calls that were made to DeleteTarget.
 // Check the length with:
-//     len(mockedProvider.DeleteTargetCalls())
+//
+//	len(mockedProvider.DeleteTargetCalls())
 func (mock *CredsProviderMock) DeleteTargetCalls() []struct {
 	S1 string
 	S2 string
@@ -428,7 +434,8 @@ func (mock *CredsProviderMock) GetProject(s string) (responses.GetProject, error
 
 // GetProjectCalls gets all the calls that were made to GetProject.
 // Check the length with:
-//     len(mockedProvider.GetProjectCalls())
+//
+//	len(mockedProvider.GetProjectCalls())
 func (mock *CredsProviderMock) GetProjectCalls() []struct {
 	S string
 } {
@@ -461,7 +468,8 @@ func (mock *CredsProviderMock) GetProjectToken(s1 string, s2 string) (types.Proj
 
 // GetProjectTokenCalls gets all the calls that were made to GetProjectToken.
 // Check the length with:
-//     len(mockedProvider.GetProjectTokenCalls())
+//
+//	len(mockedProvider.GetProjectTokenCalls())
 func (mock *CredsProviderMock) GetProjectTokenCalls() []struct {
 	S1 string
 	S2 string
@@ -496,7 +504,8 @@ func (mock *CredsProviderMock) GetTarget(s1 string, s2 string) (types.Target, er
 
 // GetTargetCalls gets all the calls that were made to GetTarget.
 // Check the length with:
-//     len(mockedProvider.GetTargetCalls())
+//
+//	len(mockedProvider.GetTargetCalls())
 func (mock *CredsProviderMock) GetTargetCalls() []struct {
 	S1 string
 	S2 string
@@ -526,7 +535,8 @@ func (mock *CredsProviderMock) GetToken() (string, error) {
 
 // GetTokenCalls gets all the calls that were made to GetToken.
 // Check the length with:
-//     len(mockedProvider.GetTokenCalls())
+//
+//	len(mockedProvider.GetTokenCalls())
 func (mock *CredsProviderMock) GetTokenCalls() []struct {
 } {
 	var calls []struct {
@@ -555,7 +565,8 @@ func (mock *CredsProviderMock) ListTargets(s string) ([]string, error) {
 
 // ListTargetsCalls gets all the calls that were made to ListTargets.
 // Check the length with:
-//     len(mockedProvider.ListTargetsCalls())
+//
+//	len(mockedProvider.ListTargetsCalls())
 func (mock *CredsProviderMock) ListTargetsCalls() []struct {
 	S string
 } {
@@ -586,7 +597,8 @@ func (mock *CredsProviderMock) ProjectExists(s string) (bool, error) {
 
 // ProjectExistsCalls gets all the calls that were made to ProjectExists.
 // Check the length with:
-//     len(mockedProvider.ProjectExistsCalls())
+//
+//	len(mockedProvider.ProjectExistsCalls())
 func (mock *CredsProviderMock) ProjectExistsCalls() []struct {
 	S string
 } {
@@ -619,7 +631,8 @@ func (mock *CredsProviderMock) TargetExists(s1 string, s2 string) (bool, error) 
 
 // TargetExistsCalls gets all the calls that were made to TargetExists.
 // Check the length with:
-//     len(mockedProvider.TargetExistsCalls())
+//
+//	len(mockedProvider.TargetExistsCalls())
 func (mock *CredsProviderMock) TargetExistsCalls() []struct {
 	S1 string
 	S2 string
@@ -654,7 +667,8 @@ func (mock *CredsProviderMock) UpdateTarget(s string, target types.Target) error
 
 // UpdateTargetCalls gets all the calls that were made to UpdateTarget.
 // Check the length with:
-//     len(mockedProvider.UpdateTargetCalls())
+//
+//	len(mockedProvider.UpdateTargetCalls())
 func (mock *CredsProviderMock) UpdateTargetCalls() []struct {
 	S      string
 	Target types.Target

@@ -14,19 +14,19 @@ var _ git.Client = &GitClientMock{}
 
 // GitClientMock is a mock implementation of git.Client.
 //
-// 	func TestSomethingThatUsesClient(t *testing.T) {
+//	func TestSomethingThatUsesClient(t *testing.T) {
 //
-// 		// make and configure a mocked git.Client
-// 		mockedClient := &GitClientMock{
-// 			GetManifestFileFunc: func(repository string, commitHash string, path string) ([]byte, error) {
-// 				panic("mock out the GetManifestFile method")
-// 			},
-// 		}
+//		// make and configure a mocked git.Client
+//		mockedClient := &GitClientMock{
+//			GetManifestFileFunc: func(repository string, commitHash string, path string) ([]byte, error) {
+//				panic("mock out the GetManifestFile method")
+//			},
+//		}
 //
-// 		// use mockedClient in code that requires git.Client
-// 		// and then make assertions.
+//		// use mockedClient in code that requires git.Client
+//		// and then make assertions.
 //
-// 	}
+//	}
 type GitClientMock struct {
 	// GetManifestFileFunc mocks the GetManifestFile method.
 	GetManifestFileFunc func(repository string, commitHash string, path string) ([]byte, error)
@@ -68,7 +68,8 @@ func (mock *GitClientMock) GetManifestFile(repository string, commitHash string,
 
 // GetManifestFileCalls gets all the calls that were made to GetManifestFile.
 // Check the length with:
-//     len(mockedClient.GetManifestFileCalls())
+//
+//	len(mockedClient.GetManifestFileCalls())
 func (mock *GitClientMock) GetManifestFileCalls() []struct {
 	Repository string
 	CommitHash string

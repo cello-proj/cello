@@ -16,31 +16,31 @@ var _ workflow.Workflow = &WorkflowMock{}
 
 // WorkflowMock is a mock implementation of workflow.Workflow.
 //
-// 	func TestSomethingThatUsesWorkflow(t *testing.T) {
+//	func TestSomethingThatUsesWorkflow(t *testing.T) {
 //
-// 		// make and configure a mocked workflow.Workflow
-// 		mockedWorkflow := &WorkflowMock{
-// 			ListStatusFunc: func(ctx context.Context) ([]workflow.Status, error) {
-// 				panic("mock out the ListStatus method")
-// 			},
-// 			LogStreamFunc: func(ctx context.Context, workflowName string, data http.ResponseWriter) error {
-// 				panic("mock out the LogStream method")
-// 			},
-// 			LogsFunc: func(ctx context.Context, workflowName string) (*workflow.Logs, error) {
-// 				panic("mock out the Logs method")
-// 			},
-// 			StatusFunc: func(ctx context.Context, workflowName string) (*workflow.Status, error) {
-// 				panic("mock out the Status method")
-// 			},
-// 			SubmitFunc: func(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
-// 				panic("mock out the Submit method")
-// 			},
-// 		}
+//		// make and configure a mocked workflow.Workflow
+//		mockedWorkflow := &WorkflowMock{
+//			ListStatusFunc: func(ctx context.Context) ([]workflow.Status, error) {
+//				panic("mock out the ListStatus method")
+//			},
+//			LogStreamFunc: func(ctx context.Context, workflowName string, data http.ResponseWriter) error {
+//				panic("mock out the LogStream method")
+//			},
+//			LogsFunc: func(ctx context.Context, workflowName string) (*workflow.Logs, error) {
+//				panic("mock out the Logs method")
+//			},
+//			StatusFunc: func(ctx context.Context, workflowName string) (*workflow.Status, error) {
+//				panic("mock out the Status method")
+//			},
+//			SubmitFunc: func(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
+//				panic("mock out the Submit method")
+//			},
+//		}
 //
-// 		// use mockedWorkflow in code that requires workflow.Workflow
-// 		// and then make assertions.
+//		// use mockedWorkflow in code that requires workflow.Workflow
+//		// and then make assertions.
 //
-// 	}
+//	}
 type WorkflowMock struct {
 	// ListStatusFunc mocks the ListStatus method.
 	ListStatusFunc func(ctx context.Context) ([]workflow.Status, error)
@@ -124,7 +124,8 @@ func (mock *WorkflowMock) ListStatus(ctx context.Context) ([]workflow.Status, er
 
 // ListStatusCalls gets all the calls that were made to ListStatus.
 // Check the length with:
-//     len(mockedWorkflow.ListStatusCalls())
+//
+//	len(mockedWorkflow.ListStatusCalls())
 func (mock *WorkflowMock) ListStatusCalls() []struct {
 	Ctx context.Context
 } {
@@ -159,7 +160,8 @@ func (mock *WorkflowMock) LogStream(ctx context.Context, workflowName string, da
 
 // LogStreamCalls gets all the calls that were made to LogStream.
 // Check the length with:
-//     len(mockedWorkflow.LogStreamCalls())
+//
+//	len(mockedWorkflow.LogStreamCalls())
 func (mock *WorkflowMock) LogStreamCalls() []struct {
 	Ctx          context.Context
 	WorkflowName string
@@ -196,7 +198,8 @@ func (mock *WorkflowMock) Logs(ctx context.Context, workflowName string) (*workf
 
 // LogsCalls gets all the calls that were made to Logs.
 // Check the length with:
-//     len(mockedWorkflow.LogsCalls())
+//
+//	len(mockedWorkflow.LogsCalls())
 func (mock *WorkflowMock) LogsCalls() []struct {
 	Ctx          context.Context
 	WorkflowName string
@@ -231,7 +234,8 @@ func (mock *WorkflowMock) Status(ctx context.Context, workflowName string) (*wor
 
 // StatusCalls gets all the calls that were made to Status.
 // Check the length with:
-//     len(mockedWorkflow.StatusCalls())
+//
+//	len(mockedWorkflow.StatusCalls())
 func (mock *WorkflowMock) StatusCalls() []struct {
 	Ctx          context.Context
 	WorkflowName string
@@ -270,7 +274,8 @@ func (mock *WorkflowMock) Submit(ctx context.Context, from string, parameters ma
 
 // SubmitCalls gets all the calls that were made to Submit.
 // Check the length with:
-//     len(mockedWorkflow.SubmitCalls())
+//
+//	len(mockedWorkflow.SubmitCalls())
 func (mock *WorkflowMock) SubmitCalls() []struct {
 	Ctx        context.Context
 	From       string

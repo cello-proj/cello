@@ -1089,6 +1089,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	level.Debug(l).Log("message", "checking if project exists")
+	// TODO do we need to check for ddb?
 	projectExists, err := h.projectExists(ctx, l, cp, w, projectName)
 
 	if err != nil || !projectExists {
@@ -1118,6 +1119,8 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		level.Warn(l).Log("message", "token does not exist in DB", "error", err)
 	}
 
+	// TODO do we need to also check for ddb?
+
 	// delete token from DB and CP
 	// only delete token if exists in DB
 	if !dbProjectToken.IsEmpty() {
@@ -1126,6 +1129,17 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 			level.Error(l).Log("message", "error deleting token from database", "error", err)
 			h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
 			return
+		}
+
+		// Continue execution even if it fails
+		if err := h.ddbClient.DeleteTokenEntryByProject(ctx, projectName, tokenID); err != nil {
+			// Check if the error is due to token not found
+			if errors.Is(err, db.ErrTokenNotFound) {
+				level.Warn(l).Log("message", "token does not exist in db", "db-type", "dynamo", "error", err)
+			} else {
+				level.Error(l).Log("message", "error deleting token from ddb", "db-type", "dynamo", "error", err)
+			}
+			// Continue execution regardless
 		}
 	}
 
