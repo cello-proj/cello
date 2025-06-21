@@ -203,6 +203,17 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Read from ddb and continue execution even if it fails
+	level.Debug(l).Log("message", "reading project from ddb", "db-type", "dynamo")
+	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+		if errors.Is(err, fmt.Errorf("project not found")) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error reading project from ddb", "db-type", "dynamo", "error", err)
+		}
+		// Continue execution even if DynamoDB fails
+	}
+
 	cwr, err := h.loadCreateWorkflowRequestFromGit(projectEntry.Repository, cgwr.CommitHash, cgwr.Path)
 	if err != nil {
 		level.Error(l).Log("message", "error loading workflow data from git", "error", err)

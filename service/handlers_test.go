@@ -1057,6 +1057,14 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 					}, nil
 				},
 			},
+			ddbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
 			gitMock: &th.GitClientMock{
 				GetManifestFileFunc: func(repository, commitHash, path string) ([]byte, error) {
 					return loadFileBytes("TestCreateWorkflow/can_create_workflow_request.json")
@@ -1082,6 +1090,14 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
 			},
 			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{
 						ProjectID:  "project1",
@@ -1126,6 +1142,80 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 			respFile:   "TestCreateWorkflowFromGit/bad_response.json",
 			method:     "POST",
 			url:        "/projects/project1/targets/target1/operations",
+		},
+		{
+			name:       "ddb error but continues",
+			req:        loadJSON(t, "TestCreateWorkflowFromGit/good_request.json"),
+			want:       http.StatusOK,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateWorkflowFromGit/good_response.json",
+			method:     "POST",
+			url:        "/projects/project1/targets/target1/operations",
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{}, errors.New("ddb error")
+				},
+			},
+			gitMock: &th.GitClientMock{
+				GetManifestFileFunc: func(repository, commitHash, path string) ([]byte, error) {
+					return loadFileBytes("TestCreateWorkflow/can_create_workflow_request.json")
+				},
+			},
+			wfMock: &th.WorkflowMock{
+				SubmitFunc: func(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
+					return workflowResponse, nil
+				},
+			},
+		},
+		{
+			name:       "ddb project not found but continues",
+			req:        loadJSON(t, "TestCreateWorkflowFromGit/good_request.json"),
+			want:       http.StatusOK,
+			authHeader: userAuthHeader,
+			respFile:   "TestCreateWorkflowFromGit/good_response.json",
+			method:     "POST",
+			url:        "/projects/project1/targets/target1/operations",
+			cpMock: &th.CredsProviderMock{
+				GetTokenFunc:      func() (string, error) { return testPassword, nil },
+				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
+				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
+			},
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{
+						ProjectID:  "project1",
+						Repository: "repo",
+					}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{}, fmt.Errorf("project not found")
+				},
+			},
+			gitMock: &th.GitClientMock{
+				GetManifestFileFunc: func(repository, commitHash, path string) ([]byte, error) {
+					return loadFileBytes("TestCreateWorkflow/can_create_workflow_request.json")
+				},
+			},
+			wfMock: &th.WorkflowMock{
+				SubmitFunc: func(ctx context.Context, from string, parameters map[string]string, labels map[string]string) (string, error) {
+					return workflowResponse, nil
+				},
+			},
 		},
 		// TODO with admin credentials should fail
 	}
