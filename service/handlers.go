@@ -687,6 +687,12 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	level.Debug(l).Log("message", "getting project from ddb", "db-type", "dynamo")
+	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+		level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
+		// Continue execution even if DynamoDB fails
+	}
+
 	resp := responses.GetProject{
 		Name:       projectName,
 		Repository: projectEntry.Repository,

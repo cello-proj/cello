@@ -625,6 +625,11 @@ func TestGetProject(t *testing.T) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
+			ddbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+			},
 		},
 		{
 			name:       "project does not exist",
@@ -635,6 +640,23 @@ func TestGetProject(t *testing.T) {
 			dbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{}, upper.ErrNoMoreRows
+				},
+			},
+		},
+		{
+			name:       "error getting project from ddb but continues",
+			want:       http.StatusOK,
+			authHeader: adminAuthHeader,
+			method:     "GET",
+			url:        "/projects/project1",
+			dbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
+				},
+			},
+			ddbMock: &th.DBClientMock{
+				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
+					return db.ProjectEntry{}, errors.New("error")
 				},
 			},
 		},
