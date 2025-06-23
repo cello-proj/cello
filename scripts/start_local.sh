@@ -35,46 +35,53 @@ if [ -z "$CELLO_DYNAMODB_ENDPOINT" ]; then
     export CELLO_DYNAMODB_ENDPOINT=http://localhost:8000
 fi
 
-# We setup DynamoDB local first as we will need real AWS credentials in order
-# for Vault to work properly
-export AWS_ACCESS_KEY_ID=cello
-export AWS_SECRET_ACCESS_KEY=cello
+# Only setup DynamoDB local if we're using localhost
+if [[ "$CELLO_DYNAMODB_ENDPOINT" == *"localhost"* ]] || [[ "$CELLO_DYNAMODB_ENDPOINT" == *"127.0.0.1"* ]]; then
+    echo "Using local DynamoDB, setting up local instance..."
 
-# Start DynamoDB local
-echo "Starting DynamoDB local..."
-docker stop dynamodb-local 2>/dev/null || true
-docker rm dynamodb-local 2>/dev/null || true
-docker run -d \
-    --name dynamodb-local \
-    -p 8000:8000 \
-    -e DDB_LOCAL_TELEMETRY=0 \
-    amazon/dynamodb-local:latest \
-    "-jar" "DynamoDBLocal.jar" "-inMemory" "-sharedDb"
+    # We setup DynamoDB local first as we will need real AWS credentials in order
+    # for Vault to work properly
+    export AWS_ACCESS_KEY_ID=cello
+    export AWS_SECRET_ACCESS_KEY=cello
 
-# Wait for DynamoDB to be ready
-sleep 2
+    # Start DynamoDB local
+    echo "Starting DynamoDB local..."
+    docker stop dynamodb-local 2>/dev/null || true
+    docker rm dynamodb-local 2>/dev/null || true
+    docker run -d \
+        --name dynamodb-local \
+        -p 8000:8000 \
+        -e DDB_LOCAL_TELEMETRY=0 \
+        amazon/dynamodb-local:latest \
+        "-jar" "DynamoDBLocal.jar" "-inMemory" "-sharedDb"
 
-echo "Creating DynamoDB table..."
-bash scripts/create_dynamodb_table.sh
+    # Wait for DynamoDB to be ready
+    sleep 2
 
-while : ; do
-  echo "Waiting for DynamoDB table to be ready..."
-  status=$(aws dynamodb describe-table \
-    --endpoint-url http://localhost:8000 \
-    --region us-west-2 \
-    --table-name cello \
-    --query 'Table.TableStatus' \
-    --output text 2>/dev/null || echo "CREATING")
-  if [ "$status" == "ACTIVE" ]; then
-    break
-  fi
-  sleep 2
-done
-echo "DynamoDB table is ready."
+    echo "Creating DynamoDB table..."
+    bash scripts/create_dynamodb_table.sh
 
-# unset our dummy credentials so vault can work properly
-unset AWS_ACCESS_KEY_ID
-unset AWS_SECRET_ACCESS_KEY
+    while : ; do
+      echo "Waiting for DynamoDB table to be ready..."
+      status=$(aws dynamodb describe-table \
+        --endpoint-url http://localhost:8000 \
+        --region us-west-2 \
+        --table-name cello \
+        --query 'Table.TableStatus' \
+        --output text 2>/dev/null || echo "CREATING")
+      if [ "$status" == "ACTIVE" ]; then
+        break
+      fi
+      sleep 2
+    done
+    echo "DynamoDB table is ready."
+
+    # unset our dummy credentials so vault can work properly
+    unset AWS_ACCESS_KEY_ID
+    unset AWS_SECRET_ACCESS_KEY
+else
+    echo "Using remote DynamoDB at $CELLO_DYNAMODB_ENDPOINT, skipping local setup..."
+fi
 
 # Vault was not loading credentials from the default chain, try to fetch from profile
 if [ -n "${AWS_PROFILE}" ]; then
