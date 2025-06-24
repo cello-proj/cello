@@ -100,7 +100,7 @@ Storing `properties` as a map (or JSON string) allows for easy extension of `Tar
 2. **List All Tokens for a Project**
 
    - Query by `pk = "PROJECT#<project_name>"`
-   - Filter or iterate over items where `sk` begins with `"TOKEN#"`
+   - Filter items where `sk` begins with `"TOKEN#"`
 
 3. **Get a Single Token**
 
@@ -114,7 +114,7 @@ Storing `properties` as a map (or JSON string) allows for easy extension of `Tar
 5. **List All Targets for a Project** (tbd)
 
    - Query by `pk = "PROJECT#<project_name>"`
-   - Filter or iterate over items where `sk` begins with `"TARGET#"`.
+   - Filter items where `sk` begins with `"TARGET#"`.
 
 6. **Get/Add/Update a Single Target** (tbd)
 
