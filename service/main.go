@@ -66,7 +66,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ddbClient, err := db.NewDynamoDBClient(env.DynamoDBTableName, env.DynamoDBEndpoint, env.AssumeRoleARN)
+	ddbClient, err := db.NewDynamoDBClient(env.DynamoDBTableName, env.DynamoDBEndpoint, env.DynamoDBAssumeRoleARN)
 	if err != nil {
 		level.Error(errLogger).Log("message", "error creating ddb client", "error", err)
 		os.Exit(1)

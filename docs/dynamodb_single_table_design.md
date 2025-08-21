@@ -42,7 +42,6 @@ Example:
 • **sk**: `"TOKEN#<token_id>"`
 • **Additional Attributes**:
 
-- `token_id` (string)
 - `created_at` (ISO-8601 date/time string)
 - `expires_at` (ISO-8601 date/time string)
 - `hashed_token` (string containing the hashed token value) (tbd - we are not implementing this right now. this is not currently stored; would be additional functionality to implement)
@@ -53,7 +52,6 @@ Example:
 {
   "pk": "PROJECT#myproj",
   "sk": "TOKEN#tkn-123",
-  "token_id": "tkn-123",
   "created_at": "2023-06-15T12:00:00Z",
   "expires_at": "2023-12-15T12:00:00Z",
   "hashed_token": "<hashed-token-string>"
@@ -148,7 +146,7 @@ The Cello service optionally supports IAM role assumption to access the DynamoDB
 
 ### Configuration
 
-The service uses the `CELLO_ASSUME_ROLE_ARN` environment variable to specify the IAM role to assume when accessing DynamoDB. If this environment variable is not set, the service will use the default AWS credentials lookup mechanisms.
+The service uses the `CELLO_DYNAMODB_ASSUME_ROLE_ARN` environment variable to specify the IAM role to assume when accessing DynamoDB. If this environment variable is not set, the service will use the default AWS credentials lookup mechanisms.
 
 ## CloudFormation Resource
 

@@ -17,28 +17,28 @@ const legacyAppPrefix = "ARGO_CLOUDOPS"
 const appPrefix = "CELLO"
 
 type Vars struct {
-	AdminSecret       string   `split_words:"true" required:"true"`
-	VaultRole         string   `envconfig:"VAULT_ROLE" required:"true"`
-	VaultSecret       string   `envconfig:"VAULT_SECRET" required:"true"`
-	VaultAddress      string   `envconfig:"VAULT_ADDR" required:"true"`
-	ArgoAddress       string   `envconfig:"ARGO_ADDR" required:"true"`
-	ArgoNamespace     string   `envconfig:"WORKFLOW_EXECUTION_NAMESPACE" default:"argo"`
-	ConfigFilePath    string   `envconfig:"CONFIG" default:"cello.yaml"`
-	SSHPEMFile        string   `envconfig:"SSH_PEM_FILE"`
-	GitAuthMethod     string   `split_words:"true" required:"true"`
-	GitHTTPSUser      string   `envconfig:"GIT_HTTPS_USER"`
-	GitHTTPSPass      string   `envconfig:"GIT_HTTPS_PASS"`
-	LogLevel          string   `split_words:"true"`
-	Port              int      `default:"8443"`
-	DBHost            string   `split_words:"true" required:"true"`
-	DBUser            string   `split_words:"true" required:"true"`
-	DBPassword        string   `split_words:"true" required:"true"`
-	DBName            string   `split_words:"true" required:"true"`
-	DBOptions         string   `split_words:"true"`
-	AssumeRoleARN     string   `envconfig:"CELLO_ASSUME_ROLE_ARN"`
-	DynamoDBEndpoint  string   `envconfig:"CELLO_DYNAMODB_ENDPOINT"`
-	DynamoDBTableName string   `envconfig:"CELLO_DYNAMODB_TABLE_NAME" required:"true"`
-	ImageURIs         []string `envconfig:"IMAGE_URIS"`
+	AdminSecret           string   `split_words:"true" required:"true"`
+	VaultRole             string   `envconfig:"VAULT_ROLE" required:"true"`
+	VaultSecret           string   `envconfig:"VAULT_SECRET" required:"true"`
+	VaultAddress          string   `envconfig:"VAULT_ADDR" required:"true"`
+	ArgoAddress           string   `envconfig:"ARGO_ADDR" required:"true"`
+	ArgoNamespace         string   `envconfig:"WORKFLOW_EXECUTION_NAMESPACE" default:"argo"`
+	ConfigFilePath        string   `envconfig:"CONFIG" default:"cello.yaml"`
+	SSHPEMFile            string   `envconfig:"SSH_PEM_FILE"`
+	GitAuthMethod         string   `split_words:"true" required:"true"`
+	GitHTTPSUser          string   `envconfig:"GIT_HTTPS_USER"`
+	GitHTTPSPass          string   `envconfig:"GIT_HTTPS_PASS"`
+	LogLevel              string   `split_words:"true"`
+	Port                  int      `default:"8443"`
+	DBHost                string   `split_words:"true" required:"true"`
+	DBUser                string   `split_words:"true" required:"true"`
+	DBPassword            string   `split_words:"true" required:"true"`
+	DBName                string   `split_words:"true" required:"true"`
+	DBOptions             string   `split_words:"true"`
+	DynamoDBAssumeRoleARN string   `envconfig:"CELLO_DYNAMODB_ASSUME_ROLE_ARN"`
+	DynamoDBEndpoint      string   `envconfig:"CELLO_DYNAMODB_ENDPOINT"`
+	DynamoDBTableName     string   `envconfig:"CELLO_DYNAMODB_TABLE_NAME" required:"true"`
+	ImageURIs             []string `envconfig:"IMAGE_URIS"`
 }
 
 var (
