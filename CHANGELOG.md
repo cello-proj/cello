@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+* Add initial support for silently writing to DynamoDB
 * Upgraded aws-sdk-go to v2
 
 ## [0.20.0]
