@@ -1375,7 +1375,7 @@ func TestDeleteToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
 				},
 			},
@@ -1416,7 +1416,7 @@ func TestDeleteToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{}, nil
 				},
 			},
@@ -1447,7 +1447,7 @@ func TestDeleteToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{}, nil
 				},
 			},
@@ -1478,7 +1478,7 @@ func TestDeleteToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{}, nil
 				},
 			},
@@ -1510,7 +1510,7 @@ func TestDeleteToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
 				},
 			},
@@ -1543,7 +1543,7 @@ func TestDeleteToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
 				},
 			},
@@ -1578,7 +1578,7 @@ func TestDeleteToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
 					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
 				},
 			},

@@ -1152,7 +1152,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 
 	// Check if token exists in ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "checking if token exists in ddb")
-	ddbProjectToken, err := h.ddbClient.ReadTokenEntry(ctx, tokenID)
+	ddbProjectToken, err := h.ddbClient.ReadTokenEntryByProject(ctx, projectName, tokenID)
 	if err != nil {
 		if errors.Is(err, db.ErrTokenNotFound) {
 			level.Warn(l).Log("message", "token does not exist in ddb", "db-type", "dynamo", "error", err)

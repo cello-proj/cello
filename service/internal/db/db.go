@@ -44,8 +44,10 @@ type Client interface {
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	CreateTokenEntry(ctx context.Context, token types.Token) error
 	DeleteTokenEntry(ctx context.Context, token string) error
+	// This only exists for dynamodb, as the token ID is the sort key which also requires the project ID as the primary key.
 	DeleteTokenEntryByProject(ctx context.Context, project, token string) error
 	ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error)
+	// This only exists for dynamodb, as the token ID is the sort key which also requires the project ID as the primary key.
 	ReadTokenEntryByProject(ctx context.Context, project, token string) (TokenEntry, error)
 	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 	Health(ctx context.Context) error
@@ -210,7 +212,7 @@ func (d SQLClient) DeleteTokenEntryByProject(ctx context.Context, project, token
 }
 
 func (d SQLClient) ReadTokenEntryByProject(ctx context.Context, project, token string) (TokenEntry, error) {
-	// For SQL, project is not needed, just read by token ID
+	// For postgres project is not needed; just read by token ID
 	return d.ReadTokenEntry(ctx, token)
 }
 
@@ -473,11 +475,17 @@ func (d *DynamoDBClient) ReadTokenEntryByProject(ctx context.Context, project, t
 }
 
 // ReadTokenEntry should not be used. Use ReadTokenEntryByProject instead.
+// This is due to a difference in how the data is stored in postgres vs dynamodb.
+// In postgres, the token ID is the primary key, while in dynamodb, the token ID is
+// the sort key which requires the project ID as the primary key.
 func (d *DynamoDBClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error) {
 	return TokenEntry{}, fmt.Errorf("ReadTokenEntry should not be used. Use ReadTokenEntryByProject instead")
 }
 
 // DeleteTokenEntry should not be used. Use DeleteTokenEntryByProject instead.
+// This is due to a difference in how the data is stored in postgres vs dynamodb.
+// In postgres, the token ID is the primary key, while in dynamodb, the token ID is
+// the sort key which requires the project ID as the primary key.
 func (d *DynamoDBClient) DeleteTokenEntry(ctx context.Context, token string) error {
 	return fmt.Errorf("DeleteTokenEntry should not be used. Use DeleteTokenEntryByProject instead")
 }
