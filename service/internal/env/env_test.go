@@ -26,6 +26,7 @@ var prefixedEnvVars = map[string]string{
 	"_DB_PASSWORD":                  "1234",
 	"_DB_OPTIONS":                   "sslrootcert=rds-ca.pem sslmode=verify-full",
 	"_DYNAMODB_ASSUME_ROLE_ARN":     "arn:aws:iam::123456789012:role/test-role",
+	"_DYNAMODB_ENDPOINT":            "http://localhost:8000",
 	"_DYNAMODB_TABLE_NAME":          "cello",
 }
 
@@ -85,6 +86,7 @@ func TestGetEnv(t *testing.T) {
 	assert.Equal(t, "sslrootcert=rds-ca.pem sslmode=verify-full", vars.DBOptions)
 	assert.Equal(t, "cello", vars.DynamoDBTableName)
 	assert.Equal(t, "arn:aws:iam::123456789012:role/test-role", vars.DynamoDBAssumeRoleARN)
+	assert.Equal(t, "http://localhost:8000", vars.DynamoDBEndpoint)
 }
 
 func TestDefaults(t *testing.T) {
@@ -104,6 +106,7 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, "argo", vars.ArgoNamespace)
 	assert.Equal(t, "cello.yaml", vars.ConfigFilePath)
 	assert.Equal(t, 8443, vars.Port)
+	assert.Equal(t, "", vars.DynamoDBEndpoint)
 }
 
 func TestValidations(t *testing.T) {
