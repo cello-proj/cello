@@ -178,7 +178,9 @@ The migration approach from PostgreSQL to DynamoDB will be:
 - Create the DynamoDB infrastructure
 - Add new config to Cello deployment
 - Deploy Cello code which starts writing (silently) to ddb in non-error mode (just logging)
-- Once verified as good, then perform batch migration of data from psql to ddb (tooling tbd)
+- Once verified as good, then perform batch migration of data from psql to ddb using our migration scripts:
+  - `scripts/migrate_dump_postgres.py` - Dumps data from PostgreSQL
+  - `scripts/migrate_load_dynamodb.py` - Loads data into DynamoDB
 - Once batch migration is complete, deploy Cello code which performs compares on reads and ensures they match (code tbd)
 - Once both are returning correct data, deploy Cello code which removes comparison code and only writes to ddb (code tbd)
 - Delete psql code
