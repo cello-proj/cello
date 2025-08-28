@@ -211,7 +211,6 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		} else {
 			level.Warn(l).Log("message", "error reading project from ddb", "db-type", "dynamo", "error", err)
 		}
-		// Continue execution even if DynamoDB fails
 	}
 
 	cwr, err := h.loadCreateWorkflowRequestFromGit(projectEntry.Repository, cgwr.CommitHash, cgwr.Path)
@@ -542,7 +541,6 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 		} else {
 			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
 		}
-		// Continue execution even if DynamoDB fails
 	}
 
 	// Checking database
@@ -637,7 +635,6 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		level.Warn(l).Log("message", "error inserting project to db", "db-type", "dynamo", "error", err)
-		// Continue execution
 	}
 
 	level.Debug(l).Log("message", "creating project")
@@ -659,7 +656,6 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	// Create token in ddb, continue execution even if it fails
 	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
 		level.Warn(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
-		// Continue execution
 	}
 
 	level.Debug(l).Log("message", "retrieving Cello token")
@@ -709,6 +705,7 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Query ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "getting project from ddb", "db-type", "dynamo")
 	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
 		if errors.Is(err, db.ErrProjectNotFound) {
@@ -716,7 +713,6 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 		} else {
 			level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
 		}
-		// Continue execution even if DynamoDB fails
 	}
 
 	resp := responses.GetProject{
@@ -805,7 +801,6 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	// Delete project from ddb, continue execution even if it fails
 	if err := h.ddbClient.DeleteProjectEntry(ctx, projectName); err != nil {
 		level.Warn(l).Log("message", "error deleting project in database", "db-type", "dynamo", "error", err)
-		// Continue execution
 	}
 }
 
@@ -1159,7 +1154,6 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		} else {
 			level.Warn(l).Log("message", "error checking token in ddb", "db-type", "dynamo", "error", err)
 		}
-		// Continue execution even if DynamoDB fails
 	}
 
 	// delete token from DB, CP, and ddb
@@ -1178,7 +1172,6 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		level.Debug(l).Log("message", "deleting token from ddb")
 		if err = h.ddbClient.DeleteTokenEntryByProject(ctx, projectName, tokenID); err != nil {
 			level.Warn(l).Log("message", "error deleting token from ddb", "db-type", "dynamo", "error", err)
-			// Continue execution even if DynamoDB fails
 		}
 	}
 
@@ -1238,7 +1231,6 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "listing tokens from ddb")
 	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
 		level.Warn(l).Log("message", "error listing tokens from ddb", "db-type", "dynamo", "error", err)
-		// Continue execution even if DynamoDB fails
 	}
 
 	if len(tokens) >= numOfTokensLimit {
@@ -1266,7 +1258,6 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 	// Create token in ddb, continue execution even if it fails
 	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
 		level.Warn(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
-		// Continue execution
 	}
 
 	celloToken := newCelloToken("vault", token)
@@ -1327,10 +1318,10 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get tokens from ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "listing tokens from ddb")
 	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
 		level.Warn(l).Log("message", "error listing project tokens from ddb", "db-type", "dynamo", "error", err)
-		// Continue execution even if DynamoDB fails
 	}
 
 	resp := []responses.ListTokens{}
