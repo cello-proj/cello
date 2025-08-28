@@ -86,6 +86,15 @@ You will need two windows
       export CELLO_ADMIN_SECRET=abcd1234abcd1234
       ```
 
+- Set DynamoDB environment variables:
+
+  ```sh
+  export CELLO_DYNAMODB_TABLE_NAME=cello
+  export CELLO_DYNAMODB_ENDPOINT=http://localhost:8000
+  ```
+
+- DynamoDB Local will be started automatically when running `make up`
+
 - Start the Cello Service (includes vault)
 
   ```sh
@@ -119,7 +128,7 @@ You will need two windows
 
   ```sh
   # CDK Example
-  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547 dev`
+  CDK_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/cdk_manifest.yaml ffd8c4fd22d1b60f444363a4b9bc12bf88424ebf dev`
 
   # Get the status / logs
   ./build/cello get $CDK_WORKFLOW_NAME
@@ -130,10 +139,67 @@ You will need two windows
 
   ```sh
   # Terraform Example
-  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml e3a419e69a5ae762862dc7cf382304a4e6cc2547 dev`
+  TERRAFORM_WORKFLOW_NAME=`bash scripts/run_gitops_example.sh manifests/terraform_manifest.yaml ffd8c4fd22d1b60f444363a4b9bc12bf88424ebf dev`
 
   # Get the status / logs
   ./build/cello get $TERRAFORM_WORKFLOW_NAME
   ./build/cello logs $TERRAFORM_WORKFLOW_NAME
   ```
+
+### DynamoDB Configuration
+
+By default, Cello uses DynamoDB Local for development, which runs in a Docker container and stores data in-memory. This is automatically started when you run `make up`.
+
+#### Using DynamoDB Local (Default)
+
+The default configuration uses DynamoDB Local:
+
+```sh
+export CELLO_DYNAMODB_TABLE_NAME=cello
+export CELLO_DYNAMODB_ENDPOINT=http://localhost:8000
+```
+
+When using localhost, the startup script will:
+
+- Start a DynamoDB Local Docker container
+- Create the required table schema
+- Wait for the table to be ready before starting the service
+
+If needed, you can use the AWS CLI to interact with it. Dynamodb Local maps data using the `AWS_ACCESS_KEY_ID` and region used to start it. Our scripts start DynamoDB Local with both `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set to `cello` and the region set to `us-west-2`. Because the data is stored in-memory, the data is not persisted across restarts (including if you re-run `make up`).
+
+If you want to inspect the data, you can use the AWS CLI and point it to the local instance.
+
+To list the tables in DynamoDB Local, you can run the following command:
+
+```sh
+AWS_ACCESS_KEY_ID=cello AWS_SECRET_ACCESS_KEY=cello aws dynamodb list-tables --endpoint-url http://localhost:8000 --region us-west-2
+```
+
+To dump the data in the `cello` table, you can run the following command:
+
+```sh
+AWS_ACCESS_KEY_ID=cello AWS_SECRET_ACCESS_KEY=cello aws dynamodb scan --table-name cello --endpoint-url http://localhost:8000 --region us-west-2
+```
+
+The schema used for DynamoDB Local is set in `scripts/create_dynamodb_table.sh`. If you want to change the schema, you can modify this file and `make up` will recreate the table with the new schema. There is also an example CloudFormation template in `.scripts/dynamodb_table.yaml` that can be used to create the same table in AWS.
+
+#### Using Remote DynamoDB
+
+To use AWS DynamoDB instead of the local version, set the endpoint to a remote DynamoDB endpoint ([here are the official endpoints](https://docs.aws.amazon.com/general/latest/gr/ddb.html)):
+
+```sh
+export CELLO_DYNAMODB_TABLE_NAME=cello
+export CELLO_DYNAMODB_ENDPOINT=https://dynamodb.us-west-2.amazonaws.com
+```
+
+**Important Notes for Remote DynamoDB:**
+
+- Ensure your AWS credentials have appropriate DynamoDB permissions
+- The table must exist in the specified region before starting the service
+- Data will persist across service restarts so you may need to delete the remote data as necessary when testing
+- Consider costs associated with AWS DynamoDB usage
+
+#### IAM Role Assumption for DynamoDB
+
+Cello supports IAM role assumption when connecting to DynamoDB, which is useful for cross-account access or when using temporary credentials. This is configured through the `CELLO_DYNAMODB_ASSUME_ROLE_ARN` environment variable. You will want to set this environment variable before running `make up`.
 

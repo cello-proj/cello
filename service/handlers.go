@@ -59,6 +59,7 @@ type handler struct {
 	gitClient              git.Client
 	env                    env.Vars
 	dbClient               db.Client
+	ddbClient              db.Client
 }
 
 // Service HealthCheck
@@ -200,6 +201,16 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 		level.Error(l).Log("message", "error reading project data", "error", err)
 		h.errorResponse(w, "error reading project data", http.StatusInternalServerError)
 		return
+	}
+
+	// Read from ddb and continue execution even if it fails
+	level.Debug(l).Log("message", "reading project from ddb", "db-type", "dynamo")
+	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+		if errors.Is(err, db.ErrProjectNotFound) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error reading project from ddb", "db-type", "dynamo", "error", err)
+		}
 	}
 
 	cwr, err := h.loadCreateWorkflowRequestFromGit(projectEntry.Repository, cgwr.CommitHash, cgwr.Path)
@@ -522,6 +533,16 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 		return false, err
 	}
 
+	// Check if project exists in ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "checking if project exists in ddb")
+	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+		if errors.Is(err, db.ErrProjectNotFound) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
+		}
+	}
+
 	// Checking database
 	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
@@ -606,6 +627,16 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating project", http.StatusInternalServerError)
 		return
 	}
+
+	// Create project in ddb and continue execution even if it fails
+	err = h.ddbClient.CreateProjectEntry(ctx, db.ProjectEntry{
+		ProjectID:  capp.Name,
+		Repository: capp.Repository,
+	})
+	if err != nil {
+		level.Warn(l).Log("message", "error inserting project to db", "db-type", "dynamo", "error", err)
+	}
+
 	level.Debug(l).Log("message", "creating project")
 	token, err := cp.CreateProject(capp.Name)
 	if err != nil {
@@ -617,9 +648,14 @@ func (h handler) createProject(w http.ResponseWriter, r *http.Request) {
 	level.Debug(l).Log("message", "inserting token into DB")
 	err = h.dbClient.CreateTokenEntry(ctx, token)
 	if err != nil {
-		level.Error(l).Log("message", "error inserting token into DB", "error", err)
+		level.Error(l).Log("message", "error inserting token into db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
+	}
+
+	// Create token in ddb, continue execution even if it fails
+	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
+		level.Warn(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
 	}
 
 	level.Debug(l).Log("message", "retrieving Cello token")
@@ -667,6 +703,16 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
 		}
 		return
+	}
+
+	// Query ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "getting project from ddb", "db-type", "dynamo")
+	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+		if errors.Is(err, db.ErrProjectNotFound) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
+		}
 	}
 
 	resp := responses.GetProject{
@@ -750,6 +796,11 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 		level.Error(l).Log("message", "error deleting project in database", "error", err)
 		h.errorResponse(w, "error deleting project", http.StatusInternalServerError)
 		return
+	}
+
+	// Delete project from ddb, continue execution even if it fails
+	if err := h.ddbClient.DeleteProjectEntry(ctx, projectName); err != nil {
+		level.Warn(l).Log("message", "error deleting project in database", "db-type", "dynamo", "error", err)
 	}
 }
 
@@ -1094,7 +1145,18 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		level.Warn(l).Log("message", "token does not exist in DB", "error", err)
 	}
 
-	// delete token from DB and CP
+	// Check if token exists in ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "checking if token exists in ddb")
+	ddbProjectToken, err := h.ddbClient.ReadTokenEntryByProject(ctx, projectName, tokenID)
+	if err != nil {
+		if errors.Is(err, db.ErrTokenNotFound) {
+			level.Warn(l).Log("message", "token does not exist in ddb", "db-type", "dynamo", "error", err)
+		} else {
+			level.Warn(l).Log("message", "error checking token in ddb", "db-type", "dynamo", "error", err)
+		}
+	}
+
+	// delete token from DB, CP, and ddb
 	// only delete token if exists in DB
 	if !dbProjectToken.IsEmpty() {
 		level.Debug(l).Log("message", "deleting token from database")
@@ -1102,6 +1164,14 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 			level.Error(l).Log("message", "error deleting token from database", "error", err)
 			h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
 			return
+		}
+	}
+
+	// only delete token from ddb if it exists, continue execution even if it fails
+	if !ddbProjectToken.IsEmpty() {
+		level.Debug(l).Log("message", "deleting token from ddb")
+		if err = h.ddbClient.DeleteTokenEntryByProject(ctx, projectName, tokenID); err != nil {
+			level.Warn(l).Log("message", "error deleting token from ddb", "db-type", "dynamo", "error", err)
 		}
 	}
 
@@ -1157,6 +1227,12 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// List tokens from ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "listing tokens from ddb")
+	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+		level.Warn(l).Log("message", "error listing tokens from ddb", "db-type", "dynamo", "error", err)
+	}
+
 	if len(tokens) >= numOfTokensLimit {
 		level.Error(l).Log("message", "number of tokens allowed per project has been reached")
 		h.errorResponse(w, "token limit reached", http.StatusInternalServerError)
@@ -1177,6 +1253,11 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		level.Error(l).Log("message", "error inserting token to db", "error", err)
 		h.errorResponse(w, "error creating token", http.StatusInternalServerError)
 		return
+	}
+
+	// Create token in ddb, continue execution even if it fails
+	if err := h.ddbClient.CreateTokenEntry(ctx, token); err != nil {
+		level.Warn(l).Log("message", "error inserting token into db", "db-type", "dynamo", "error", err)
 	}
 
 	celloToken := newCelloToken("vault", token)
@@ -1235,6 +1316,12 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		level.Error(l).Log("message", "error listing project tokens", "error", err)
 		h.errorResponse(w, "error listing project tokens", http.StatusInternalServerError)
 		return
+	}
+
+	// Get tokens from ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "listing tokens from ddb")
+	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+		level.Warn(l).Log("message", "error listing project tokens from ddb", "db-type", "dynamo", "error", err)
 	}
 
 	resp := []responses.ListTokens{}
