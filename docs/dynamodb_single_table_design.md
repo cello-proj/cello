@@ -92,30 +92,24 @@ Storing `properties` as a map (or JSON string) allows for easy extension of `Tar
 ## Access Patterns
 
 1. **Get a Single Project**
-
    - `pk = "PROJECT#<project_name>"`, `sk = "METADATA"`
 
 2. **List All Tokens for a Project**
-
    - Query by `pk = "PROJECT#<project_name>"`
    - Filter items where `sk` begins with `"TOKEN#"`
 
 3. **Get a Single Token**
-
    - `pk = "PROJECT#<project_name>"`, `sk = "TOKEN#<token_id>"`
 
 4. **Authenticate/Authorize (Token)** (tbd)
-
    - Retrieve the token item using `pk = "PROJECT#<project_name>"` and `sk = "TOKEN#<token_id>"`.
    - Compare `hashed_token` from the item with the hashed token in the request.
 
 5. **List All Targets for a Project** (tbd)
-
    - Query by `pk = "PROJECT#<project_name>"`
    - Filter items where `sk` begins with `"TARGET#"`.
 
 6. **Get/Add/Update a Single Target** (tbd)
-
    - **Get**: `pk = "PROJECT#<project_name>"`, `sk = "TARGET#<target_name>"`
    - **Add/Update**: Put a new item (or update existing) with the same key: `pk = "PROJECT#<project_name>"`, `sk = "TARGET#<target_name>"`, along with attributes for `name`, `type`, and `properties`.
 
