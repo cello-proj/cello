@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	ddbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
 )
@@ -246,22 +247,26 @@ var (
 )
 
 func NewDynamoDBClient(tableName string, endpointURL string, assumeRoleARN string) (*DynamoDBClient, error) {
-	var cfg aws.Config
-	var err error
-
-	if assumeRoleARN != "" {
-		cfg, err = config.LoadDefaultConfig(context.Background(),
-			config.WithAssumeRoleCredentialOptions(func(options *stscreds.AssumeRoleOptions) {
-				options.RoleARN = assumeRoleARN
-				options.RoleSessionName = "cello-session"
-			}),
-		)
-	} else {
-		cfg, err = config.LoadDefaultConfig(context.Background())
-	}
-
+	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	// Setup assume role if provided
+	if assumeRoleARN != "" {
+		stsClient := sts.NewFromConfig(cfg)
+		cfg, err = config.LoadDefaultConfig(context.Background(),
+			config.WithCredentialsProvider(stscreds.NewAssumeRoleProvider(
+				stsClient,
+				assumeRoleARN,
+				func(options *stscreds.AssumeRoleOptions) {
+					options.RoleSessionName = "cello-session"
+				}),
+			),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load assume role config: %w", err)
+		}
 	}
 
 	svc := dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
