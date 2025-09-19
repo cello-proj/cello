@@ -1248,8 +1248,14 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 
 	// List tokens from ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "listing tokens from ddb")
-	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+	ddbTokens, err := h.ddbClient.ListTokenEntries(ctx, projectName)
+	if err != nil {
 		level.Warn(l).Log("message", "error listing tokens from ddb", "db-type", "dynamo", "error", err)
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(tokens, ddbTokens); !matches {
+			level.Warn(l).Log("message", "token list data mismatch", "data-type", "token-list", "diff", diff)
+		}
 	}
 
 	if len(tokens) >= numOfTokensLimit {
@@ -1339,8 +1345,14 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	// Get tokens from ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "listing tokens from ddb")
-	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+	ddbTokens, err := h.ddbClient.ListTokenEntries(ctx, projectName)
+	if err != nil {
 		level.Warn(l).Log("message", "error listing project tokens from ddb", "db-type", "dynamo", "error", err)
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(tokens, ddbTokens); !matches {
+			level.Warn(l).Log("message", "token list data mismatch", "data-type", "token-list", "diff", diff)
+		}
 	}
 
 	resp := []responses.ListTokens{}
