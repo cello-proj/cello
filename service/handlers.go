@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 	upper "github.com/upper/db/v4"
 	"gopkg.in/yaml.v2"
@@ -205,11 +206,17 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 	// Read from ddb and continue execution even if it fails
 	level.Debug(l).Log("message", "reading project from ddb", "db-type", "dynamo")
-	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+	ddbProjectEntry, err := h.ddbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
 		if errors.Is(err, db.ErrProjectNotFound) {
 			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
 		} else {
 			level.Warn(l).Log("message", "error reading project from ddb", "db-type", "dynamo", "error", err)
+		}
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(projectEntry, ddbProjectEntry); !matches {
+			level.Warn(l).Log("message", "project data mismatch", "data-type", "project", "diff", diff)
 		}
 	}
 
@@ -533,18 +540,8 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 		return false, err
 	}
 
-	// Check if project exists in ddb, continue execution even if it fails
-	level.Debug(l).Log("message", "checking if project exists in ddb")
-	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
-		if errors.Is(err, db.ErrProjectNotFound) {
-			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
-		} else {
-			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
-		}
-	}
-
 	// Checking database
-	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	projectEntry, err := h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project from database", "error", err)
 		if errors.Is(err, upper.ErrNoMoreRows) {
@@ -553,6 +550,22 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
 		}
 		return false, err
+	}
+
+	// Check if project exists in ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "checking if project exists in ddb")
+	ddbProjectEntry, err := h.ddbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		if errors.Is(err, db.ErrProjectNotFound) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
+		}
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(projectEntry, ddbProjectEntry); !matches {
+			level.Warn(l).Log("message", "project data mismatch", "data-type", "project", "diff", diff)
+		}
 	}
 
 	return true, err
@@ -707,11 +720,17 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	// Query ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "getting project from ddb", "db-type", "dynamo")
-	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+	ddbProjectEntry, err := h.ddbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
 		if errors.Is(err, db.ErrProjectNotFound) {
 			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
 		} else {
 			level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
+		}
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(projectEntry, ddbProjectEntry); !matches {
+			level.Warn(l).Log("message", "project data mismatch", "data-type", "project", "diff", diff)
 		}
 	}
 
@@ -1229,8 +1248,14 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 
 	// List tokens from ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "listing tokens from ddb")
-	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+	ddbTokens, err := h.ddbClient.ListTokenEntries(ctx, projectName)
+	if err != nil {
 		level.Warn(l).Log("message", "error listing tokens from ddb", "db-type", "dynamo", "error", err)
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(tokens, ddbTokens); !matches {
+			level.Warn(l).Log("message", "token list data mismatch", "data-type", "token-list", "diff", diff)
+		}
 	}
 
 	if len(tokens) >= numOfTokensLimit {
@@ -1320,8 +1345,14 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 
 	// Get tokens from ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "listing tokens from ddb")
-	if _, err := h.ddbClient.ListTokenEntries(ctx, projectName); err != nil {
+	ddbTokens, err := h.ddbClient.ListTokenEntries(ctx, projectName)
+	if err != nil {
 		level.Warn(l).Log("message", "error listing project tokens from ddb", "db-type", "dynamo", "error", err)
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(tokens, ddbTokens); !matches {
+			level.Warn(l).Log("message", "token list data mismatch", "data-type", "token-list", "diff", diff)
+		}
 	}
 
 	resp := []responses.ListTokens{}
@@ -1359,6 +1390,13 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 		r = r + fmt.Sprintf(" %s='%s'", k, value)
 	}
 	return r
+}
+
+// compareEntries compares two entries of any type using go-cmp
+// Returns true if they match, false if they don't match along with a diff string
+func compareEntries[T any](entryA, entryB T) (bool, string) {
+	diff := cmp.Diff(entryA, entryB)
+	return diff == "", diff
 }
 
 func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logger {

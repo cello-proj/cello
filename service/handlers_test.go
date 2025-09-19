@@ -1987,3 +1987,95 @@ func loadJSON(t *testing.T, filename string) (output interface{}) {
 	}
 	return output
 }
+
+func TestCompareEntries(t *testing.T) {
+	tests := []struct {
+		name     string
+		entryA   db.ProjectEntry
+		entryB   db.ProjectEntry
+		expected bool
+		hasDiff  bool
+	}{
+		{
+			name: "identical entries should match",
+			entryA: db.ProjectEntry{
+				ProjectID:  "test-project",
+				Repository: "https://github.com/test/repo",
+			},
+			entryB: db.ProjectEntry{
+				ProjectID:  "test-project",
+				Repository: "https://github.com/test/repo",
+			},
+			expected: true,
+		},
+		{
+			name: "different project ID should not match",
+			entryA: db.ProjectEntry{
+				ProjectID:  "project-a",
+				Repository: "https://github.com/test/repo",
+			},
+			entryB: db.ProjectEntry{
+				ProjectID:  "project-b",
+				Repository: "https://github.com/test/repo",
+			},
+			expected: false,
+			hasDiff:  true,
+		},
+		{
+			name: "different repository should not match",
+			entryA: db.ProjectEntry{
+				ProjectID:  "test-project",
+				Repository: "https://github.com/test/repo-a",
+			},
+			entryB: db.ProjectEntry{
+				ProjectID:  "test-project",
+				Repository: "https://github.com/test/repo-b",
+			},
+			expected: false,
+			hasDiff:  true,
+		},
+		{
+			name: "both fields different should not match",
+			entryA: db.ProjectEntry{
+				ProjectID:  "project-a",
+				Repository: "https://github.com/test/repo-a",
+			},
+			entryB: db.ProjectEntry{
+				ProjectID:  "project-b",
+				Repository: "https://github.com/test/repo-b",
+			},
+			expected: false,
+			hasDiff:  true,
+		},
+		{
+			name:     "empty entries should match",
+			entryA:   db.ProjectEntry{},
+			entryB:   db.ProjectEntry{},
+			expected: true,
+		},
+		{
+			name: "one empty entry should not match",
+			entryA: db.ProjectEntry{
+				ProjectID:  "test-project",
+				Repository: "https://github.com/test/repo",
+			},
+			entryB:   db.ProjectEntry{},
+			expected: false,
+			hasDiff:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			matches, diff := compareEntries(tt.entryA, tt.entryB)
+
+			assert.Equal(t, tt.expected, matches, "Expected matches to be %v", tt.expected)
+
+			if tt.hasDiff {
+				assert.NotEmpty(t, diff, "Expected non-empty diff when entries don't match")
+			} else {
+				assert.Empty(t, diff, "Expected empty diff when entries match")
+			}
+		})
+	}
+}
