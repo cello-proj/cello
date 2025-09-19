@@ -206,11 +206,17 @@ func (h handler) createWorkflowFromGit(w http.ResponseWriter, r *http.Request) {
 
 	// Read from ddb and continue execution even if it fails
 	level.Debug(l).Log("message", "reading project from ddb", "db-type", "dynamo")
-	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+	ddbProjectEntry, err := h.ddbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
 		if errors.Is(err, db.ErrProjectNotFound) {
 			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
 		} else {
 			level.Warn(l).Log("message", "error reading project from ddb", "db-type", "dynamo", "error", err)
+		}
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(projectEntry, ddbProjectEntry); !matches {
+			level.Warn(l).Log("message", "project data mismatch", "data-type", "project", "diff", diff)
 		}
 	}
 
@@ -534,18 +540,8 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 		return false, err
 	}
 
-	// Check if project exists in ddb, continue execution even if it fails
-	level.Debug(l).Log("message", "checking if project exists in ddb")
-	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
-		if errors.Is(err, db.ErrProjectNotFound) {
-			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
-		} else {
-			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
-		}
-	}
-
 	// Checking database
-	_, err = h.dbClient.ReadProjectEntry(ctx, projectName)
+	projectEntry, err := h.dbClient.ReadProjectEntry(ctx, projectName)
 	if err != nil {
 		level.Error(l).Log("message", "error retrieving project from database", "error", err)
 		if errors.Is(err, upper.ErrNoMoreRows) {
@@ -554,6 +550,22 @@ func (h handler) projectExists(ctx context.Context, l log.Logger, cp credentials
 			h.errorResponse(w, "error retrieving project", http.StatusInternalServerError)
 		}
 		return false, err
+	}
+
+	// Check if project exists in ddb, continue execution even if it fails
+	level.Debug(l).Log("message", "checking if project exists in ddb")
+	ddbProjectEntry, err := h.ddbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
+		if errors.Is(err, db.ErrProjectNotFound) {
+			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
+		} else {
+			level.Warn(l).Log("message", "error checking project in ddb", "db-type", "dynamo", "error", err)
+		}
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(projectEntry, ddbProjectEntry); !matches {
+			level.Warn(l).Log("message", "project data mismatch", "data-type", "project", "diff", diff)
+		}
 	}
 
 	return true, err
