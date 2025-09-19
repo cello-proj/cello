@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 	upper "github.com/upper/db/v4"
 	"gopkg.in/yaml.v2"
@@ -707,11 +708,17 @@ func (h handler) getProject(w http.ResponseWriter, r *http.Request) {
 
 	// Query ddb, continue execution even if it fails
 	level.Debug(l).Log("message", "getting project from ddb", "db-type", "dynamo")
-	if _, err := h.ddbClient.ReadProjectEntry(ctx, projectName); err != nil {
+	ddbProjectEntry, err := h.ddbClient.ReadProjectEntry(ctx, projectName)
+	if err != nil {
 		if errors.Is(err, db.ErrProjectNotFound) {
 			level.Warn(l).Log("message", "project does not exist in ddb", "db-type", "dynamo")
 		} else {
 			level.Warn(l).Log("message", "error retrieving project from ddb", "db-type", "dynamo", "error", err)
+		}
+	} else {
+		// Compare results
+		if matches, diff := compareEntries(projectEntry, ddbProjectEntry); !matches {
+			level.Warn(l).Log("message", "project data mismatch", "data-type", "project", "diff", diff)
 		}
 	}
 
@@ -1359,6 +1366,13 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 		r = r + fmt.Sprintf(" %s='%s'", k, value)
 	}
 	return r
+}
+
+// compareEntries compares two entries of any type using go-cmp
+// Returns true if they match, false if they don't match along with a diff string
+func compareEntries[T any](entryA, entryB T) (bool, string) {
+	diff := cmp.Diff(entryA, entryB)
+	return diff == "", diff
 }
 
 func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logger {
