@@ -33,7 +33,7 @@ You will need two windows
   export CELLO_ADMIN_SECRET=abcd1234abcd1234
   ```
 
-- Start the Cello Service (includes workflows, vault, and postgres).
+- Start the Cello Service (includes workflows and vault).
   Note: this will copy your current AWS credentials to the vault containers.
 
   ```sh
