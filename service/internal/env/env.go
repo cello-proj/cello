@@ -30,11 +30,6 @@ type Vars struct {
 	GitHTTPSPass          string   `envconfig:"GIT_HTTPS_PASS"`
 	LogLevel              string   `split_words:"true"`
 	Port                  int      `default:"8443"`
-	DBHost                string   `split_words:"true" required:"true"`
-	DBUser                string   `split_words:"true" required:"true"`
-	DBPassword            string   `split_words:"true" required:"true"`
-	DBName                string   `split_words:"true" required:"true"`
-	DBOptions             string   `split_words:"true"`
 	DynamoDBAssumeRoleARN string   `envconfig:"CELLO_DYNAMODB_ASSUME_ROLE_ARN"`
 	DynamoDBEndpoint      string   `envconfig:"CELLO_DYNAMODB_ENDPOINT"`
 	DynamoDBTableName     string   `envconfig:"CELLO_DYNAMODB_TABLE_NAME" required:"true"`
