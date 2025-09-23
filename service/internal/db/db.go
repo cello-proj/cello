@@ -17,8 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	ddbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/upper/db/v4"
-	"github.com/upper/db/v4/adapter/postgresql"
 )
 
 type ProjectEntry struct {
@@ -56,166 +54,13 @@ type Client interface {
 
 // Verify interface implementations at compile time
 var (
-	_ Client = SQLClient{}
 	_ Client = (*DynamoDBClient)(nil)
 )
-
-// SQLClient allows for db crud operations using postgres db
-type SQLClient struct {
-	host     string
-	database string
-	user     string
-	password string
-	options  map[string]string
-}
 
 const (
 	ProjectEntryDB = "projects"
 	TokenEntryDB   = "tokens"
 )
-
-func NewSQLClient(host, database, user, password string, options map[string]string) (SQLClient, error) {
-	return SQLClient{
-		host:     host,
-		database: database,
-		user:     user,
-		password: password,
-		options:  options,
-	}, nil
-}
-
-func (d SQLClient) createSession() (db.Session, error) {
-	settings := postgresql.ConnectionURL{
-		Host:     d.host,
-		Database: d.database,
-		User:     d.user,
-		Password: d.password,
-		Options:  d.options,
-	}
-
-	return postgresql.Open(settings)
-}
-
-func (d SQLClient) Health(ctx context.Context) error {
-	sess, err := d.createSession()
-	if err != nil {
-		return err
-	}
-	defer sess.Close()
-
-	return sess.WithContext(ctx).Ping()
-}
-
-func (d SQLClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) error {
-	sess, err := d.createSession()
-	if err != nil {
-		return err
-	}
-	defer sess.Close()
-
-	return sess.WithContext(ctx).Tx(func(sess db.Session) error {
-		if err := sess.Collection(ProjectEntryDB).Find("project", pe.ProjectID).Delete(); err != nil {
-			return err
-		}
-
-		if _, err = sess.Collection(ProjectEntryDB).Insert(pe); err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
-
-func (d SQLClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
-	res := ProjectEntry{}
-
-	sess, err := d.createSession()
-	if err != nil {
-		return res, err
-	}
-	defer sess.Close()
-
-	err = sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).One(&res)
-	return res, err
-}
-
-func (d SQLClient) DeleteProjectEntry(ctx context.Context, project string) error {
-	sess, err := d.createSession()
-	if err != nil {
-		return err
-	}
-	defer sess.Close()
-
-	return sess.WithContext(ctx).Collection(ProjectEntryDB).Find("project", project).Delete()
-}
-
-func (d SQLClient) CreateTokenEntry(ctx context.Context, token types.Token) error {
-	sess, err := d.createSession()
-	if err != nil {
-		return err
-	}
-	defer sess.Close()
-
-	err = sess.WithContext(ctx).Tx(func(sess db.Session) error {
-		res := TokenEntry{
-			CreatedAt: token.CreatedAt,
-			ExpiresAt: token.ExpiresAt,
-			ProjectID: token.ProjectID,
-			TokenID:   token.ProjectToken.ID,
-		}
-
-		if _, err = sess.Collection(TokenEntryDB).Insert(res); err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
-}
-
-func (d SQLClient) DeleteTokenEntry(ctx context.Context, token string) error {
-	sess, err := d.createSession()
-	if err != nil {
-		return err
-	}
-	defer sess.Close()
-
-	return sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).Delete()
-}
-
-func (d SQLClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error) {
-	res := TokenEntry{}
-	sess, err := d.createSession()
-	if err != nil {
-		return res, err
-	}
-	defer sess.Close()
-
-	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).One(&res)
-	return res, err
-}
-
-func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
-	res := []TokenEntry{}
-
-	sess, err := d.createSession()
-	if err != nil {
-		return res, err
-	}
-	defer sess.Close()
-
-	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
-	return res, err
-}
-
-func (d SQLClient) DeleteTokenEntryByProject(ctx context.Context, project, token string) error {
-	// For SQL, project is not needed, just delete by token ID
-	return d.DeleteTokenEntry(ctx, token)
-}
-
-func (d SQLClient) ReadTokenEntryByProject(ctx context.Context, project, token string) (TokenEntry, error) {
-	// For postgres project is not needed; just read by token ID
-	return d.ReadTokenEntry(ctx, token)
-}
 
 // DynamoDBSvc defines the interface for DynamoDB operations
 type DynamoDBSvc interface {
