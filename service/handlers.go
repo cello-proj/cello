@@ -91,7 +91,6 @@ func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintln(w, "Health check succeeded")
 }
@@ -1267,7 +1266,6 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 	}
 	return r
 }
-
 
 func (h handler) requestLogger(r *http.Request, fields ...interface{}) log.Logger {
 	return log.With(
