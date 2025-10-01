@@ -77,7 +77,6 @@ fi
 set +e
 echo "Building docker image"
 docker build --pull --rm -f "Dockerfile" --build-arg BINARY=quickstart/service -t cello:latest "."
-docker build --pull --rm -f "Dockerfile.db_migration" -t cello-db-migration:latest "."
 echo "Checking for Argo Workflows"
 kubectl get ns | grep argo
 if [ $? != 0 ]; then
@@ -98,42 +97,9 @@ while [ "$(kubectl get pods -l=app.kubernetes.io/name='vault' -o jsonpath='{.ite
    sleep 5
    echo "Waiting for Vault to be ready."
 done
-while [ "$(kubectl get pods -l=app='postgres' -o jsonpath='{.items[*].status.containerStatuses[0].ready}')" != "true" ]; do
-   sleep 5
-   echo "Waiting for Postgres to be ready."
-done
 echo "Pods ready. Initializing environment"
 set -e
 
-# setup postgres db
-# don't fail if already exists
-set +e
-export POSTGRES_POD="$(kubectl get pods --no-headers -o custom-columns=":metadata.name" | grep postgres)"
-kubectl exec $POSTGRES_POD -- psql -lqt | cut -d \| -f 1 | grep cello
-if [ $? != 0 ]; then
-  kubectl exec $POSTGRES_POD -- createdb cello -U postgres
-fi
-set -e
-
-# run DB migration job after Postgres DB is fully stood up
-echo "Applying DB migration manifest"
-kubectl apply -f ./scripts/quickstart_db_migration_manifest.yaml
-
-while : ; do
-  echo "Waiting for DB migration job to complete"
-  status=$(kubectl get job migrate-db -o jsonpath='{.status.conditions[].type}')
-  if [ -z $status ]; then
-    sleep 5
-    continue
-  fi
-  if [ $status == 'Complete' ]; then
-    break
-  fi
-  if [ $status == 'Failed' ]; then
-    echo "ERROR: migration job failed. Please check pod logs and ."
-    exit 1
-  fi
-done
 
 # setup workflow if it doesn't exist
 set +e
