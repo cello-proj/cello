@@ -1988,6 +1988,200 @@ func loadJSON(t *testing.T, filename string) (output interface{}) {
 	return output
 }
 
+func TestCompareEntriesWithTimestamps(t *testing.T) {
+	tests := []struct {
+		name     string
+		entryA   []db.TokenEntry
+		entryB   []db.TokenEntry
+		expected bool
+		hasDiff  bool
+	}{
+		{
+			name: "timestamps with different precision should match when within same millisecond",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305Z",
+				ExpiresAt: "2026-10-21T09:31:10.305Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			expected: true,
+		},
+		{
+			name: "timestamps with microsecond vs nanosecond precision should match",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305036Z",
+				ExpiresAt: "2026-10-21T09:31:10.305036Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			expected: true,
+		},
+		{
+			name: "timestamps differing by more than 1ms should not match",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305Z",
+				ExpiresAt: "2026-10-21T09:31:10.305Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.307Z",
+				ExpiresAt: "2026-10-21T09:31:10.307Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			expected: false,
+			hasDiff:  true,
+		},
+		{
+			name: "identical timestamps should match",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			expected: true,
+		},
+		{
+			name: "different ProjectID should not match regardless of timestamps",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305Z",
+				ExpiresAt: "2026-10-21T09:31:10.305Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project2",
+				TokenID:   "token1",
+			}},
+			expected: false,
+			hasDiff:  true,
+		},
+		{
+			name: "different TokenID should not match regardless of timestamps",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305Z",
+				ExpiresAt: "2026-10-21T09:31:10.305Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project1",
+				TokenID:   "token2",
+			}},
+			expected: false,
+			hasDiff:  true,
+		},
+		{
+			name: "multiple tokens with varying precision should match",
+			entryA: []db.TokenEntry{
+				{
+					CreatedAt: "2025-10-20T17:31:10.305Z",
+					ExpiresAt: "2026-10-21T09:31:10.305Z",
+					ProjectID: "project1",
+					TokenID:   "token1",
+				},
+				{
+					CreatedAt: "2025-10-20T17:32:15.123456Z",
+					ExpiresAt: "2026-10-21T09:32:15.123456Z",
+					ProjectID: "project1",
+					TokenID:   "token2",
+				},
+			},
+			entryB: []db.TokenEntry{
+				{
+					CreatedAt: "2025-10-20T17:31:10.305035644Z",
+					ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+					ProjectID: "project1",
+					TokenID:   "token1",
+				},
+				{
+					CreatedAt: "2025-10-20T17:32:15.123456789Z",
+					ExpiresAt: "2026-10-21T09:32:15.123456789Z",
+					ProjectID: "project1",
+					TokenID:   "token2",
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "only CreatedAt differs within same millisecond should match",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305999999Z",
+				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			expected: true,
+		},
+		{
+			name: "only ExpiresAt differs within same millisecond should match",
+			entryA: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			entryB: []db.TokenEntry{{
+				CreatedAt: "2025-10-20T17:31:10.305035644Z",
+				ExpiresAt: "2026-10-21T09:31:10.305999999Z",
+				ProjectID: "project1",
+				TokenID:   "token1",
+			}},
+			expected: true,
+		},
+		{
+			name:     "empty token slices should match",
+			entryA:   []db.TokenEntry{},
+			entryB:   []db.TokenEntry{},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			matches, diff := compareEntries(tt.entryA, tt.entryB, timestampComparer())
+
+			assert.Equal(t, tt.expected, matches, "Expected matches to be %v", tt.expected)
+
+			if tt.hasDiff {
+				assert.NotEmpty(t, diff, "Expected non-empty diff when entries don't match")
+			} else {
+				assert.Empty(t, diff, "Expected empty diff when entries match")
+			}
+		})
+	}
+}
+
 func TestCompareEntries(t *testing.T) {
 	tests := []struct {
 		name     string

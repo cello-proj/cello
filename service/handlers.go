@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/cello-proj/cello/internal/requests"
 	"github.com/cello-proj/cello/internal/responses"
@@ -1253,7 +1254,7 @@ func (h handler) createToken(w http.ResponseWriter, r *http.Request) {
 		level.Warn(l).Log("message", "error listing tokens from ddb", "db-type", "dynamo", "error", err)
 	} else {
 		// Compare results
-		if matches, diff := compareEntries(tokens, ddbTokens); !matches {
+		if matches, diff := compareEntries(tokens, ddbTokens, timestampComparer()); !matches {
 			level.Warn(l).Log("message", "token list data mismatch", "data-type", "token-list", "diff", diff)
 		}
 	}
@@ -1350,7 +1351,7 @@ func (h handler) listTokens(w http.ResponseWriter, r *http.Request) {
 		level.Warn(l).Log("message", "error listing project tokens from ddb", "db-type", "dynamo", "error", err)
 	} else {
 		// Compare results
-		if matches, diff := compareEntries(tokens, ddbTokens); !matches {
+		if matches, diff := compareEntries(tokens, ddbTokens, timestampComparer()); !matches {
 			level.Warn(l).Log("message", "token list data mismatch", "data-type", "token-list", "diff", diff)
 		}
 	}
@@ -1392,10 +1393,47 @@ func generateEnvVariablesString(environmentVariables map[string]string) string {
 	return r
 }
 
+// timestampComparer returns a cmp.Option that normalizes timestamp strings
+// to millisecond precision before comparison to handle precision differences
+// between different database implementations (e.g., PostgreSQL vs DynamoDB)
+// This only applies to CreatedAt and ExpiresAt fields
+func timestampComparer() cmp.Option {
+	return cmp.FilterPath(
+		func(p cmp.Path) bool {
+			// Only apply to CreatedAt and ExpiresAt fields
+			if len(p) == 0 {
+				return false
+			}
+
+			// Check if the last step is a struct field named CreatedAt or ExpiresAt
+			lastStep := p[len(p)-1]
+			if sf, ok := lastStep.(cmp.StructField); ok {
+				fieldName := sf.Name()
+				return fieldName == "CreatedAt" || fieldName == "ExpiresAt"
+			}
+			return false
+		},
+		cmp.Comparer(func(a, b string) bool {
+			// Parse as RFC3339Nano timestamps
+			tA, errA := time.Parse(time.RFC3339Nano, a)
+			tB, errB := time.Parse(time.RFC3339Nano, b)
+
+			// If either fails to parse, fall back to direct string comparison
+			if errA != nil || errB != nil {
+				return a == b
+			}
+
+			// Truncate both to millisecond precision and compare
+			return tA.Truncate(time.Millisecond).Equal(tB.Truncate(time.Millisecond))
+		}),
+	)
+}
+
 // compareEntries compares two entries of any type using go-cmp
 // Returns true if they match, false if they don't match along with a diff string
-func compareEntries[T any](entryA, entryB T) (bool, string) {
-	diff := cmp.Diff(entryA, entryB)
+// Additional cmp.Options can be provided for custom comparison logic
+func compareEntries[T any](entryA, entryB T, opts ...cmp.Option) (bool, string) {
+	diff := cmp.Diff(entryA, entryB, opts...)
 	return diff == "", diff
 }
 
