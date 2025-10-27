@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - postgresql
 
+## [0.22.2]
+### Changed
+* Fix ddb return when there are no tokens
+
+## [0.22.1]
+### Changed
+* For token created/expires comparison, normalize to ms
+
 ## [0.22.0]
 ### Added
 * db comparison logic/logging for project/token data

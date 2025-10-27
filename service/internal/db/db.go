@@ -373,7 +373,7 @@ func (d *DynamoDBClient) ListTokenEntries(ctx context.Context, project string) (
 		return nil, fmt.Errorf("failed to query tokens: %w", err)
 	}
 
-	var tokens []TokenEntry
+	tokens := []TokenEntry{}
 	for _, item := range result.Items {
 		token, err := d.parseTokenFromItem(item, project)
 		if err != nil {
