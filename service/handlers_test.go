@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/stretchr/testify/assert"
-	upper "github.com/upper/db/v4"
 )
 
 const (
@@ -46,7 +45,6 @@ type test struct {
 	url        string
 	method     string
 	cpMock     *th.CredsProviderMock
-	dbMock     *th.DBClientMock
 	ddbMock    *th.DBClientMock
 	gitMock    *th.GitClientMock
 	wfMock     *th.WorkflowMock
@@ -86,10 +84,6 @@ func TestCreateProject(t *testing.T) {
 					}, nil
 				},
 			},
-			dbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
-				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
-			},
 			ddbMock: &th.DBClientMock{
 				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
 				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
@@ -125,42 +119,8 @@ func TestCreateProject(t *testing.T) {
 			cpMock: &th.CredsProviderMock{
 				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
 			},
-			dbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return errors.New("db error") },
-			},
-		},
-		{
-			name:       "project fails to create ddb entry but continues",
-			req:        loadJSON(t, "TestCreateProject/can_create_project_request.json"),
-			want:       http.StatusOK,
-			respFile:   "TestCreateProject/can_create_project_response.json",
-			authHeader: adminAuthHeader,
-			url:        "/projects",
-			method:     "POST",
-			cpMock: &th.CredsProviderMock{
-				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
-				CreateProjectFunc: func(s string) (types.Token, error) {
-					return types.Token{
-						CreatedAt: "createdAt",
-						ExpiresAt: "expiresAt",
-						ProjectID: "project1",
-						ProjectToken: types.ProjectToken{
-							ID: "secret-id-accessor",
-						},
-						RoleID: "role-id",
-						Secret: "secret",
-					}, nil
-				},
-			},
-			dbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
-				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
-			},
 			ddbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
-					return errors.New("failed to write to DynamoDB")
-				},
-				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error { return nil },
+				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return errors.New("db error") },
 			},
 		},
 		{
@@ -185,46 +145,10 @@ func TestCreateProject(t *testing.T) {
 					}, nil
 				},
 			},
-			dbMock: &th.DBClientMock{
+			ddbMock: &th.DBClientMock{
 				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
 				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
 					return errors.New("failed to write token to database")
-				},
-			},
-			ddbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
-			},
-		},
-		{
-			name:       "project fails to create ddb token entry but continues",
-			req:        loadJSON(t, "TestCreateProject/project_fails_to_create_token_entry.json"),
-			want:       http.StatusOK,
-			authHeader: adminAuthHeader,
-			url:        "/projects",
-			method:     "POST",
-			cpMock: &th.CredsProviderMock{
-				ProjectExistsFunc: func(s string) (bool, error) { return false, nil },
-				CreateProjectFunc: func(s string) (types.Token, error) {
-					return types.Token{
-						CreatedAt: "createdAt",
-						ExpiresAt: "expiresAt",
-						ProjectID: "project1",
-						ProjectToken: types.ProjectToken{
-							ID: "secret-id-accessor",
-						},
-						RoleID: "role-id",
-						Secret: "secret",
-					}, nil
-				},
-			},
-			dbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
-				CreateTokenEntryFunc:   func(ctx context.Context, token types.Token) error { return nil },
-			},
-			ddbMock: &th.DBClientMock{
-				CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error { return nil },
-				CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
-					return errors.New("failed to write token to DynamoDB")
 				},
 			},
 		},
@@ -256,20 +180,6 @@ func TestCreateToken(t *testing.T) {
 					}, nil
 				},
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
-				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
-					return []db.TokenEntry{{
-						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
-						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
-						ProjectID: "project1",
-						TokenID:   "secret-id-accessor",
-					}}, nil
-				},
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
 			},
 			ddbMock: &th.DBClientMock{
 				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
@@ -318,19 +228,6 @@ func TestCreateToken(t *testing.T) {
 				CreateTokenFunc:   func(s string) (types.Token, error) { return types.Token{}, errors.New("error") },
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
-					return []db.TokenEntry{{
-						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
-						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
-						ProjectID: "project1",
-						TokenID:   "secret-id-accessor",
-					}}, nil
-				},
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{{
@@ -343,48 +240,6 @@ func TestCreateToken(t *testing.T) {
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
-			},
-		},
-		{
-			name:       "token fails to create ddb entry but continues",
-			req:        loadJSON(t, "TestCreateToken/request.json"),
-			want:       http.StatusOK,
-			respFile:   "TestCreateToken/can_create_token_response.json",
-			authHeader: adminAuthHeader,
-			url:        "/projects/projectddberror/tokens",
-			method:     "POST",
-			cpMock: &th.CredsProviderMock{
-				CreateTokenFunc: func(s string) (types.Token, error) {
-					return types.Token{
-						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
-						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
-						ProjectID: "project1",
-						ProjectToken: types.ProjectToken{
-							ID: "secret-id-accessor",
-						},
-						RoleID: "role-id",
-						Secret: "secret",
-					}, nil
-				},
-				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
-					return []db.TokenEntry{}, nil
-				},
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
-				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return nil },
-			},
-			ddbMock: &th.DBClientMock{
-				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
-					return []db.TokenEntry{}, nil
-				},
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
-				CreateTokenEntryFunc: func(ctx context.Context, t types.Token) error { return errors.New("ddb error") },
 			},
 		},
 		{
@@ -397,24 +252,6 @@ func TestCreateToken(t *testing.T) {
 			method:     "POST",
 			cpMock: &th.CredsProviderMock{
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
-					return []db.TokenEntry{{
-						CreatedAt: "2022-06-21T14:56:10.341066-07:00",
-						ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
-						ProjectID: "project1",
-						TokenID:   "secret-id-accessor",
-					}, {
-						CreatedAt: "2022-07-21T14:00:00.000000-07:00",
-						ExpiresAt: "2023-07-21T14:00:00.000000-07:00",
-						ProjectID: "project1",
-						TokenID:   "secret-id-accessor",
-					}}, nil
-				},
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
 			},
 			ddbMock: &th.DBClientMock{
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
@@ -446,16 +283,11 @@ func TestCreateToken(t *testing.T) {
 			cpMock: &th.CredsProviderMock{
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
+			ddbMock: &th.DBClientMock{
 				ListTokenEntriesFunc: func(ctx context.Context, p string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{}, errors.New("error")
 				},
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
-			},
-			ddbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
 				},
 			},
@@ -586,9 +418,6 @@ func TestDeleteProject(t *testing.T) {
 				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return nil },
-			},
 			ddbMock: &th.DBClientMock{
 				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return nil },
 			},
@@ -629,29 +458,8 @@ func TestDeleteProject(t *testing.T) {
 				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return errors.New("error") },
-			},
-			ddbMock: &th.DBClientMock{},
-		},
-		{
-			name:       "project fails to delete ddb entry but continues",
-			want:       http.StatusOK,
-			authHeader: adminAuthHeader,
-			url:        "/projects/projectddberror",
-			method:     "DELETE",
-			cpMock: &th.CredsProviderMock{
-				DeleteProjectFunc: func(s string) error { return nil },
-				ListTargetsFunc:   func(s string) ([]string, error) { return []string{}, nil },
-				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return nil },
-			},
 			ddbMock: &th.DBClientMock{
-				DeleteProjectEntryFunc: func(ctx context.Context, project string) error {
-					return errors.New("failed to delete from DynamoDB")
-				},
+				DeleteProjectEntryFunc: func(ctx context.Context, project string) error { return errors.New("error") },
 			},
 		},
 	}
@@ -673,11 +481,6 @@ func TestGetProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/projects/project1",
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
@@ -690,26 +493,9 @@ func TestGetProject(t *testing.T) {
 			authHeader: adminAuthHeader,
 			method:     "GET",
 			url:        "/projects/projectdoesnotexist",
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{}, upper.ErrNoMoreRows
-				},
-			},
-		},
-		{
-			name:       "error getting project from ddb but continues",
-			want:       http.StatusOK,
-			authHeader: adminAuthHeader,
-			method:     "GET",
-			url:        "/projects/project1",
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{}, errors.New("error")
+					return db.ProjectEntry{}, db.ErrProjectNotFound
 				},
 			},
 		},
@@ -1049,14 +835,6 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{
-						ProjectID:  "project1",
-						Repository: "repo",
-					}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{
@@ -1088,14 +866,6 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 				GetTokenFunc:      func() (string, error) { return testPassword, nil },
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{
-						ProjectID:  "project1",
-						Repository: "repo",
-					}, nil
-				},
 			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
@@ -1156,17 +926,12 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
+			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{
 						ProjectID:  "project1",
 						Repository: "repo",
 					}, nil
-				},
-			},
-			ddbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{}, errors.New("ddb error")
 				},
 			},
 			gitMock: &th.GitClientMock{
@@ -1193,17 +958,12 @@ func TestCreateWorkflowFromGit(t *testing.T) {
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
+			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{
 						ProjectID:  "project1",
 						Repository: "repo",
 					}, nil
-				},
-			},
-			ddbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{}, db.ErrProjectNotFound
 				},
 			},
 			gitMock: &th.GitClientMock{
@@ -1361,15 +1121,6 @@ func TestDeleteToken(t *testing.T) {
 				ProjectExistsFunc:      func(s string) (bool, error) { return true, nil },
 				DeleteProjectTokenFunc: func(p, t string) error { return nil },
 			},
-			dbMock: &th.DBClientMock{
-				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return nil },
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
@@ -1392,7 +1143,7 @@ func TestDeleteToken(t *testing.T) {
 			},
 		},
 		{
-			name:       "token does not exist in DB or CP or ddb",
+			name:       "token does not exist in CP or ddb",
 			want:       http.StatusOK,
 			respFile:   "TestDeleteToken/can_delete_token_response.json",
 			authHeader: adminAuthHeader,
@@ -1404,14 +1155,6 @@ func TestDeleteToken(t *testing.T) {
 				},
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
@@ -1422,7 +1165,7 @@ func TestDeleteToken(t *testing.T) {
 			},
 		},
 		{
-			name:       "token exists in CP but not in DB or ddb",
+			name:       "token exists in CP but not in ddb",
 			want:       http.StatusOK,
 			respFile:   "TestDeleteToken/can_delete_token_response.json",
 			authHeader: adminAuthHeader,
@@ -1434,14 +1177,6 @@ func TestDeleteToken(t *testing.T) {
 					return types.ProjectToken{ID: "tokenonlyincp"}, nil
 				},
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{}, nil
-				},
 			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
@@ -1465,21 +1200,13 @@ func TestDeleteToken(t *testing.T) {
 				},
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return nil },
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{TokenID: "tokenonlyindb"}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
+				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return nil },
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
 				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{}, nil
+					return db.TokenEntry{TokenID: "tokenonlyindb"}, nil
 				},
 			},
 		},
@@ -1497,83 +1224,9 @@ func TestDeleteToken(t *testing.T) {
 				},
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return errors.New("error deleting entry from DB") },
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
-				},
-			},
-			ddbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
-				},
-			},
-		},
-		{
-			name:       "ddb token does not exist but continues",
-			want:       http.StatusOK,
-			respFile:   "TestDeleteToken/can_delete_token_response.json",
-			authHeader: adminAuthHeader,
-			url:        "/projects/project/tokens/ddbtokennotexist",
-			method:     "DELETE",
-			cpMock: &th.CredsProviderMock{
-				DeleteProjectTokenFunc: func(s1, s2 string) error { return nil },
-				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
-					return types.ProjectToken{ID: "1234"}, nil
-				},
-				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return nil },
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
-				},
-			},
-			ddbMock: &th.DBClientMock{
-				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error { return db.ErrTokenNotFound },
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryByProjectFunc: func(ctx context.Context, project, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
-				},
-			},
-		},
-		{
-			name:       "ddb delete error but continues",
-			want:       http.StatusOK,
-			respFile:   "TestDeleteToken/can_delete_token_response.json",
-			authHeader: adminAuthHeader,
-			url:        "/projects/project/tokens/ddbdeleteerror",
-			method:     "DELETE",
-			cpMock: &th.CredsProviderMock{
-				DeleteProjectTokenFunc: func(s1, s2 string) error { return nil },
-				GetProjectTokenFunc: func(s1 string, s2 string) (types.ProjectToken, error) {
-					return types.ProjectToken{ID: "1234"}, nil
-				},
-				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				DeleteTokenEntryFunc: func(ctx context.Context, token string) error { return nil },
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
-				},
-				ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
-					return db.TokenEntry{ProjectID: "project1", TokenID: "1234", CreatedAt: "2022-06-21T14:42:50.182037-07:00"}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				DeleteTokenEntryByProjectFunc: func(ctx context.Context, project, token string) error {
-					return errors.New("error deleting entry from DDB")
+					return errors.New("error deleting entry from DB")
 				},
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
@@ -1606,30 +1259,6 @@ func TestListTokens(t *testing.T) {
 			method:     "GET",
 			cpMock: &th.CredsProviderMock{
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-			},
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1", Repository: "repo"}, nil
-				},
-				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
-					return []db.TokenEntry{
-						{
-							CreatedAt: "2022-06-21T14:56:10.341066-07:00",
-							ExpiresAt: "2023-06-21T14:56:10.341066-07:00",
-							TokenID:   "ghi789",
-						},
-						{
-							CreatedAt: "2022-06-21T14:43:16.172896-07:00",
-							ExpiresAt: "2023-06-21T14:43:16.172896-07:00",
-							TokenID:   "def456",
-						},
-						{
-							CreatedAt: "2022-06-21T14:42:50.182037-07:00",
-							ExpiresAt: "2023-06-21T14:42:50.182037-07:00",
-							TokenID:   "abc123",
-						},
-					}, nil
-				},
 			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
@@ -1677,14 +1306,6 @@ func TestListTokens(t *testing.T) {
 			cpMock: &th.CredsProviderMock{
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "abc123", Repository: "repo"}, nil
-				},
-				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
-					return []db.TokenEntry{}, nil
-				},
-			},
 			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, p string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "abc123", Repository: "repo"}, nil
@@ -1715,17 +1336,12 @@ func TestListTokens(t *testing.T) {
 			cpMock: &th.CredsProviderMock{
 				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
 			},
-			dbMock: &th.DBClientMock{
+			ddbMock: &th.DBClientMock{
 				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
 				ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
 					return []db.TokenEntry{}, errors.New("error from DB")
-				},
-			},
-			ddbMock: &th.DBClientMock{
-				ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
-					return db.ProjectEntry{ProjectID: "project1"}, nil
 				},
 			},
 		},
@@ -1742,7 +1358,6 @@ func TestHealthCheck(t *testing.T) {
 		wantResponseBody      string
 		wantStatusCode        int
 		wantResponseHeader    string
-		dbMock                *th.DBClientMock
 	}{
 		{
 			name:               "good_vault_200",
@@ -1750,11 +1365,6 @@ func TestHealthCheck(t *testing.T) {
 			wantResponseBody:   "Health check succeeded\n",
 			wantStatusCode:     http.StatusOK,
 			wantResponseHeader: "text/plain",
-			dbMock: &th.DBClientMock{
-				HealthFunc: func(ctx context.Context) error {
-					return nil
-				},
-			},
 		},
 		{
 			name:               "good_vault_429",
@@ -1762,11 +1372,6 @@ func TestHealthCheck(t *testing.T) {
 			wantResponseBody:   "Health check succeeded\n",
 			wantStatusCode:     http.StatusOK,
 			wantResponseHeader: "text/plain",
-			dbMock: &th.DBClientMock{
-				HealthFunc: func(ctx context.Context) error {
-					return nil
-				},
-			},
 		},
 		{
 			// We want successful health check in this vault error scenario.
@@ -1776,11 +1381,6 @@ func TestHealthCheck(t *testing.T) {
 			wantResponseBody:      "Health check succeeded\n",
 			wantStatusCode:        http.StatusOK,
 			wantResponseHeader:    "text/plain",
-			dbMock: &th.DBClientMock{
-				HealthFunc: func(ctx context.Context) error {
-					return nil
-				},
-			},
 		},
 		{
 			name:             "error_vault_connection",
@@ -1793,17 +1393,6 @@ func TestHealthCheck(t *testing.T) {
 			vaultStatusCode:  http.StatusInternalServerError,
 			wantResponseBody: "Health check failed\n",
 			wantStatusCode:   http.StatusServiceUnavailable,
-		},
-		{
-			name:             "bad_db",
-			vaultStatusCode:  http.StatusOK,
-			wantResponseBody: "Health check failed\n",
-			wantStatusCode:   http.StatusServiceUnavailable,
-			dbMock: &th.DBClientMock{
-				HealthFunc: func(ctx context.Context) error {
-					return errors.New("too many connections")
-				},
-			},
 		},
 	}
 
@@ -1839,7 +1428,6 @@ func TestHealthCheck(t *testing.T) {
 				env: env.Vars{
 					VaultAddress: vaultEndpoint,
 				},
-				dbClient: tt.dbMock,
 			}
 
 			// Dummy request.
@@ -1892,10 +1480,6 @@ func runTests(t *testing.T, tests []test) {
 				env: env.Vars{
 					AdminSecret: testPassword,
 				},
-			}
-
-			if tt.dbMock != nil {
-				h.dbClient = tt.dbMock
 			}
 
 			if tt.ddbMock != nil {
@@ -1986,290 +1570,4 @@ func loadJSON(t *testing.T, filename string) (output interface{}) {
 		t.Fatalf("failed to decode file %s: %v", filename, err)
 	}
 	return output
-}
-
-func TestCompareEntriesWithTimestamps(t *testing.T) {
-	tests := []struct {
-		name     string
-		entryA   []db.TokenEntry
-		entryB   []db.TokenEntry
-		expected bool
-		hasDiff  bool
-	}{
-		{
-			name: "timestamps with different precision should match when within same millisecond",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305Z",
-				ExpiresAt: "2026-10-21T09:31:10.305Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			expected: true,
-		},
-		{
-			name: "timestamps with microsecond vs nanosecond precision should match",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305036Z",
-				ExpiresAt: "2026-10-21T09:31:10.305036Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			expected: true,
-		},
-		{
-			name: "timestamps differing by more than 1ms should not match",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305Z",
-				ExpiresAt: "2026-10-21T09:31:10.305Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.307Z",
-				ExpiresAt: "2026-10-21T09:31:10.307Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			expected: false,
-			hasDiff:  true,
-		},
-		{
-			name: "identical timestamps should match",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			expected: true,
-		},
-		{
-			name: "different ProjectID should not match regardless of timestamps",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305Z",
-				ExpiresAt: "2026-10-21T09:31:10.305Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project2",
-				TokenID:   "token1",
-			}},
-			expected: false,
-			hasDiff:  true,
-		},
-		{
-			name: "different TokenID should not match regardless of timestamps",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305Z",
-				ExpiresAt: "2026-10-21T09:31:10.305Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project1",
-				TokenID:   "token2",
-			}},
-			expected: false,
-			hasDiff:  true,
-		},
-		{
-			name: "multiple tokens with varying precision should match",
-			entryA: []db.TokenEntry{
-				{
-					CreatedAt: "2025-10-20T17:31:10.305Z",
-					ExpiresAt: "2026-10-21T09:31:10.305Z",
-					ProjectID: "project1",
-					TokenID:   "token1",
-				},
-				{
-					CreatedAt: "2025-10-20T17:32:15.123456Z",
-					ExpiresAt: "2026-10-21T09:32:15.123456Z",
-					ProjectID: "project1",
-					TokenID:   "token2",
-				},
-			},
-			entryB: []db.TokenEntry{
-				{
-					CreatedAt: "2025-10-20T17:31:10.305035644Z",
-					ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-					ProjectID: "project1",
-					TokenID:   "token1",
-				},
-				{
-					CreatedAt: "2025-10-20T17:32:15.123456789Z",
-					ExpiresAt: "2026-10-21T09:32:15.123456789Z",
-					ProjectID: "project1",
-					TokenID:   "token2",
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "only CreatedAt differs within same millisecond should match",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305999999Z",
-				ExpiresAt: "2026-10-21T09:31:10.305035644Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			expected: true,
-		},
-		{
-			name: "only ExpiresAt differs within same millisecond should match",
-			entryA: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			entryB: []db.TokenEntry{{
-				CreatedAt: "2025-10-20T17:31:10.305035644Z",
-				ExpiresAt: "2026-10-21T09:31:10.305999999Z",
-				ProjectID: "project1",
-				TokenID:   "token1",
-			}},
-			expected: true,
-		},
-		{
-			name:     "empty token slices should match",
-			entryA:   []db.TokenEntry{},
-			entryB:   []db.TokenEntry{},
-			expected: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			matches, diff := compareEntries(tt.entryA, tt.entryB, timestampComparer())
-
-			assert.Equal(t, tt.expected, matches, "Expected matches to be %v", tt.expected)
-
-			if tt.hasDiff {
-				assert.NotEmpty(t, diff, "Expected non-empty diff when entries don't match")
-			} else {
-				assert.Empty(t, diff, "Expected empty diff when entries match")
-			}
-		})
-	}
-}
-
-func TestCompareEntries(t *testing.T) {
-	tests := []struct {
-		name     string
-		entryA   db.ProjectEntry
-		entryB   db.ProjectEntry
-		expected bool
-		hasDiff  bool
-	}{
-		{
-			name: "identical entries should match",
-			entryA: db.ProjectEntry{
-				ProjectID:  "test-project",
-				Repository: "https://github.com/test/repo",
-			},
-			entryB: db.ProjectEntry{
-				ProjectID:  "test-project",
-				Repository: "https://github.com/test/repo",
-			},
-			expected: true,
-		},
-		{
-			name: "different project ID should not match",
-			entryA: db.ProjectEntry{
-				ProjectID:  "project-a",
-				Repository: "https://github.com/test/repo",
-			},
-			entryB: db.ProjectEntry{
-				ProjectID:  "project-b",
-				Repository: "https://github.com/test/repo",
-			},
-			expected: false,
-			hasDiff:  true,
-		},
-		{
-			name: "different repository should not match",
-			entryA: db.ProjectEntry{
-				ProjectID:  "test-project",
-				Repository: "https://github.com/test/repo-a",
-			},
-			entryB: db.ProjectEntry{
-				ProjectID:  "test-project",
-				Repository: "https://github.com/test/repo-b",
-			},
-			expected: false,
-			hasDiff:  true,
-		},
-		{
-			name: "both fields different should not match",
-			entryA: db.ProjectEntry{
-				ProjectID:  "project-a",
-				Repository: "https://github.com/test/repo-a",
-			},
-			entryB: db.ProjectEntry{
-				ProjectID:  "project-b",
-				Repository: "https://github.com/test/repo-b",
-			},
-			expected: false,
-			hasDiff:  true,
-		},
-		{
-			name:     "empty entries should match",
-			entryA:   db.ProjectEntry{},
-			entryB:   db.ProjectEntry{},
-			expected: true,
-		},
-		{
-			name: "one empty entry should not match",
-			entryA: db.ProjectEntry{
-				ProjectID:  "test-project",
-				Repository: "https://github.com/test/repo",
-			},
-			entryB:   db.ProjectEntry{},
-			expected: false,
-			hasDiff:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			matches, diff := compareEntries(tt.entryA, tt.entryB)
-
-			assert.Equal(t, tt.expected, matches, "Expected matches to be %v", tt.expected)
-
-			if tt.hasDiff {
-				assert.NotEmpty(t, diff, "Expected non-empty diff when entries don't match")
-			} else {
-				assert.Empty(t, diff, "Expected empty diff when entries match")
-			}
-		})
-	}
 }

@@ -1,1 +1,0 @@
-ALTER TABLE IF EXISTS tokens DROP COLUMN IF EXISTS expires_at;

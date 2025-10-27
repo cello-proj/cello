@@ -15,10 +15,6 @@ with Docker Desktop managing resource in AWS (region us-west-2) with credentials
 
 - Install GoLint `go get -u golang.org/x/lint/golint` and ensure `$GOPATH` is in your `$PATH`.
 
-- Install PostgreSQL `brew install postgresql`
-
-- Install [golang-migrate](https://github.com/golang-migrate/migrate)
-
 - Install [Vault](https://www.vaultproject.io/downloads) for credential generation.
 
 - Install [jq](https://stedolan.github.io/jq/) for json parsing.
@@ -56,18 +52,6 @@ You will need two windows
 
   ```sh
   bash scripts/create_iam_role.sh
-  ```
-
-- Create a new postgres database. This can be done using the command:
-
-  ```sh
-  createdb cello
-  ```
-
-- Use `golang-migrate` to create the relevant tables and create a new user with read/write permissions. This can be done using the command:
-
-  ```sh
-  migrate -path scripts/db_migrations -database 'postgres://localhost:5432/cello?sslmode=disable' up
   ```
 
 - Create the default workflow template in Argo.

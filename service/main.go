@@ -15,7 +15,6 @@ import (
 	"github.com/cello-proj/cello/service/internal/env"
 	"github.com/cello-proj/cello/service/internal/git"
 	"github.com/cello-proj/cello/service/internal/workflow"
-	"github.com/cello-proj/cello/service/util"
 
 	"github.com/argoproj/argo-workflows/v3/cmd/argo/commands/client"
 	"github.com/go-kit/log"
@@ -60,12 +59,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	sqlClient, err := db.NewSQLClient(env.DBHost, env.DBName, env.DBUser, env.DBPassword, util.OptionsToMap(env.DBOptions))
-	if err != nil {
-		level.Error(errLogger).Log("message", "error creating sql db client", "error", err)
-		os.Exit(1)
-	}
-
 	ddbClient, err := db.NewDynamoDBClient(env.DynamoDBTableName, env.DynamoDBEndpoint, env.DynamoDBAssumeRoleARN)
 	if err != nil {
 		level.Error(errLogger).Log("message", "error creating ddb client", "error", err)
@@ -83,7 +76,6 @@ func main() {
 		config:                 config,
 		gitClient:              gitClient(env, errLogger),
 		env:                    env,
-		dbClient:               sqlClient,
 		ddbClient:              ddbClient,
 	}
 
