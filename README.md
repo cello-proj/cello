@@ -1,4 +1,5 @@
-**Cello is Alpha on a good day, please only use as appropriate!!!**
+> [!IMPORTANT]
+> This repo has been archived and is no longer maintained.
 
 [![build](https://github.com/cello-proj/cello/actions/workflows/build.yaml/badge.svg)](https://github.com/cello-proj/cello/actions/workflows/build.yaml)
 
